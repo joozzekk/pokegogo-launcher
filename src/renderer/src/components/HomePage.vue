@@ -1,6 +1,10 @@
 <script lang="ts" setup>
 import { createParticles, showToast } from '@renderer/utils'
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
+import { initNavigation } from '@renderer/assets/scripts/navigation'
+import { initSettings, loadSettings } from '@renderer/assets/scripts/settings'
+import { initShop } from '@renderer/assets/scripts/shop'
+import { updateServerStatus } from '@renderer/assets/scripts//server-status'
 
 const currentState = ref<string>('')
 const isOpeningGame = ref<boolean>(false)
@@ -24,6 +28,27 @@ const handleLaunchGame = async (e: Event): Promise<void> => {
     showToast(`${res}`)
   }
 }
+
+onMounted(() => {
+  initNavigation()
+  initSettings()
+  updateServerStatus()
+  setInterval(updateServerStatus, 30000)
+  loadSettings()
+  initShop()
+
+  // document.querySelectorAll<HTMLElement>('.news-item, .news-featured').forEach((item) => {
+  //   item.addEventListener('click', function () {
+  //     const title = this.querySelector<HTMLHeadingElement>('h3, h4')?.textContent || 'Artykuł'
+  //     showToast(`Otwieranie: ${title}`, 'success')
+
+  //     this.style.transform = 'scale(0.98)'
+  //     setTimeout(() => {
+  //       this.style.transform = ''
+  //     }, 200)
+  //   })
+  // })
+})
 </script>
 
 <template>

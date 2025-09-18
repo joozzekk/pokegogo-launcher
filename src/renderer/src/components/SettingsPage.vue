@@ -1,3 +1,11 @@
+<script lang="ts" setup>
+import { reactive } from 'vue'
+
+const state = reactive({
+  javaVersion: '21'
+})
+</script>
+
 <template>
   <div id="settingsPage" class="page">
     <div class="settings-container">
@@ -47,10 +55,8 @@
 
           <div class="setting-group">
             <label>Wersja Java</label>
-            <select class="setting-select">
-              <option>Java 25</option>
-              <option>Java 21 (Zalecana)</option>
-              <option>Java 17</option>
+            <select v-model="state.javaVersion" class="setting-select">
+              <option value="21">Java 21 (Zalecana)</option>
             </select>
           </div>
 

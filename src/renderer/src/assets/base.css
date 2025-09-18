@@ -5,7 +5,7 @@
   --bg-dark: #0a0c10;
   --bg-medium: #0f1117;
   --bg-light: #1a1d25;
-  --bg-card: rgba(26, 29, 37, 0.6);
+  --bg-card: rgba(26, 29, 37, 1);
   --bg-toast: rgba(26, 29, 37, 1);
   --text-primary: #ffffff;
   --text-secondary: #94a3b8;
@@ -62,7 +62,7 @@ body {
 @keyframes gradientShift {
   0%,
   100% {
-    transform: translate(0, 0) rotat e(0deg);
+    transform: translate(0, 0) rotate(0deg);
   }
   33% {
     transform: translate(-10%, -10%) rotate(120deg);
@@ -911,6 +911,13 @@ body {
 
 .setting-group {
   margin-bottom: 25px;
+  display: flex;
+  flex-direction: column;
+}
+
+.setting-desc {
+  margin: 0 0.5rem;
+  color: rgba(255, 255, 255, 0.4);
 }
 
 .setting-group label {
@@ -1062,20 +1069,23 @@ body {
 
 .settings-actions {
   display: flex;
+  max-width: 50%;
   gap: 15px;
 }
 
 .btn-primary,
 .btn-secondary {
-  padding: 12px 2.25rem;
+  padding: 0.8rem 1rem;
   border: none;
   border-radius: 10px;
-  font-size: 16px;
+  width: 100%;
+  font-size: 1.25rem;
   font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  gap: 1rem;
   transition: all 0.3s ease;
 }
 
