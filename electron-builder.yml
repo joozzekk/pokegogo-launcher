@@ -1,4 +1,4 @@
-appId: pl.pokemongogo
+appId: pl.pokemongogo.launcher
 productName: PokemonGoGo Launcher
 directories:
   buildResources: build
@@ -13,6 +13,10 @@ asarUnpack:
   - resources/**
 win:
   executableName: pokemongogo-launcher
+  publish:
+    # an object provider for github with additional options
+    - provider: github
+      protocol: https
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}

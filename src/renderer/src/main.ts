@@ -21,3 +21,5 @@ router.beforeEach((to, _from, next) => {
 })
 
 app.mount('#app')
+
+//TODO: disable web contents on prod
