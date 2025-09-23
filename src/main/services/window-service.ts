@@ -2,8 +2,11 @@ import { is } from '@electron-toolkit/utils'
 import { BrowserWindow, ipcMain, shell } from 'electron'
 import { join } from 'path'
 import icon from '../../../resources/icon.png?asset'
+import { getAutoUpdater } from './electron-updater'
 
 const createWindow = (): BrowserWindow => {
+  const autoUpdater = getAutoUpdater()
+
   const mainWindow = new BrowserWindow({
     width: 1280,
     height: 720,
@@ -22,6 +25,7 @@ const createWindow = (): BrowserWindow => {
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
+    autoUpdater.checkForUpdatesAndNotify()
   })
 
   ipcMain.on('window-minimize', () => {
