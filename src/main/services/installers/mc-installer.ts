@@ -32,6 +32,28 @@ async function getFileHash(filePath: string): Promise<string> {
     stream.on('error', reject)
   })
 }
+async function readHashesFile(localDir: string): Promise<Record<string, string>> {
+  const hashesFilePath = path.join(localDir, 'hashes.txt')
+  try {
+    const data = await fs.promises.readFile(hashesFilePath, 'utf8')
+    const lines = data
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+    const map: Record<string, string> = {}
+    for (const line of lines) {
+      const [fileName, fileHash] = line.split(' ')
+      if (fileName && fileHash) {
+        map[fileName] = fileHash
+      }
+    }
+    return map
+  } catch {
+    // Plik nie istnieje lub błąd odczytu - traktujemy jak pusty
+    return {}
+  }
+}
+
 async function downloadAll(
   client: ftp.Client,
   remoteDir: string,
@@ -43,6 +65,10 @@ async function downloadAll(
   await fs.promises.mkdir(localDir, { recursive: true })
   const changed = await safeCd(client, remoteDir)
   if (!changed) return
+
+  // Wczytujemy lokalne hashe dla tego folderu (jeśli istnieją)
+  const localHashes = await readHashesFile(localDir)
+
   const list = await client.list()
   let downloadedFiles = 0
   const totalFiles = list.filter((f) => !f.isDirectory).length
@@ -54,50 +80,30 @@ async function downloadAll(
     if (file.isDirectory) {
       await downloadAll(client, remotePath, localPath, log, isFirstInstall, importantFolders)
     } else {
-      if (file.name.endsWith('.sha256')) {
+      if (file.name.endsWith('.sha256') || file.name === 'hashes.txt') {
         continue
       }
 
-      const folderName = path.basename(localDir)
-
-      let verifyHash = false
-      if (isFirstInstall) {
-        verifyHash = true
-      } else if (importantFolders.includes(folderName)) {
-        verifyHash = true
-      }
-
-      let remoteHash = ''
-      if (verifyHash) {
-        try {
-          const remoteHashPath = remotePath + '.sha256'
-          const tempHashFile = path.join(localDir, file.name + '.sha256.tmp')
-          await client.downloadTo(tempHashFile, remoteHashPath)
-          remoteHash = (await fs.promises.readFile(tempHashFile, 'utf8')).trim()
-          await fs.promises.unlink(tempHashFile)
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        } catch (e) {
-          log(`Brak sumy kontrolnej dla pliku ${file.name}, pobieram bez porównania.`)
-        }
-      }
-
       let downloadFile = true
-      if (verifyHash && remoteHash) {
+
+      // Jeśli mamy hash z pliku hashes.txt, to porównaj ze stanem lokalnym
+      if (localHashes[file.name]) {
         try {
           const localHash = await getFileHash(localPath)
-          if (localHash === remoteHash) {
+          if (localHash === localHashes[file.name]) {
             downloadFile = false
-            log(`Plik ${file.name} aktualny, pomijam pobieranie.`)
+            log(`Plik ${file.name} jest aktualny wg hashes.txt, pomijam pobieranie.`)
           }
         } catch {
+          // Plik lokalny nie istnieje lub błąd haszowania - pobieramy
           downloadFile = true
         }
       } else {
-        // No hash verification means we download only if file missing
+        // Brak informacji w hashes.txt - pobieramy tylko jeśli pliku lokalnego nie ma
         try {
           await fs.promises.access(localPath)
           downloadFile = false
-          log(`Plik ${file.name} istnieje lokalnie, pomijam pobieranie (bez weryfikacji).`)
+          log(`Plik ${file.name} istnieje lokalnie, pomijam pobieranie (brak hash).`)
         } catch {
           downloadFile = true
         }
@@ -111,6 +117,7 @@ async function downloadAll(
     }
   }
 }
+
 export async function copyMCFiles(mainWindow: BrowserWindow): Promise<void> {
   const client = new ftp.Client(1000 * 120)
   const localRoot = path.join(app.getPath('userData'), 'mcfiles')
@@ -132,7 +139,7 @@ export async function copyMCFiles(mainWindow: BrowserWindow): Promise<void> {
     await client.send('OPTS UTF8 ON')
 
     const pwd = await client.pwd()
-    const remoteURL = pwd + '/mcfiles'
+    const remoteURL = pwd + '/mc'
 
     mainWindow.webContents.send('show-toast', 'Instalowanie minecraft..')
     await downloadAll(

@@ -17,15 +17,35 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  ipcMain.handle('launch-game', async (_event, token) => {
-    try {
-      await installJava()
-      await copyMCFiles(mainWindow)
-      await launchMinecraft('1.21.1', token)
-      return 'Pomyślnie zainstalowno wszystkie pakiety!'
-    } catch (error) {
-      return `${error}`
+  ipcMain.handle(
+    'launch-game',
+    async (
+      _event,
+      data: {
+        javaVersion: string
+        mcVersion: string
+        token: string
+      }
+    ) => {
+      try {
+        await installJava(data.javaVersion)
+        await copyMCFiles(mainWindow)
+        await launchMinecraft(data.mcVersion, data.token)
+        return 'Pomyślnie zainstalowno wszystkie pakiety!'
+      } catch (error) {
+        return `${error}`
+      }
     }
+  )
+
+  ipcMain.handle('change-resolution', (_, newResolution: string) => {
+    const [width, height] = newResolution.split('x').map((v: string) => parseInt(v))
+
+    mainWindow.setBounds({
+      width,
+      height
+    })
+    mainWindow.center()
   })
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

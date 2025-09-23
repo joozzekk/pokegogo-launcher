@@ -1,7 +1,7 @@
 import { Authenticator, Client } from 'minecraft-launcher-core'
 import path from 'path'
 import { app } from 'electron'
-import log from 'electron-log'
+// import log from 'electron-log'
 import { Auth } from 'msmc'
 
 const toMCLC = (token: string, refreshable: boolean = false): unknown => {
@@ -42,7 +42,7 @@ export async function launchMinecraft(
     .launch({
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
-      authorization: token ? toMCLC(token) : Authenticator.getAuth(username!),
+      authorization: token ? toMCLC(token, true) : Authenticator.getAuth(username!),
       root: minecraftDir,
       version: {
         number: version,
@@ -54,11 +54,12 @@ export async function launchMinecraft(
         min: '6G'
       }
     })
-    .catch(log.error)
+    .then(console.log)
+    .catch(console.log)
 
-  client.on('debug', log.debug)
-  client.on('data', log.info)
-  client.on('error', log.error)
-  client.on('progress', log.info)
-  client.on('close', () => log.info('Minecraft został zamknięty'))
+  client.on('debug', console.log)
+  client.on('data', console.log)
+  client.on('error', console.log)
+  client.on('progress', console.log)
+  client.on('close', () => console.log('Minecraft został zamknięty'))
 }

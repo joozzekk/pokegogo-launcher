@@ -1,30 +1,39 @@
 <script lang="ts" setup>
 import logo from '@renderer/assets/logo.png'
 
-function minimizeWindow(): void {
+const maximizeWindow = (): void => {
+  window.electron.ipcRenderer.send('window-maximize')
+}
+const minimizeWindow = (): void => {
   window.electron.ipcRenderer.send('window-minimize')
 }
-
-function closeWindow(): void {
+const closeWindow = (): void => {
   window.electron.ipcRenderer.send('window-close')
 }
 </script>
 
 <template>
   <header class="header">
-    <div class="logo">
-      <div class="logo-icon">
+    <div class="applogo">
+      <div class="applogo-icon">
         <img :src="logo" width="100%" />
       </div>
       <h1>PokemonGoGo</h1>
-      <span class="logo-badge">beta</span>
+      <span class="applogo-badge">beta</span>
+    </div>
+    <div v-if="$route.path.includes('/app')" class="breadcrumbs">
+      <i class="fa fa-home" /> >
+      <span class="active"></span>
     </div>
     <div class="buttons">
       <button @click="minimizeWindow">
-        <i class="fa fa-minimize" />
+        <i class="fa-solid fa-window-minimize"></i>
+      </button>
+      <button @click="maximizeWindow">
+        <i class="fa-solid fa-window-maximize" />
       </button>
       <button class="red" @click="closeWindow">
-        <i class="fa fa-close" />
+        <i class="fa-solid fa-xmark fa-xl"></i>
       </button>
     </div>
   </header>
@@ -40,20 +49,18 @@ function closeWindow(): void {
 }
 
 .buttons button {
-  width: 50px;
-  height: 100%;
   background: transparent;
   border: none;
   color: white;
-  padding: 0.25rem 0.5rem;
+  width: 50px;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   user-select: none;
   -webkit-app-region: no-drag;
-  transition: background 0.15s ease-in-out;
-  border-radius: 4px;
+  transition: background 0.1s ease-in-out;
 }
 
 .buttons button > i {
@@ -70,5 +77,23 @@ function closeWindow(): void {
 
 .buttons button.red:hover {
   background: rgba(197, 34, 48, 0.4) !important;
+}
+
+.breadcrumbs {
+  color: #575b69;
+
+  user-select: none;
+  -webkit-app-region: no-drag;
+  text-transform: capitalize;
+}
+
+.breadcrumbs > i:hover {
+  cursor: pointer;
+  color: white;
+}
+
+.breadcrumbs > .active:hover {
+  cursor: pointer;
+  text-decoration: underline;
 }
 </style>

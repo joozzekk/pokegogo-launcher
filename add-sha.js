@@ -14,27 +14,35 @@ async function getFileHash(filePath) {
 
 async function generateHashesForFolder(folderPath) {
   const entries = await fs.promises.readdir(folderPath, { withFileTypes: true })
+  const hashes = []
+
   for (const entry of entries) {
     const fullPath = path.join(folderPath, entry.name)
+
     if (entry.isDirectory()) {
+      // Rekurencja: generujemy plik w podfolderze
       await generateHashesForFolder(fullPath)
     } else if (entry.isFile()) {
-      if (entry.name.endsWith('.sha256')) {
-        // Pomijaj pliki kończące się na .sha256
+      if (entry.name === 'hashes.txt' || entry.name.endsWith('.sha256')) {
+        // Pomijamy plik wynikowy i stare pliki .sha256
         continue
       }
       const hash = await getFileHash(fullPath)
-      const hashFilePath = fullPath + '.sha256'
-      await fs.promises.writeFile(hashFilePath, hash, 'utf8')
-      console.log(`Wygenerowano hash dla pliku ${entry.name} -> ${hashFilePath}`)
+      // Dodajemy wpis: nazwa pliku + hash
+      hashes.push(`${entry.name} ${hash}`)
     }
+  }
+
+  if (hashes.length > 0) {
+    const hashFilePath = path.join(folderPath, 'hashes.txt')
+    // Zapisujemy jeden plik tekstowy z listą "nazwa pliku + hash"
+    await fs.promises.writeFile(hashFilePath, hashes.join('\n'), 'utf8')
+    console.log(`Wygenerowano plik hashów: ${hashFilePath}`)
   }
 }
 
-// Przykład użycia
+// Przykład użycia z argumentem np. "node script.js ./test-folder"
 const folderPath = process.argv[2] || './test-folder'
 generateHashesForFolder(folderPath)
-  .then(() => {
-    console.log('Gotowe: wygenerowano pliki .sha256 dla wszystkich plików')
-  })
+  .then(() => console.log('Gotowe: wygenerowano pliki hashów w folderach.'))
   .catch(console.error)

@@ -6,7 +6,7 @@ import icon from '../../../resources/icon.png?asset'
 const createWindow = (): BrowserWindow => {
   const mainWindow = new BrowserWindow({
     width: 1280,
-    height: 768,
+    height: 720,
     show: false,
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
@@ -27,6 +27,11 @@ const createWindow = (): BrowserWindow => {
   ipcMain.on('window-minimize', () => {
     const win = BrowserWindow.getFocusedWindow()
     if (win) win.minimize()
+  })
+
+  ipcMain.on('window-maximize', () => {
+    const win = BrowserWindow.getFocusedWindow()
+    if (win) win.maximize()
   })
 
   ipcMain.on('window-close', () => {

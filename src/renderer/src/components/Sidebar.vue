@@ -1,7 +1,14 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const playerName = ref<string>('guest')
+
+const handleLogout = async (): Promise<void> => {
+  localStorage.removeItem('token')
+  router.push('/')
+}
 
 onMounted(() => {
   const dataStr = localStorage.getItem('token')
@@ -17,21 +24,26 @@ onMounted(() => {
   <aside class="sidebar">
     <nav class="sidebar-nav">
       <div class="player-profile">
-        <div class="player-avatar">
-          <img
-            id="playerSkin"
-            :src="`https://mineskin.eu/helm/${playerName}/100.png`"
-            class="player-skin"
-            alt="Player Skin"
-          />
-          <div class="status-dot"></div>
+        <div class="player-fullinfo">
+          <div class="player-avatar">
+            <img
+              id="playerSkin"
+              :src="`https://mineskin.eu/helm/${playerName}/100.png`"
+              class="player-skin"
+              alt="Player Skin"
+            />
+            <div class="status-dot"></div>
+          </div>
+          <div class="player-info">
+            <span class="player-label">Gracz</span>
+            <span id="playerName" class="player-name">
+              {{ playerName }}
+            </span>
+          </div>
         </div>
-        <div class="player-info">
-          <span class="player-label">Gracz</span>
-          <span id="playerName" class="player-name">
-            {{ playerName }}
-          </span>
-        </div>
+        <button class="player-logout" @click="handleLogout">
+          <i class="fa-solid fa-door-open"></i>
+        </button>
       </div>
 
       <a href="#" class="nav-item active" data-page="home">
@@ -67,7 +79,7 @@ onMounted(() => {
     <div class="sidebar-footer">
       <div class="server-mini-status">
         <div class="pulse-dot"></div>
-        <span>Server Online</span>
+        <span>Wesprzyj developera :)</span>
       </div>
     </div>
   </aside>

@@ -2,8 +2,16 @@
 import { reactive } from 'vue'
 
 const state = reactive({
-  javaVersion: '21'
+  javaVersion: '21',
+  selectedRAM: 6,
+  selectedResolution: '1280x720'
 })
+
+const changeResolution = (e: Event): void => {
+  const target = e.target as HTMLSelectElement
+
+  window.electron.ipcRenderer.invoke('change-resolution', target.value)
+}
 </script>
 
 <template>
@@ -21,7 +29,14 @@ const state = reactive({
           <div class="setting-group">
             <label>Pamięć RAM</label>
             <div class="ram-slider-container">
-              <input id="ramSlider" type="range" min="6" max="16" value="6" step="1" />
+              <input
+                id="ramSlider"
+                v-model="state.selectedRAM"
+                type="range"
+                min="6"
+                max="16"
+                step="1"
+              />
               <div id="ramDisplay" class="ram-display">6 GB</div>
               <div class="ram-markers">
                 <span>6GB</span>
@@ -33,13 +48,21 @@ const state = reactive({
 
           <div class="setting-group">
             <label>Rozdzielczość</label>
-            <select class="setting-select">
-              <option>1280x768</option>
+            <select
+              v-model="state.selectedResolution"
+              class="setting-select"
+              @change="changeResolution"
+            >
+              <!-- <option value="1920x1080">1280x768 (4K UHD)</option> -->
+              <!-- <option value="1920x1080">2560x1440 (QHD)</option> -->
+              <option value="1920x1080">1920x1080 (Full HD)</option>
+              <option value="1366x768">1366x768</option>
+              <option value="1280x720">1280x720</option>
             </select>
           </div>
 
           <div class="setting-group">
-            <label>Tryb wyświetlania</label>
+            <label>Tryb wyświetlania gry</label>
             <div class="toggle-group">
               <button class="toggle-option active">Okno</button>
               <button class="toggle-option">Pełny ekran</button>
@@ -63,8 +86,8 @@ const state = reactive({
           <div class="setting-group">
             <label>Argumenty JVM</label>
             <textarea class="jvm-args" disabled style="resize: none !important; color: #787878">
--XX:+UnlockExperimentalVMOptions -XX:+UseG1GC</textarea
-            >
+-XX:+UnlockExperimentalVMOptions -XX:+UseG1GC
+            </textarea>
           </div>
 
           <!-- <div class="setting-group">

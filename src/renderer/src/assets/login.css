@@ -113,34 +113,14 @@ body {
 }
 
 .login-container {
-  min-height: 100vh;
+  min-height: calc(100vh - 140px);
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  position: relative;
 }
 
-.logo {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 15px;
-  margin-bottom: 10px;
-}
-.logo-icon {
-  font-size: 2.5rem;
-  filter: drop-shadow(0px 0px 5px #03a2ad);
-}
-.logo-text {
-  font-family: 'Orbitron', monospace;
-  font-size: 2.5rem;
-  font-weight: 700;
-  background: linear-gradient(45deg, var(--primary1), var(--primary2));
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  letter-spacing: 2px;
-}
 .tagline {
   font-size: 1.1rem;
   color: var(--text-secondary);
@@ -198,7 +178,7 @@ body {
   flex: 1;
   background: none;
   border: none;
-  padding: 20px;
+  padding: 1rem 1.5rem;
   color: var(--text-secondary);
   font-family: inherit;
   font-size: 1rem;
@@ -235,12 +215,15 @@ body {
   position: relative;
   overflow: hidden;
 }
+
 .form-container {
-  padding: 40px;
+  padding: 1rem 2rem;
   position: absolute;
+  overflow-y: auto;
   top: 0;
   left: 0;
   width: 100%;
+  max-height: 480px;
   opacity: 0;
   transform: translateX(100%);
   transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
@@ -255,7 +238,7 @@ body {
 
 .form-header {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 1.5rem;
 }
 .form-header h2 {
   font-size: 1.8rem;
@@ -271,7 +254,7 @@ body {
 }
 
 .form-group {
-  margin-bottom: 25px;
+  margin-bottom: 1.8rem;
   position: relative;
 }
 .input-wrapper {
@@ -282,13 +265,20 @@ body {
   background: var(--bg-input);
   border: 2px solid var(--border-primary);
   border-radius: var(--border-radius-small);
-  padding: 16px 20px 16px 50px;
+  padding: 0.5rem 1.5rem 0.5rem 3.25rem;
   font-size: 1rem;
   color: var(--text-primary);
   font-family: inherit;
   transition: var(--transition);
   outline: none;
 }
+
+.form-input.invalid {
+  background: rgba(255, 71, 87, 0.1);
+  border: 1px solid rgba(255, 71, 87, 0.3);
+  border-radius: var(--border-radius-small);
+}
+
 .form-input:focus {
   border-color: var(--primary1);
   box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.1);
@@ -384,7 +374,7 @@ body {
   width: 100%;
   border: none;
   border-radius: var(--border-radius-small);
-  padding: 16px 24px;
+  padding: 0.8rem 1rem;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
@@ -397,15 +387,29 @@ body {
   justify-content: center;
   gap: 10px;
 }
-.btn-primary {
+
+.btn-login-primary {
+  padding: 0.8rem 1rem;
+  border: none;
+  border-radius: 10px;
+  width: 100%;
+  font-size: 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
   background: linear-gradient(45deg, var(--primary1), var(--primary2));
   color: var(--bg-primary);
 }
+
 .btn-microsoft {
   background: linear-gradient(45deg, #0078d4, #106ebe);
   color: white;
 }
-.btn-primary:hover,
+.btn-login-primary:hover,
 .btn-microsoft:hover {
   transform: translateY(-2px);
   box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
@@ -420,17 +424,19 @@ body {
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
   transition: left 0.5s;
 }
-.btn-primary:hover .btn-glow {
+
+.btn-login-primary:hover .btn-glow {
   left: 100%;
 }
 
 .divider {
   text-align: center;
-  margin: 25px 0;
+  margin: 1rem 0;
   position: relative;
   color: var(--text-muted);
   font-size: 0.9rem;
 }
+
 .divider::before {
   content: '';
   position: absolute;
@@ -440,9 +446,10 @@ body {
   height: 1px;
   background: var(--border-primary);
 }
+
 .divider span {
   background: var(--bg-card);
-  padding: 0 20px;
+  padding: 0 0.8rem;
   position: relative;
   z-index: 1;
 }
@@ -475,13 +482,10 @@ body {
 }
 
 .error-message {
-  background: rgba(255, 71, 87, 0.1);
-  border: 1px solid rgba(255, 71, 87, 0.3);
-  border-radius: var(--border-radius-small);
   color: #ff4757;
-  padding: 12px 16px;
-  margin-top: 8px;
-  font-size: 0.85rem;
+  margin-top: 2px;
+  font-size: 0.8rem;
+  position: absolute;
   display: none;
   animation: errorSlide 0.3s ease-out;
 }
@@ -651,10 +655,10 @@ body {
 
 @media (max-width: 768px) {
   .container {
-    padding: 15px;
+    padding: 0.6rem;
   }
   .form-container {
-    padding: 30px 25px;
+    padding: 2rem 1rem;
   }
   .logo-text {
     font-size: 2rem;
@@ -681,16 +685,17 @@ body {
 }
 
 .footer {
-  margin-top: 50px;
   text-align: center;
   animation: fadeIn 0.8s ease-out 0.6s both;
+  position: absolute;
+  bottom: -6rem;
 }
 
 .footer-links {
   display: flex;
   justify-content: center;
   gap: 30px;
-  margin-bottom: 20px;
+  margin-bottom: 1.5rem;
   flex-wrap: wrap;
 }
 

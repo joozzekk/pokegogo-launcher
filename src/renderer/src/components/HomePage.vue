@@ -22,7 +22,11 @@ window.electron.ipcRenderer.on('show-log', (_event, data: string, ended?: boolea
 const handleLaunchGame = async (e: Event): Promise<void> => {
   isOpeningGame.value = true
   createParticles(e.target as HTMLElement)
-  const res = await window.electron.ipcRenderer.invoke('launch-game', token ?? null, 'YourMummy')
+  const res = await window.electron.ipcRenderer.invoke('launch-game', {
+    token,
+    mcVersion: '1.21.1',
+    javaVersion: '21'
+  })
 
   if (res) {
     showToast(`${res}`)
@@ -37,17 +41,17 @@ onMounted(() => {
   loadSettings()
   initShop()
 
-  // document.querySelectorAll<HTMLElement>('.news-item, .news-featured').forEach((item) => {
-  //   item.addEventListener('click', function () {
-  //     const title = this.querySelector<HTMLHeadingElement>('h3, h4')?.textContent || 'Artykuł'
-  //     showToast(`Otwieranie: ${title}`, 'success')
+  document.querySelectorAll<HTMLElement>('.news-item, .news-featured').forEach((item) => {
+    item.addEventListener('click', function () {
+      const title = this.querySelector<HTMLHeadingElement>('h3, h4')?.textContent || 'Artykuł'
+      showToast(`Otwieranie: ${title}`, 'success')
 
-  //     this.style.transform = 'scale(0.98)'
-  //     setTimeout(() => {
-  //       this.style.transform = ''
-  //     }, 200)
-  //   })
-  // })
+      this.style.transform = 'scale(0.98)'
+      setTimeout(() => {
+        this.style.transform = ''
+      }, 200)
+    })
+  })
 })
 </script>
 

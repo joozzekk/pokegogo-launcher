@@ -1,24 +1,6 @@
 <script lang="ts" setup>
-import { useRouter } from 'vue-router'
+import '@renderer/assets/scripts/login'
 import Header from './Header.vue'
-import { reactive } from 'vue'
-
-const router = useRouter()
-const state = reactive({
-  email: '',
-  pass: ''
-})
-
-const loginViaMicrosoft = async (e: Event): Promise<void> => {
-  e.preventDefault()
-
-  const token: string = await window.electron.ipcRenderer.invoke('login')
-
-  localStorage.setItem('token', token)
-  router.push({
-    path: '/app'
-  })
-}
 </script>
 
 <template>
@@ -31,9 +13,9 @@ const loginViaMicrosoft = async (e: Event): Promise<void> => {
     </div>
   </div>
 
-  <div class="login-container">
-    <Header />
+  <Header />
 
+  <div class="login-container">
     <div class="auth-card">
       <div class="tab-nav">
         <button class="tab-btn active" data-tab="login">
@@ -60,7 +42,6 @@ const loginViaMicrosoft = async (e: Event): Promise<void> => {
                 <i class="fas fa-user input-icon"></i>
                 <input
                   id="login-email"
-                  v-model="state.email"
                   type="text"
                   class="form-input"
                   placeholder="Nick lub Email"
@@ -76,7 +57,6 @@ const loginViaMicrosoft = async (e: Event): Promise<void> => {
                 <i class="fas fa-lock input-icon"></i>
                 <input
                   id="login-password"
-                  v-model="state.pass"
                   type="password"
                   class="form-input"
                   placeholder="Hasło"
@@ -90,19 +70,14 @@ const loginViaMicrosoft = async (e: Event): Promise<void> => {
               <div id="login-password-error" class="error-message"></div>
             </div>
 
-            <button type="submit" class="btn-primary">
+            <button type="submit" class="btn-login-primary">
               <span>Zaloguj się</span>
               <div class="btn-glow"></div>
             </button>
 
             <div class="divider"><span>lub</span></div>
 
-            <button
-              id="microsoft-login"
-              type="button"
-              class="btn-microsoft"
-              @click="loginViaMicrosoft"
-            >
+            <button id="microsoft-login" type="button" class="btn-microsoft">
               <i class="fab fa-microsoft"></i>
               <span>Zaloguj przez Microsoft</span>
             </button>
@@ -199,7 +174,7 @@ const loginViaMicrosoft = async (e: Event): Promise<void> => {
               </label>
             </div>
 
-            <button type="submit" class="btn-primary">
+            <button type="submit" class="btn-login-primary">
               <span>Utwórz konto</span>
               <div class="btn-glow"></div>
             </button>

@@ -113,10 +113,10 @@ body {
 
 /* -------------------------------------- Nagłówek  ---------------------------- */
 .header {
+  position: sticky;
+  top: 0;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 0.75rem 1rem;
   background: linear-gradient(180deg, rgba(10, 12, 16, 0.95) 0%, rgba(10, 12, 16, 0.8) 100%);
   backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border);
@@ -126,6 +126,7 @@ body {
   animation: slideDown 0.5s ease;
   user-select: none;
   -webkit-app-region: drag;
+  padding: 0.5rem 1rem;
 }
 
 @keyframes slideDown {
@@ -139,13 +140,16 @@ body {
   }
 }
 
-.logo {
+.applogo {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 1rem;
+  padding: 0 0.5rem;
+  user-select: none;
+  -webkit-app-region: no-drag;
 }
 
-.logo-icon {
+.applogo-icon {
   width: 2.25rem;
   height: 2.25rem;
   background: var(--gradient-primary);
@@ -167,7 +171,7 @@ body {
   }
 }
 
-.logo h1 {
+.applogo h1 {
   font-size: 25px;
   font-weight: 800;
   background: var(--gradient-primary);
@@ -177,7 +181,7 @@ body {
   letter-spacing: 1px;
 }
 
-.logo-badge {
+.applogo-badge {
   background: rgba(34, 192, 197, 0.2);
   color: var(--primary);
   padding: 0.25rem 0.5rem;
@@ -198,10 +202,16 @@ body {
 }
 
 /* -------------------------------------- Profil gracza ---------------------------- */
-.player-profile {
+.player-fullinfo {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.player-profile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   background: var(--bg-card);
   border-radius: 50px;
   border: 1px solid var(--border);
@@ -237,6 +247,21 @@ body {
   border-radius: 50%;
   border: 2px solid var(--primary);
   image-rendering: pixelated;
+}
+
+.player-logout {
+  width: 2.25rem;
+  height: 2.25rem;
+  background: transparent;
+  border: none;
+  border-radius: 100%;
+  color: rgb(62, 59, 73);
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+
+.player-logout:hover {
+  color: var(--primary);
 }
 
 .status-dot {
@@ -294,12 +319,12 @@ body {
 
 .container {
   display: flex;
-  height: calc(100vh - 65px);
+  height: calc(100vh - 51px);
 }
 
 /* -------------------------------------- Pasek boczny ---------------------------- */
 .sidebar {
-  width: 260px;
+  width: 20%;
   background: linear-gradient(180deg, var(--bg-medium) 0%, var(--bg-dark) 100%);
   border-right: 1px solid var(--border);
   display: flex;
