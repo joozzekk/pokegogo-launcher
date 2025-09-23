@@ -1,5 +1,4 @@
 /* eslint-disable */
-
 import { router } from '@renderer/router'
 
 const CONFIG = {

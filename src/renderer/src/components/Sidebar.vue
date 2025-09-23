@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
 
-const router = useRouter()
 const playerName = ref<string>('guest')
 
 const handleLogout = async (): Promise<void> => {
   localStorage.removeItem('token')
-  router.push('/')
+  location.replace('/')
 }
 
 onMounted(() => {

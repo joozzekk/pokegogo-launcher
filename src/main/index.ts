@@ -17,6 +17,8 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
+  // mainWindow.webContents.send('refresh-token', token)
+
   ipcMain.handle(
     'launch-game',
     async (

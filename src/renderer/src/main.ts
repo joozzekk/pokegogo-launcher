@@ -6,7 +6,7 @@ const app = createApp(App)
 app.use(router)
 
 router.beforeEach((to, _from, next) => {
-  // TODO: add take token from electron
+  // TODO: add take token from electron and refresh token on electron
   const token = localStorage.getItem('token')
 
   if (token) {
