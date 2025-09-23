@@ -1,3 +1,5 @@
-provider: generic
-url: https://example.com/auto-updates
-updaterCacheDirName: pokemongogo-launcher-updater
+provider: github
+protocol: https
+owner: joozzekk
+repo: pokegogo-launcher
+GH_TOKEN: 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

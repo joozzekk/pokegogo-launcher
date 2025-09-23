@@ -17,6 +17,7 @@ win:
     # an object provider for github with additional options
     - provider: github
       protocol: https
+      owner: joozzekk # nazwa użytkownika lub organizacji GitHub
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
@@ -35,13 +36,12 @@ dmg:
 linux:
   target:
     - AppImage
-    - snap
-    - deb
-  maintainer: electronjs.org
+  maintainer: pokemongogo.pl
   category: Utility
 appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false
 publish:
   - provider: github
-    protocol: https
+    owner: joozzekk # nazwa użytkownika lub organizacji GitHub
+    repo: pokegogo-launcher # nazwa repozytorium na GitHub
