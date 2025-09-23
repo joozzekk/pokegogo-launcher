@@ -77,7 +77,7 @@ onMounted(() => {
     <div class="sidebar-footer">
       <div class="server-mini-status">
         <div class="pulse-dot"></div>
-        <span>Wesprzyj developera :)</span>
+        <span>Wesprzyj developera 🥰</span>
       </div>
     </div>
   </aside>
