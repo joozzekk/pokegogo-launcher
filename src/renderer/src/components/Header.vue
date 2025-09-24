@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import logo from '@renderer/assets/logo.png'
 import useGeneralStore from '@renderer/stores/general-store'
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 
 const generalStore = useGeneralStore()
 
@@ -22,6 +22,10 @@ const isUpdateAvailable = computed(() => {
 const handleInstallUpdate = async (): Promise<void> => {
   window.electron.ipcRenderer.invoke('start-update')
 }
+
+onMounted(() => {
+  window.electron.ipcRenderer.invoke('check-for-update')
+})
 </script>
 
 <template>

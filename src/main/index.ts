@@ -27,6 +27,12 @@ app.whenReady().then(() => {
     mainWindow.webContents.send('update-available', false)
   })
 
+  ipcMain.handle('check-for-update', async () => {
+    const res = await autoUpdater.checkForUpdates()
+
+    return autoUpdater.currentVersion !== res?.updateInfo?.version
+  })
+
   electronApp.setAppUserModelId('pl.pokemongogo')
 
   app.on('browser-window-created', (_, window) => {
@@ -73,6 +79,7 @@ app.whenReady().then(() => {
   })
 
   ipcMain.handle('start-update', async () => {
+    await autoUpdater.downloadUpdate()
     autoUpdater.quitAndInstall()
   })
 
