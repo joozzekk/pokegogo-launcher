@@ -375,7 +375,7 @@ class pokemongogo {
 
       localStorage.setItem('token', token)
       router.push({
-        path: '/app'
+        path: '/app/home'
       })
     } catch (_error) {
       this.showToast('Błąd podczas przekierowania', 'error')
@@ -482,9 +482,8 @@ class pokemongogo {
 
   simulateRedirect(): void {
     setTimeout(() => {
-      console.log('Przekierowanie')
       router.push({
-        path: '/app'
+        path: '/app/home'
       })
     }, 2000)
   }

@@ -12,6 +12,10 @@ window.electron?.ipcRenderer?.on('show-toast', (_, data: string) => {
 window.electron?.ipcRenderer?.on('change-version', (_, ver: string) => {
   generalStore.changeVersion(ver)
 })
+
+window.electron?.ipcRenderer?.on('update-available', (_, isUpdate: boolean) => {
+  generalStore.setUpdateAvailable(isUpdate)
+})
 </script>
 
 <template>

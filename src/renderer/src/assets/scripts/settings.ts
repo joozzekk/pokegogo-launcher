@@ -98,8 +98,9 @@ export function loadSettings(): void {
         ramSlider.value = settings.ram.toString()
       }
       if (ramDisplay) {
-        ramDisplay.textContent = `${settings.ram} GB`
+        ramDisplay.textContent = `${settings.ram}GB`
       }
+
       if (quickRam) {
         quickRam.textContent = `${settings.ram}GB`
       }

@@ -1,5 +1,5 @@
 import { is } from '@electron-toolkit/utils'
-import { app, BrowserWindow, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, screen, shell } from 'electron'
 import { join } from 'path'
 import icon from '../../../resources/icon.png?asset'
 
@@ -31,13 +31,19 @@ const createWindow = (): BrowserWindow => {
     if (win) win.minimize()
   })
 
-  ipcMain.on('window-maximize', () => {
+  ipcMain.on('window-maximize', (_, defaultSize: string) => {
     const win = BrowserWindow.getFocusedWindow()
+
     if (win) {
       if (win.isMaximized()) {
+        const [width, height] = defaultSize.split('x').map((v: string) => parseInt(v))
         win.unmaximize()
+        win.setSize(width, height)
+        win.center()
       } else {
+        const { width, height } = screen.getPrimaryDisplay().bounds
         win.maximize()
+        win.setSize(width, height)
       }
     }
   })

@@ -12,8 +12,8 @@ router.beforeEach((to, _from, next) => {
   const token = localStorage.getItem('token')
 
   if (token) {
-    if (to.path !== '/app') {
-      next('/app')
+    if (!to.path.includes('/app')) {
+      next('/app/home')
     } else {
       next()
     }

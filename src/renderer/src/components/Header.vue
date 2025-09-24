@@ -6,7 +6,7 @@ import { computed } from 'vue'
 const generalStore = useGeneralStore()
 
 const maximizeWindow = (): void => {
-  window.electron.ipcRenderer.send('window-maximize')
+  window.electron.ipcRenderer.send('window-maximize', generalStore.settings.resolution)
 }
 const minimizeWindow = (): void => {
   window.electron.ipcRenderer.send('window-minimize')
@@ -34,8 +34,10 @@ const handleInstallUpdate = async (): Promise<void> => {
       <span class="applogo-badge">{{ generalStore.appVersion }}</span>
     </div>
     <div v-if="$route.path.includes('/app')" class="breadcrumbs">
-      <i class="fa fa-home" /> >
-      <span class="active"></span>
+      <i class="fa fa-home" @click="$router.push('/app/home')" /> >
+      <span class="active">
+        {{ $route.name }}
+      </span>
     </div>
 
     <button v-if="isUpdateAvailable" class="nav-icon" @click="handleInstallUpdate">

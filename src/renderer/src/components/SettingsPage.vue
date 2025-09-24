@@ -1,24 +1,112 @@
 <script lang="ts" setup>
-import { reactive } from 'vue'
+import useGeneralStore from '@renderer/stores/general-store'
+import { calculateValueFromPercentage, showToast } from '@renderer/utils'
+import { onMounted, ref, watch } from 'vue'
 
-const state = reactive({
-  javaVersion: '21',
-  selectedRAM: 6,
-  selectedResolution: '1280x720'
-})
+const generalStore = useGeneralStore()
 
 const changeResolution = (e: Event): void => {
   const target = e.target as HTMLSelectElement
 
   window.electron.ipcRenderer.invoke('change-resolution', target.value)
 }
+
+const sliderRef = ref<HTMLInputElement | null>(null)
+const displayRef = ref<HTMLInputElement | null>(null)
+
+const ram = ref<number>(11)
+const version = ref<string>('PokemonGoGo.pl')
+const resolution = ref<string>(generalStore.settings.resolution)
+const displayMode = ref<string>('')
+const theme = ref<string>('')
+const autoUpdate = ref<boolean>(false)
+
+const percent = ref(0)
+
+const quickRam = ref('6GB')
+
+const saveSettings = (): void => {
+  const settings = {
+    ram: ram.value,
+    version: version.value,
+    resolution: resolution.value,
+    displayMode: displayMode.value,
+    theme: theme.value,
+    autoUpdate: autoUpdate.value
+  }
+  localStorage.setItem('launcherSettings', JSON.stringify(settings))
+  showToast('Zapisano ustawienia.')
+}
+
+const loadSettings = (): void => {
+  const savedSettings = localStorage.getItem('launcherSettings')
+  if (!savedSettings) return
+  try {
+    const settings = JSON.parse(savedSettings) as {
+      ram?: number | string
+      version?: string
+      resolution?: string
+      displayMode?: string
+      theme?: string
+      autoUpdate?: boolean
+    }
+    if (settings.ram) {
+      ram.value = Number(settings.ram)
+      quickRam.value = `${settings.ram}GB`
+    }
+    if (settings.version) version.value = settings.version || ''
+    if (settings.resolution) resolution.value = settings.resolution || ''
+    if (settings.displayMode) displayMode.value = settings.displayMode || ''
+    if (settings.theme) theme.value = settings.theme || ''
+    if (typeof settings.autoUpdate === 'boolean') autoUpdate.value = settings.autoUpdate
+  } catch {
+    // ignore parse errors
+  }
+}
+
+const resetSettings = (): void => {
+  localStorage.removeItem('launcherSettings')
+  ram.value = 6
+  version.value = 'PokemonGoGo.pl'
+  resolution.value = ''
+  displayMode.value = ''
+  theme.value = ''
+  autoUpdate.value = false
+  quickRam.value = '6GB'
+  showToast('Przywrócono domyślne ustawienia', 'success')
+}
+
+watch(
+  () => ram.value,
+  (newVal) => {
+    if (sliderRef.value) {
+      percent.value = calculateValueFromPercentage(newVal, sliderRef.value?.offsetWidth)
+    }
+    quickRam.value = `${newVal}GB`
+    if (displayRef.value) {
+      displayRef.value.textContent = `${newVal}GB`
+      displayRef.value.style.left = percent.value + 'px'
+    }
+  }
+)
+
+onMounted(() => {
+  loadSettings()
+  if (sliderRef.value) {
+    percent.value = calculateValueFromPercentage(ram.value, sliderRef.value?.offsetWidth)
+  }
+  quickRam.value = `${ram.value}GB`
+
+  if (displayRef.value) {
+    displayRef.value.textContent = `${ram.value}GB`
+    displayRef.value.style.left = percent.value + 'px'
+  }
+})
 </script>
 
 <template>
   <div id="settingsPage" class="page">
     <div class="settings-container">
-      <h2>Ustawienia</h2>
-
       <div class="settings-grid">
         <div class="settings-card">
           <div class="settings-card-header">
@@ -31,13 +119,14 @@ const changeResolution = (e: Event): void => {
             <div class="ram-slider-container">
               <input
                 id="ramSlider"
-                v-model="state.selectedRAM"
+                ref="sliderRef"
+                v-model="ram"
                 type="range"
-                min="6"
-                max="16"
-                step="1"
+                :min="6"
+                :max="16"
+                :step="1"
               />
-              <div id="ramDisplay" class="ram-display">6 GB</div>
+              <div id="ramDisplay" ref="displayRef" class="ram-display">6 GB</div>
               <div class="ram-markers">
                 <span>6GB</span>
                 <span>11GB</span>
@@ -48,11 +137,7 @@ const changeResolution = (e: Event): void => {
 
           <div class="setting-group">
             <label>Rozdzielczość</label>
-            <select
-              v-model="state.selectedResolution"
-              class="setting-select"
-              @change="changeResolution"
-            >
+            <select v-model="resolution" class="setting-select" @change="changeResolution">
               <!-- <option value="1920x1080">1280x768 (4K UHD)</option> -->
               <!-- <option value="1920x1080">2560x1440 (QHD)</option> -->
               <option value="1920x1080">1920x1080 (Full HD)</option>
@@ -78,7 +163,7 @@ const changeResolution = (e: Event): void => {
 
           <div class="setting-group">
             <label>Wersja Java</label>
-            <select v-model="state.javaVersion" class="setting-select">
+            <select class="setting-select">
               <option value="21">Java 21 (Zalecana)</option>
             </select>
           </div>
@@ -142,11 +227,11 @@ const changeResolution = (e: Event): void => {
       </div>
 
       <div class="settings-actions">
-        <button id="saveSettings" class="btn-primary">
+        <button id="saveSettings" class="btn-primary" @click="saveSettings">
           <i class="fas fa-save"></i>
           Zapisz zmiany
         </button>
-        <button id="resetSettings" class="btn-secondary">
+        <button id="resetSettings" class="btn-secondary" @click="resetSettings">
           <i class="fas fa-undo"></i>
           Przywróć domyślne
         </button>

@@ -1,9 +1,12 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { reactive, ref } from 'vue'
 
 const useGeneralStore = defineStore('general', () => {
   const appVersion = ref<string>('dev')
   const isUpdateAvailable = ref<boolean>(false)
+  const settings = reactive({
+    resolution: '1366x768'
+  })
 
   const changeVersion = (newVer: string): void => {
     appVersion.value = newVer
@@ -14,6 +17,7 @@ const useGeneralStore = defineStore('general', () => {
   }
 
   return {
+    settings,
     appVersion,
     changeVersion,
     isUpdateAvailable,

@@ -2,7 +2,6 @@
 import { createParticles, showToast } from '@renderer/utils'
 import { onMounted, ref } from 'vue'
 import { initNavigation } from '@renderer/assets/scripts/navigation'
-import { initSettings, loadSettings } from '@renderer/assets/scripts/settings'
 import { updateServerStatus } from '@renderer/assets/scripts//server-status'
 
 const currentState = ref<string>('')
@@ -34,10 +33,8 @@ const handleLaunchGame = async (e: Event): Promise<void> => {
 
 onMounted(() => {
   initNavigation()
-  initSettings()
   updateServerStatus()
   setInterval(updateServerStatus, 30000)
-  loadSettings()
 
   document.querySelectorAll<HTMLElement>('.news-item, .news-featured').forEach((item) => {
     item.addEventListener('click', function () {
@@ -50,8 +47,6 @@ onMounted(() => {
       }, 200)
     })
   })
-
-  showToast('Testowy toast')
 })
 </script>
 
@@ -60,7 +55,13 @@ onMounted(() => {
     <div class="home-grid">
       <div class="launch-panel">
         <div class="launch-header">
-          <h2>Graj Teraz</h2>
+          <div class="launch-title">
+            <div class="nav-icon">
+              <i class="fas fa-play"></i>
+            </div>
+            <h2>Graj Teraz</h2>
+          </div>
+
           <div class="version-selector">
             <select id="versionSelect">
               <option value="Cobblemon">PokemonGoGo.pl</option>
@@ -136,7 +137,12 @@ onMounted(() => {
 
       <div class="news-panel">
         <div class="news-header">
-          <h2>Aktualności</h2>
+          <div class="news-title">
+            <div class="nav-icon">
+              <i class="fas fa-bell"></i>
+            </div>
+            <h2>Aktualności</h2>
+          </div>
         </div>
 
         <div class="news-featured">

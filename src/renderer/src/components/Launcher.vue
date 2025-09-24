@@ -2,11 +2,6 @@
 import { onMounted } from 'vue'
 import { initAnimations } from '@renderer/assets/scripts/animations'
 
-import HomePage from '@renderer/components/HomePage.vue'
-import ShopPage from '@renderer/components/ShopPage.vue'
-import SettingsPage from '@renderer/components/SettingsPage.vue'
-import ChangelogPage from '@renderer/components/ChangelogPage.vue'
-
 import Header from '@renderer/components/Header.vue'
 import Sidebar from '@renderer/components/Sidebar.vue'
 
@@ -28,10 +23,7 @@ onMounted(() => {
       <Sidebar />
 
       <main class="main-content">
-        <HomePage />
-        <ShopPage />
-        <SettingsPage />
-        <ChangelogPage />
+        <RouterView />
       </main>
     </div>
 

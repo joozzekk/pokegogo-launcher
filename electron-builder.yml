@@ -19,6 +19,7 @@ win:
       protocol: https
       repo: pokegogo-launcher # nazwa repozytorium na GitHub
       owner: joozzekk # nazwa użytkownika lub organizacji GitHub
+      token: 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
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}

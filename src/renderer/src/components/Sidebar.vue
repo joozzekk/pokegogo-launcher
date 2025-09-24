@@ -1,11 +1,17 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const playerName = ref<string>('guest')
 
 const handleLogout = async (): Promise<void> => {
   localStorage.removeItem('token')
   location.reload()
+}
+
+const handleChangeRoute = (newRoute: string): void => {
+  router.push(newRoute)
 }
 
 onMounted(() => {
@@ -44,28 +50,56 @@ onMounted(() => {
         </button>
       </div>
 
-      <a href="#" class="nav-item active" data-page="home">
+      <a
+        href="#"
+        class="nav-item"
+        :class="{
+          active: $route.path === '/app/home'
+        }"
+        @click="handleChangeRoute('/app/home')"
+      >
         <div class="nav-icon">
           <i class="fas fa-home"></i>
         </div>
         <span>Home</span>
         <div class="nav-indicator"></div>
       </a>
-      <a href="#" class="nav-item" data-page="shop">
+      <a
+        href="#"
+        class="nav-item"
+        :class="{
+          active: $route.path === '/app/shop'
+        }"
+        @click="handleChangeRoute('/app/shop')"
+      >
         <div class="nav-icon">
           <i class="fas fa-shopping-cart"></i>
         </div>
         <span>Sklep</span>
         <div class="nav-indicator"></div>
       </a>
-      <a href="#" class="nav-item" data-page="settings">
+      <a
+        href="#"
+        class="nav-item"
+        :class="{
+          active: $route.path === '/app/settings'
+        }"
+        @click="handleChangeRoute('/app/settings')"
+      >
         <div class="nav-icon">
           <i class="fas fa-cog"></i>
         </div>
         <span>Ustawienia</span>
         <div class="nav-indicator"></div>
       </a>
-      <a href="#" class="nav-item" data-page="changelog">
+      <a
+        href="#"
+        class="nav-item"
+        :class="{
+          active: $route.path === '/app/changelog'
+        }"
+        @click="handleChangeRoute('/app/changelog')"
+      >
         <div class="nav-icon">
           <i class="fas fa-list"></i>
         </div>
