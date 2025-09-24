@@ -1,5 +1,8 @@
 <script lang="ts" setup>
 import logo from '@renderer/assets/logo.png'
+import useGeneralStore from '@renderer/stores/general-store'
+
+const generalStore = useGeneralStore()
 
 const maximizeWindow = (): void => {
   window.electron.ipcRenderer.send('window-maximize')
@@ -19,7 +22,7 @@ const closeWindow = (): void => {
         <img :src="logo" width="100%" />
       </div>
       <h1>PokemonGoGo</h1>
-      <span class="applogo-badge">beta</span>
+      <span class="applogo-badge">{{ generalStore.appVersion }}</span>
     </div>
     <div v-if="$route.path.includes('/app')" class="breadcrumbs">
       <i class="fa fa-home" /> >

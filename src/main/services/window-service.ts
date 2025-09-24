@@ -1,5 +1,5 @@
 import { is } from '@electron-toolkit/utils'
-import { BrowserWindow, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import { join } from 'path'
 import icon from '../../../resources/icon.png?asset'
 
@@ -22,6 +22,7 @@ const createWindow = (): BrowserWindow => {
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
+    mainWindow.webContents.send('change-version', app.getVersion())
   })
 
   ipcMain.on('window-minimize', () => {

@@ -1,6 +1,6 @@
 {
   "name": "pokemongogo-launcher",
-  "version": "0.1.0-sthelse3",
+  "version": "0.1.1-dev",
   "description": "A minecraft launcher for PokemonGoGo server",
   "main": "./out/main/index.js",
   "author": "Dominik Jóźwicki <joozvvicki@gmail.com>",
@@ -36,6 +36,7 @@
     "ftp": "^0.3.10",
     "minecraft-launcher-core": "^3.18.2",
     "msmc": "^5.0.5",
+    "pinia": "^3.0.3",
     "vue-router": "4"
   },
   "devDependencies": {

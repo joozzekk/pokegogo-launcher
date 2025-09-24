@@ -5,7 +5,7 @@ const playerName = ref<string>('guest')
 
 const handleLogout = async (): Promise<void> => {
   localStorage.removeItem('token')
-  location.replace('/')
+  location.reload()
 }
 
 onMounted(() => {

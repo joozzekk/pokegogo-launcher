@@ -14,7 +14,7 @@ app.whenReady().then(() => {
   if (!is.dev) autoUpdater.checkForUpdatesAndNotify()
   const mainWindow = createWindow()
 
-  function sendStatusToWindow(text): void {
+  function sendStatusToWindow(text: string): void {
     console.info(text)
     mainWindow.webContents.send('show-toast', text)
   }
