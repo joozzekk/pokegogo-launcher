@@ -92,7 +92,7 @@ onMounted(() => {
         <span>Ustawienia</span>
         <div class="nav-indicator"></div>
       </a>
-      <a
+      <!-- <a
         href="#"
         class="nav-item"
         :class="{
@@ -105,7 +105,7 @@ onMounted(() => {
         </div>
         <span>Changelog</span>
         <div class="nav-indicator"></div>
-      </a>
+      </a> -->
     </nav>
 
     <div class="sidebar-footer">

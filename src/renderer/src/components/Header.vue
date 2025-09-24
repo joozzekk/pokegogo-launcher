@@ -8,9 +8,11 @@ const generalStore = useGeneralStore()
 const maximizeWindow = (): void => {
   window.electron.ipcRenderer.send('window-maximize', generalStore.settings.resolution)
 }
+
 const minimizeWindow = (): void => {
   window.electron.ipcRenderer.send('window-minimize')
 }
+
 const closeWindow = (): void => {
   window.electron.ipcRenderer.send('window-close')
 }

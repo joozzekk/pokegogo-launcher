@@ -1,7 +1,6 @@
 import { Authenticator, Client } from 'minecraft-launcher-core'
 import path from 'path'
 import { app } from 'electron'
-// import log from 'electron-log'
 import { Auth } from 'msmc'
 
 const toMCLC = (token: string, refreshable: boolean = false): unknown => {
@@ -32,11 +31,13 @@ const toMCLC = (token: string, refreshable: boolean = false): unknown => {
 export async function launchMinecraft(
   version: string,
   token: string,
-  username?: string
+  resolution: string
 ): Promise<void> {
   const baseDir = app.getPath('userData')
   const minecraftDir = path.join(baseDir, 'mcfiles')
   const client = new Client()
+
+  const [width, height] = resolution.split('x').map((v: string) => parseInt(v))
 
   await client
     .launch({
@@ -48,6 +49,10 @@ export async function launchMinecraft(
         number: version,
         type: 'release',
         custom: '1.21.1-fabric'
+      },
+      window: {
+        width,
+        height
       },
       memory: {
         max: '16G',

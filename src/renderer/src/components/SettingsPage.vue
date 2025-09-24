@@ -16,7 +16,6 @@ const displayRef = ref<HTMLInputElement | null>(null)
 
 const ram = ref<number>(11)
 const version = ref<string>('PokemonGoGo.pl')
-const resolution = ref<string>(generalStore.settings.resolution)
 const displayMode = ref<string>('')
 const theme = ref<string>('')
 const autoUpdate = ref<boolean>(false)
@@ -29,7 +28,7 @@ const saveSettings = (): void => {
   const settings = {
     ram: ram.value,
     version: version.value,
-    resolution: resolution.value,
+    resolution: generalStore.settings.resolution,
     displayMode: displayMode.value,
     theme: theme.value,
     autoUpdate: autoUpdate.value
@@ -55,7 +54,7 @@ const loadSettings = (): void => {
       quickRam.value = `${settings.ram}GB`
     }
     if (settings.version) version.value = settings.version || ''
-    if (settings.resolution) resolution.value = settings.resolution || ''
+    if (settings.resolution) generalStore.settings.resolution = settings.resolution || ''
     if (settings.displayMode) displayMode.value = settings.displayMode || ''
     if (settings.theme) theme.value = settings.theme || ''
     if (typeof settings.autoUpdate === 'boolean') autoUpdate.value = settings.autoUpdate
@@ -68,9 +67,9 @@ const resetSettings = (): void => {
   localStorage.removeItem('launcherSettings')
   ram.value = 6
   version.value = 'PokemonGoGo.pl'
-  resolution.value = ''
-  displayMode.value = ''
-  theme.value = ''
+  generalStore.settings.resolution = '1280x720'
+  displayMode.value = 'Okno'
+  theme.value = 'Dark'
   autoUpdate.value = false
   quickRam.value = '6GB'
   showToast('Przywrócono domyślne ustawienia', 'success')
@@ -110,8 +109,12 @@ onMounted(() => {
       <div class="settings-grid">
         <div class="settings-card">
           <div class="settings-card-header">
-            <i class="fas fa-gamepad"></i>
-            <h3>Ustawienia Gry</h3>
+            <div class="settings-card-title">
+              <div class="nav-icon">
+                <i class="fas fa-cog"></i>
+              </div>
+              <h2>Ustawienia gry</h2>
+            </div>
           </div>
 
           <div class="setting-group">
@@ -137,7 +140,11 @@ onMounted(() => {
 
           <div class="setting-group">
             <label>Rozdzielczość</label>
-            <select v-model="resolution" class="setting-select" @change="changeResolution">
+            <select
+              v-model="generalStore.settings.resolution"
+              class="setting-select"
+              @change="changeResolution"
+            >
               <!-- <option value="1920x1080">1280x768 (4K UHD)</option> -->
               <!-- <option value="1920x1080">2560x1440 (QHD)</option> -->
               <option value="1920x1080">1920x1080 (Full HD)</option>
@@ -157,8 +164,12 @@ onMounted(() => {
 
         <div class="settings-card">
           <div class="settings-card-header">
-            <i class="fas fa-coffee"></i>
-            <h3>Ustawienia Java</h3>
+            <div class="settings-card-title">
+              <div class="nav-icon">
+                <i class="fas fa-coffee"></i>
+              </div>
+              <h2>Ustawienia Javy</h2>
+            </div>
           </div>
 
           <div class="setting-group">

@@ -1,8 +1,6 @@
 <template>
   <div id="changelogPage" class="page">
     <div class="changelog-container">
-      <h2>Changelog</h2>
-
       <div class="changelog-timeline">
         <div class="changelog-entry">
           <div class="changelog-marker"></div>

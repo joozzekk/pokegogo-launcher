@@ -157,7 +157,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: 1.5rem;
   color: white;
   animation: rotateCube 10s linear infinite;
 }
@@ -494,7 +494,7 @@ body {
 }
 
 .launch-header h2 {
-  font-size: 24px;
+  font-size: 1.5rem;
   font-weight: 700;
 }
 
@@ -707,7 +707,7 @@ body {
 }
 
 .news-header h2 {
-  font-size: 24px;
+  font-size: 1.5rem;
   font-weight: 700;
 }
 
@@ -885,7 +885,7 @@ body {
   align-items: center;
   gap: 10px;
   margin-top: 20px;
-  padding: 12px 24px;
+  padding: 12px 1.5rem;
   background: var(--gradient-primary);
   color: white;
   text-decoration: none;
@@ -905,8 +905,7 @@ body {
 }
 
 .settings-container h2 {
-  font-size: 32px;
-  margin-bottom: 2.25rem;
+  font-size: 1.5rem;
 }
 
 .settings-grid {
@@ -919,20 +918,15 @@ body {
 .settings-card {
   background: var(--bg-card);
   border-radius: 20px;
-  padding: 25px;
+  padding: 1rem;
   border: 1px solid var(--border);
 }
 
-.settings-card-header {
+.settings-card-title {
   display: flex;
   align-items: center;
-  gap: 15px;
-  margin-bottom: 25px;
-}
-
-.settings-card-header i {
-  font-size: 24px;
-  color: var(--primary);
+  margin-bottom: 2.25rem;
+  gap: 1rem;
 }
 
 .settings-card-header h3 {

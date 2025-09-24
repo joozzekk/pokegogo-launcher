@@ -47,28 +47,19 @@ app.whenReady().then(() => {
         javaVersion: string
         mcVersion: string
         token: string
+        resolution: string
       }
     ) => {
       try {
         await installJava(data.javaVersion)
         await copyMCFiles(mainWindow)
-        await launchMinecraft(data.mcVersion, data.token)
+        await launchMinecraft(data.mcVersion, data.token, data.resolution)
         return 'Pomyślnie zainstalowno wszystkie pakiety!'
       } catch (error) {
         return `${error}`
       }
     }
   )
-
-  ipcMain.handle('change-resolution', (_, newResolution: string) => {
-    const [width, height] = newResolution.split('x').map((v: string) => parseInt(v))
-
-    mainWindow.setBounds({
-      width,
-      height
-    })
-    mainWindow.center()
-  })
 
   ipcMain.handle('login', async () => {
     const authManager = new Auth('select_account')
