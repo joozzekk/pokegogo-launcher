@@ -1,10 +1,11 @@
 import { Authenticator, Client } from 'minecraft-launcher-core'
 import path from 'path'
 import { app } from 'electron'
-import { Auth } from 'msmc'
 
-const toMCLC = (token: string, refreshable: boolean = false): unknown => {
-  const data = JSON.parse(JSON.parse(token))
+const toMCLC = (token: string): unknown => {
+  const data = JSON.parse(token)
+
+  console.log(data)
 
   return {
     access_token: data.mcToken,
@@ -16,11 +17,7 @@ const toMCLC = (token: string, refreshable: boolean = false): unknown => {
       type: 'msa',
       demo: token.length ? false : true,
       exp: data.exp,
-      refresh: refreshable
-        ? data.parent instanceof Auth
-          ? data.refreshTkn
-          : data.parent.msToken.refresh_token
-        : undefined
+      refresh: true
     },
     user_properties: {
       POKE_SECRET_KEY: 'Pizda:)'
@@ -43,7 +40,7 @@ export async function launchMinecraft(
     .launch({
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
-      authorization: token ? toMCLC(token, true) : Authenticator.getAuth(username!),
+      authorization: token.length ? toMCLC(token, true) : Authenticator.getAuth(username!),
       root: minecraftDir,
       version: {
         number: version,

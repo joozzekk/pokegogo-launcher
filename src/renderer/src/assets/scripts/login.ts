@@ -371,9 +371,11 @@ class pokemongogo {
   async handleMicrosoftLogin(): Promise<void> {
     try {
       this.showLoading('Logowanie przez Microsoft...')
-      const token: string = await window.electron.ipcRenderer.invoke('login')
+      const { refreshToken, mcToken }: { mcToken: string; refreshToken: string } =
+        await window.electron.ipcRenderer.invoke('login')
 
-      localStorage.setItem('token', token)
+      localStorage.setItem('token', refreshToken)
+      localStorage.setItem('mcToken', mcToken)
       router.push({
         path: '/app/home'
       })

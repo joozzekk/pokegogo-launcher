@@ -7,10 +7,9 @@ const app = createApp(App)
 app.use(router)
 app.use(createPinia())
 
-router.beforeEach((to, _from, next) => {
-  // TODO: add take token from electron and refresh token on electron
-  const token = localStorage.getItem('token')
+const token = localStorage.getItem('token')
 
+router.beforeEach(async (to, _from, next) => {
   if (token) {
     if (!to.path.includes('/app')) {
       next('/app/home')
@@ -22,6 +21,21 @@ router.beforeEach((to, _from, next) => {
   }
 })
 
-app.mount('#app')
+if (token) {
+  setInterval(
+    async () => {
+      const { refreshToken, mcToken } = await window.electron.ipcRenderer.invoke(
+        'refresh-token',
+        token
+      )
 
-//TODO: disable web contents on prod
+      console.log('RefreshToken: ', refreshToken)
+      console.log('MCToken Data: ', JSON.parse(mcToken))
+      localStorage.setItem('token', refreshToken)
+      localStorage.setItem('mcToken', mcToken)
+    },
+    1000 * 60 * 30
+  )
+}
+
+app.mount('#app')

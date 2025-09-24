@@ -6,7 +6,7 @@ import { updateServerStatus } from '@renderer/assets/scripts//server-status'
 
 const currentState = ref<string>('')
 const isOpeningGame = ref<boolean>(false)
-const token = localStorage.getItem('token')
+const mcToken = localStorage.getItem('mcToken')
 
 window.electron.ipcRenderer.on('show-log', (_event, data: string, ended?: boolean) => {
   if (!ended) {
@@ -21,9 +21,10 @@ const handleLaunchGame = async (e: Event): Promise<void> => {
   isOpeningGame.value = true
   createParticles(e.target as HTMLElement)
   const res = await window.electron.ipcRenderer.invoke('launch-game', {
-    token,
+    mcToken,
     mcVersion: '1.21.1',
-    javaVersion: '21'
+    javaVersion: '21',
+    resolution: '1280x720'
   })
 
   if (res) {

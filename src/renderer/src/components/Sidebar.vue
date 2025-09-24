@@ -7,6 +7,7 @@ const playerName = ref<string>('guest')
 
 const handleLogout = async (): Promise<void> => {
   localStorage.removeItem('token')
+  localStorage.removeItem('mcToken')
   location.reload()
 }
 
@@ -15,9 +16,9 @@ const handleChangeRoute = (newRoute: string): void => {
 }
 
 onMounted(() => {
-  const dataStr = localStorage.getItem('token')
-  if (dataStr) {
-    const data = JSON.parse(JSON.parse(dataStr))
+  const json = localStorage.getItem('mcToken')
+  if (json) {
+    const data = JSON.parse(json)
     const profile = data?.profile
     playerName.value = profile?.name
   }

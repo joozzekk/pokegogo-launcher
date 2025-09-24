@@ -46,27 +46,44 @@ app.whenReady().then(() => {
       data: {
         javaVersion: string
         mcVersion: string
-        token: string
+        mcToken: string
         resolution: string
       }
     ) => {
       try {
         await installJava(data.javaVersion)
         await copyMCFiles(mainWindow)
-        await launchMinecraft(data.mcVersion, data.token, data.resolution)
+        await launchMinecraft(data.mcVersion, data.mcToken, data.resolution)
         return 'Pomyślnie zainstalowno wszystkie pakiety!'
       } catch (error) {
         return `${error}`
       }
     }
   )
+  const auth = new Auth('select_account')
+
+  ipcMain.handle(
+    'refresh-token',
+    async (_, refreshToken: string): Promise<{ refreshToken: string; mcToken: string }> => {
+      console.log('Refreshing token...')
+      const xbox = await auth.refresh(refreshToken)
+      const mc = await xbox.getMinecraft()
+
+      return {
+        refreshToken: xbox.save(),
+        mcToken: JSON.stringify(mc.getToken(true))
+      }
+    }
+  )
 
   ipcMain.handle('login', async () => {
-    const authManager = new Auth('select_account')
-    const xboxManager = await authManager.launch('electron')
-    const token = await xboxManager.getMinecraft()
+    const xbox = await auth.launch('electron')
+    const mc = await xbox.getMinecraft()
 
-    return JSON.stringify(JSON.stringify(token))
+    return {
+      refreshToken: xbox.save(),
+      mcToken: JSON.stringify(mc.getToken(true))
+    }
   })
 
   ipcMain.handle('start-update', async () => {

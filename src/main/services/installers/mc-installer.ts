@@ -141,7 +141,7 @@ export async function copyMCFiles(mainWindow: BrowserWindow): Promise<void> {
     const pwd = await client.pwd()
     const remoteURL = pwd + '/mc'
 
-    mainWindow.webContents.send('show-toast', 'Instalowanie minecraft..')
+    mainWindow.webContents.send('show-toast', 'Weryfikowanie minecraft..')
     await downloadAll(
       client,
       remoteURL,
@@ -158,7 +158,7 @@ export async function copyMCFiles(mainWindow: BrowserWindow): Promise<void> {
     }
 
     mainWindow.webContents.send('show-log', '', true)
-    mainWindow.webContents.send('show-toast', 'Pomyślnie zainstalowano Minecraft.')
+    mainWindow.webContents.send('show-toast', 'Pomyślnie zweryfikowano Minecraft.')
   } catch (err) {
     console.error(err)
   } finally {
