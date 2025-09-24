@@ -4,10 +4,10 @@ import * as log from 'electron-log'
 export function getAutoUpdater(): AppUpdater {
   const { autoUpdater } = electronUpdater
 
+  autoUpdater.autoDownload = false
+
   autoUpdater.logger = log
   log.transports.file.level = 'info'
-
-  autoUpdater.forceDevUpdateConfig = true
 
   return autoUpdater
 }

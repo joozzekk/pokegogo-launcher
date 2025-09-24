@@ -370,15 +370,13 @@ class pokemongogo {
 
   async handleMicrosoftLogin(): Promise<void> {
     try {
-      this.showLoading('Przekierowanie do Microsoft...')
+      this.showLoading('Logowanie przez Microsoft...')
       const token: string = await window.electron.ipcRenderer.invoke('login')
 
       localStorage.setItem('token', token)
       router.push({
         path: '/app'
       })
-
-      this.showToast('Funkcja Microsoft OAuth będzie dostępna wkrótce!', 'warning')
     } catch (_error) {
       this.showToast('Błąd podczas przekierowania', 'error')
     } finally {

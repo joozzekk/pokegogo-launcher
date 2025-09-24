@@ -14,32 +14,17 @@ app.whenReady().then(() => {
   if (!is.dev) autoUpdater.checkForUpdatesAndNotify()
   const mainWindow = createWindow()
 
-  function sendStatusToWindow(text: string): void {
-    console.info(text)
-    mainWindow.webContents.send('show-toast', text)
-  }
-
-  autoUpdater.on('checking-for-update', () => {
-    sendStatusToWindow('Checking for update...')
-  })
   autoUpdater.on('update-available', () => {
-    sendStatusToWindow('Update available.')
+    mainWindow.webContents.send('update-available', true)
   })
   autoUpdater.on('update-not-available', () => {
-    sendStatusToWindow('Update not available.')
+    mainWindow.webContents.send('update-available', false)
   })
   autoUpdater.on('error', (err) => {
-    sendStatusToWindow('Error in auto-updater.' + err)
-  })
-  autoUpdater.on('download-progress', (progressObj) => {
-    let log_message = 'Download speed: ' + progressObj.bytesPerSecond
-    log_message = log_message + ' - Downloaded ' + progressObj.percent + '%'
-    log_message = log_message + ' (' + progressObj.transferred + '/' + progressObj.total + ')'
-    sendStatusToWindow(log_message)
+    console.log(err)
   })
   autoUpdater.on('update-downloaded', () => {
-    sendStatusToWindow('Update downloaded')
-    autoUpdater.quitAndInstall()
+    mainWindow.webContents.send('update-available', false)
   })
 
   electronApp.setAppUserModelId('pl.pokemongogo')
@@ -47,8 +32,6 @@ app.whenReady().then(() => {
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
-
-  // mainWindow.webContents.send('refresh-token', token)
 
   ipcMain.handle(
     'launch-game',
@@ -81,13 +64,16 @@ app.whenReady().then(() => {
     mainWindow.center()
   })
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  ipcMain.handle('login', async (_event) => {
+  ipcMain.handle('login', async () => {
     const authManager = new Auth('select_account')
     const xboxManager = await authManager.launch('electron')
     const token = await xboxManager.getMinecraft()
 
     return JSON.stringify(JSON.stringify(token))
+  })
+
+  ipcMain.handle('start-update', async () => {
+    autoUpdater.quitAndInstall()
   })
 
   app.on('activate', function () {

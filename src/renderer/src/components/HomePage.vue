@@ -3,7 +3,6 @@ import { createParticles, showToast } from '@renderer/utils'
 import { onMounted, ref } from 'vue'
 import { initNavigation } from '@renderer/assets/scripts/navigation'
 import { initSettings, loadSettings } from '@renderer/assets/scripts/settings'
-import { initShop } from '@renderer/assets/scripts/shop'
 import { updateServerStatus } from '@renderer/assets/scripts//server-status'
 
 const currentState = ref<string>('')
@@ -39,7 +38,6 @@ onMounted(() => {
   updateServerStatus()
   setInterval(updateServerStatus, 30000)
   loadSettings()
-  initShop()
 
   document.querySelectorAll<HTMLElement>('.news-item, .news-featured').forEach((item) => {
     item.addEventListener('click', function () {
@@ -52,6 +50,8 @@ onMounted(() => {
       }, 200)
     })
   })
+
+  showToast('Testowy toast')
 })
 </script>
 

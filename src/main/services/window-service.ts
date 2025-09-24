@@ -15,6 +15,7 @@ const createWindow = (): BrowserWindow => {
     frame: false,
     resizable: false,
     webPreferences: {
+      nodeIntegration: false,
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
     }

@@ -1,3 +1,12 @@
+<script lang="ts" setup>
+import { initShop } from '@renderer/assets/scripts/shop'
+import { onMounted } from 'vue'
+
+onMounted(() => {
+  initShop()
+})
+</script>
+
 <template>
   <div id="shopPage" class="page">
     <iframe

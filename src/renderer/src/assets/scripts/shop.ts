@@ -1,6 +1,4 @@
-const shopLoading = document.querySelector<HTMLElement>('.shop-loading')
-
-const hideShopLoading = (): void => {
+const hideShopLoading = (shopLoading: HTMLElement | null): void => {
   if (shopLoading) {
     shopLoading.style.display = 'none'
   }
@@ -9,6 +7,7 @@ const hideShopLoading = (): void => {
 export function initShop(): void {
   const shopFrame = document.getElementById('shopFrame') as HTMLIFrameElement | null
   const shopError = document.querySelector<HTMLElement>('.shop-error')
+  const shopLoading = document.querySelector<HTMLElement>('.shop-loading')
 
   const showError = (): void => {
     if (shopError) {
@@ -17,10 +16,10 @@ export function initShop(): void {
   }
 
   if (shopFrame) {
-    shopFrame.addEventListener('load', () => hideShopLoading())
+    shopFrame.addEventListener('load', () => hideShopLoading(shopLoading))
 
     shopFrame.addEventListener('error', () => {
-      hideShopLoading()
+      hideShopLoading(shopLoading)
       showError()
     })
   }
@@ -28,12 +27,13 @@ export function initShop(): void {
 
 export function loadShop(): void {
   const shopFrame = document.getElementById('shopFrame') as HTMLIFrameElement | null
+  const shopLoading = document.querySelector<HTMLElement>('.shop-loading')
   if (shopFrame && !shopFrame.hasAttribute('data-loaded')) {
     shopFrame.setAttribute('data-loaded', 'true')
 
     setTimeout(() => {
       if (!shopFrame.contentWindow || !shopFrame.contentWindow.length) {
-        hideShopLoading()
+        hideShopLoading(shopLoading)
       }
     }, 5000)
   }

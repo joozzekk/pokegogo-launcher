@@ -92,7 +92,7 @@ async function downloadAll(
           const localHash = await getFileHash(localPath)
           if (localHash === localHashes[file.name]) {
             downloadFile = false
-            log(`Plik ${file.name} jest aktualny wg hashes.txt, pomijam pobieranie.`)
+            log(`Plik ${file.name} jest aktualny, pomijam pobieranie.`)
           }
         } catch {
           // Plik lokalny nie istnieje lub błąd haszowania - pobieramy
@@ -103,7 +103,7 @@ async function downloadAll(
         try {
           await fs.promises.access(localPath)
           downloadFile = false
-          log(`Plik ${file.name} istnieje lokalnie, pomijam pobieranie (brak hash).`)
+          log(`Plik ${file.name} istnieje lokalnie, pomijam pobieranie.`)
         } catch {
           downloadFile = true
         }

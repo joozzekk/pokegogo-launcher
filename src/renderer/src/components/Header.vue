@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import logo from '@renderer/assets/logo.png'
 import useGeneralStore from '@renderer/stores/general-store'
+import { computed } from 'vue'
 
 const generalStore = useGeneralStore()
 
@@ -12,6 +13,14 @@ const minimizeWindow = (): void => {
 }
 const closeWindow = (): void => {
   window.electron.ipcRenderer.send('window-close')
+}
+
+const isUpdateAvailable = computed(() => {
+  return generalStore.isUpdateAvailable
+})
+
+const handleInstallUpdate = async (): Promise<void> => {
+  window.electron.ipcRenderer.invoke('start-update')
 }
 </script>
 
@@ -28,6 +37,10 @@ const closeWindow = (): void => {
       <i class="fa fa-home" /> >
       <span class="active"></span>
     </div>
+
+    <button v-if="isUpdateAvailable" class="nav-icon" @click="handleInstallUpdate">
+      <i class="fas fa-download"></i>
+    </button>
     <div class="buttons">
       <button @click="minimizeWindow">
         <i class="fa-solid fa-window-minimize"></i>
@@ -42,7 +55,21 @@ const closeWindow = (): void => {
   </header>
 </template>
 
-<style>
+<style scoped>
+.nav-icon {
+  margin-left: auto;
+  margin-right: 11rem;
+  color: #0aefff !important;
+  cursor: pointer !important;
+  border: none;
+  -webkit-app-region: no-drag;
+  transition: background 0.1s ease-in-out;
+}
+
+.nav-icon:hover {
+  box-shadow: 0 0 5px gray;
+}
+
 .buttons {
   position: absolute;
   right: 0;
