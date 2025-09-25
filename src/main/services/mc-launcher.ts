@@ -5,8 +5,6 @@ import { app } from 'electron'
 const toMCLC = (token: string): unknown => {
   const data = JSON.parse(token)
 
-  console.log(data)
-
   return {
     access_token: data.mcToken,
     client_token: data.profile.uuid,
@@ -15,12 +13,27 @@ const toMCLC = (token: string): unknown => {
     meta: {
       xuid: data.xuid,
       type: 'msa',
-      demo: token.length ? false : true,
+      demo: false,
       exp: data.exp,
       refresh: true
     },
     user_properties: {
-      POKE_SECRET_KEY: 'Pizda:)'
+      POKE_SECRET_KEY: 'LUNCH_NA_ZAWOLANIE'
+    }
+  }
+}
+
+const nonPremiumToMCLC = async (json: string): Promise<unknown> => {
+  const profile = JSON.parse(json)
+  const res = await Authenticator.getAuth(profile.nickname)
+
+  console.log(res)
+
+  return {
+    ...res,
+    uuid: profile.uuid,
+    user_properties: {
+      POKE_SECRET_KEY: 'LUNCH_NA_ZAWOLANIE'
     }
   }
 }
@@ -28,7 +41,8 @@ const toMCLC = (token: string): unknown => {
 export async function launchMinecraft(
   version: string,
   token: string,
-  resolution: string
+  resolution: string,
+  accountType: string
 ): Promise<void> {
   const baseDir = app.getPath('userData')
   const minecraftDir = path.join(baseDir, 'mcfiles')
@@ -40,7 +54,7 @@ export async function launchMinecraft(
     .launch({
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
-      authorization: token.length ? toMCLC(token, true) : Authenticator.getAuth(username!),
+      authorization: accountType === 'microsoft' ? toMCLC(token) : await nonPremiumToMCLC(token),
       root: minecraftDir,
       version: {
         number: version,

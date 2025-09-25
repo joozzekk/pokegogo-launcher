@@ -1,13 +1,25 @@
 <script setup lang="ts">
+import { fetchProfile } from '@renderer/api/endpoints'
+import useUserStore from '@renderer/stores/user-store'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
 const playerName = ref<string>('guest')
+const accountType = localStorage.getItem('LOGIN_TYPE')
+const userStore = useUserStore()
 
 const handleLogout = async (): Promise<void> => {
   localStorage.removeItem('token')
-  localStorage.removeItem('mcToken')
+  switch (accountType) {
+    case 'backend':
+      localStorage.removeItem('refresh_token')
+      break
+    case 'microsoft':
+      localStorage.removeItem('mcToken')
+      break
+  }
+
   location.reload()
 }
 
@@ -15,13 +27,36 @@ const handleChangeRoute = (newRoute: string): void => {
   router.push(newRoute)
 }
 
-onMounted(() => {
-  const json = localStorage.getItem('mcToken')
-  if (json) {
-    const data = JSON.parse(json)
-    const profile = data?.profile
-    playerName.value = profile?.name
+const fetchProfileData = async (): Promise<void> => {
+  if (!userStore.user?.uuid) {
+    const profile = await fetchProfile()
+
+    userStore.setUser(profile)
+    console.log(new Date(profile.exp * 1000))
   }
+
+  playerName.value = userStore.user?.nickname ?? 'guest'
+}
+
+const loadProfile = async (): Promise<void> => {
+  const json = localStorage.getItem('mcToken')
+
+  switch (accountType) {
+    case 'backend':
+      await fetchProfileData()
+      break
+    case 'microsoft':
+      if (json) {
+        const data = JSON.parse(json)
+        const profile = data?.profile
+        playerName.value = profile?.name
+      }
+      break
+  }
+}
+
+onMounted(async () => {
+  await loadProfile()
 })
 </script>
 

@@ -46,14 +46,15 @@ app.whenReady().then(() => {
       data: {
         javaVersion: string
         mcVersion: string
-        mcToken: string
+        token: string
         resolution: string
+        accountType: string
       }
     ) => {
       try {
         await installJava(data.javaVersion)
         await copyMCFiles(mainWindow)
-        await launchMinecraft(data.mcVersion, data.mcToken, data.resolution)
+        await launchMinecraft(data.mcVersion, data.token, data.resolution, data.accountType)
         return 'Pomyślnie zainstalowno wszystkie pakiety!'
       } catch (error) {
         return `${error}`

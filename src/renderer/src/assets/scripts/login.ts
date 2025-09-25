@@ -1,5 +1,6 @@
 /* eslint-disable */
 // @ts-nocheck
+import { fetchLogin, fetchRegister } from '@renderer/api/endpoints'
 import { router } from '@renderer/router'
 
 const CONFIG = {
@@ -282,17 +283,18 @@ class pokemongogo {
 
     try {
       this.showLoading('Logowanie do serwera...')
-      await this.simulateApiCall()
+      const { access_token, refresh_token } = await fetchLogin(formData.email, formData.password)
 
-      //const success = ;  dodać tutaj sprawdzanie z bazą danych czy podany nick jest zarejestrowany
-      // G moze kiedys dodam :)
-
-      if (success) {
-        this.showToast('Zalogowano pomyślnie!', 'success')
-        this.simulateRedirect()
-      } else {
-        throw new Error('Nieprawidłowe dane logowania')
+      if (access_token && refresh_token) {
+        localStorage.setItem('token', access_token)
+        localStorage.setItem('refresh_token', refresh_token)
+        localStorage.setItem('LOGIN_TYPE', 'backend')
+        router.push({
+          path: '/app/home'
+        })
       }
+
+      this.showToast('Zalogowano pomyślnie!', 'success')
     } catch (error) {
       this.showToast(error.message, 'error')
       this.showError(document.getElementById('login-email-error'), 'Sprawdź swoje dane')
@@ -316,21 +318,21 @@ class pokemongogo {
 
     try {
       this.showLoading('Tworzenie konta gracza...')
-      await this.simulateApiCall(2000)
 
-      //const nickTaken = ; Sprawdzić czy nick nie jest już zajęty
+      const { access_token, refresh_token } = await fetchRegister(
+        formData.nick,
+        formData.email,
+        formData.password
+      )
 
-      // if (nickTaken) {
-      //   throw new Error('Nick jest już zajęty')
-      // }
-
-      this.showToast('Konto utworzone pomyślnie!', 'success')
-
-      setTimeout(() => {
-        this.switchTab('login')
-        document.getElementById('login-email').value = formData.email
-        this.showToast('Możesz się teraz zalogować!', 'success')
-      }, 1000)
+      if (access_token && refresh_token) {
+        localStorage.setItem('token', access_token)
+        localStorage.setItem('refresh_token', refresh_token)
+        localStorage.setItem('LOGIN_TYPE', 'backend')
+        router.push({
+          path: '/app/home'
+        })
+      }
     } catch (error: Error) {
       if (error.message.includes('zajęty')) {
         this.showError(document.getElementById('register-nick-error'), error.message)
@@ -353,7 +355,7 @@ class pokemongogo {
     }
     return isValid
   }
-
+  x
   validateRegisterForm(data): boolean {
     let isValid = true
     if (!this.validateNick('register-nick')) isValid = false
@@ -376,6 +378,7 @@ class pokemongogo {
 
       localStorage.setItem('token', refreshToken)
       localStorage.setItem('mcToken', mcToken)
+      localStorage.setItem('LOGIN_TYPE', 'microsoft')
       router.push({
         path: '/app/home'
       })

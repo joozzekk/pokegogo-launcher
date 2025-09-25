@@ -3,10 +3,13 @@ import { createParticles, showToast } from '@renderer/utils'
 import { onMounted, ref } from 'vue'
 import { initNavigation } from '@renderer/assets/scripts/navigation'
 import { updateServerStatus } from '@renderer/assets/scripts//server-status'
+import useUserStore from '@renderer/stores/user-store'
 
 const currentState = ref<string>('')
 const isOpeningGame = ref<boolean>(false)
+const accountType = localStorage.getItem('LOGIN_TYPE')
 const mcToken = localStorage.getItem('mcToken')
+const userStore = useUserStore()
 
 window.electron.ipcRenderer.on('show-log', (_event, data: string, ended?: boolean) => {
   if (!ended) {
@@ -20,11 +23,15 @@ window.electron.ipcRenderer.on('show-log', (_event, data: string, ended?: boolea
 const handleLaunchGame = async (e: Event): Promise<void> => {
   isOpeningGame.value = true
   createParticles(e.target as HTMLElement)
+
+  showToast(JSON.stringify(userStore.user))
+
   const res = await window.electron.ipcRenderer.invoke('launch-game', {
-    mcToken,
+    token: accountType === 'microsoft' ? mcToken : JSON.stringify(userStore.user),
     mcVersion: '1.21.1',
     javaVersion: '21',
-    resolution: '1280x720'
+    resolution: '1280x720',
+    accountType
   })
 
   if (res) {
