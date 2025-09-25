@@ -27,8 +27,6 @@ const nonPremiumToMCLC = async (json: string): Promise<unknown> => {
   const profile = JSON.parse(json)
   const res = await Authenticator.getAuth(profile.nickname)
 
-  console.log(res)
-
   return {
     ...res,
     uuid: profile.uuid,

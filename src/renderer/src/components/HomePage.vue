@@ -24,8 +24,6 @@ const handleLaunchGame = async (e: Event): Promise<void> => {
   isOpeningGame.value = true
   createParticles(e.target as HTMLElement)
 
-  showToast(JSON.stringify(userStore.user))
-
   const res = await window.electron.ipcRenderer.invoke('launch-game', {
     token: accountType === 'microsoft' ? mcToken : JSON.stringify(userStore.user),
     mcVersion: '1.21.1',
