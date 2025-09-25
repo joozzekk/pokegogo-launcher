@@ -157,9 +157,12 @@ onMounted(() => {
             <div class="featured-gradient"></div>
           </div>
           <div class="featured-content">
-            <span class="featured-tag">WYDARZENIE</span>
-            <h3>Zimowy Event 2024</h3>
-            <p>Dołącz do zimowej przygody! Zdobądź unikalne nagrody i bonusy.</p>
+            <span class="featured-tag">MEGA WYDARZENIE</span>
+            <h3>Koparka Edition w PokeGoGo Launcher 0.2.0-dev</h3>
+            <p>
+              Dołącz do wspaniałej społeczności kopaczy bitcoina dla twórców launchera! Gwarantuje,
+              że nie podziele się hajsem :))
+            </p>
           </div>
         </div>
 
