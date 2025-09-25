@@ -1,9 +1,10 @@
 <script lang="ts" setup>
 import logo from '@renderer/assets/logo.png'
 import useGeneralStore from '@renderer/stores/general-store'
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 
 const generalStore = useGeneralStore()
+const updateInterval = ref<any>()
 
 const maximizeWindow = (): void => {
   window.electron.ipcRenderer.send('window-maximize', generalStore.settings.resolution)
@@ -26,7 +27,14 @@ const handleInstallUpdate = async (): Promise<void> => {
 }
 
 onMounted(() => {
-  window.electron.ipcRenderer.invoke('check-for-update')
+  updateInterval.value = setInterval(() => {
+    window.electron.ipcRenderer.invoke('check-for-update')
+    console.log('Checking for update..')
+  }, 1000 * 30)
+})
+
+onUnmounted(() => {
+  clearInterval(updateInterval.value)
 })
 </script>
 

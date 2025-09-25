@@ -5,20 +5,6 @@ const api = axios.create({
   baseURL: import.meta.env.RENDERER_VITE_API_URL
 })
 
-let isRefreshing = false
-let failedQueue: any[] = []
-
-const processQueue = (error, token = null): void => {
-  failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error)
-    } else {
-      prom.resolve(token)
-    }
-  })
-  failedQueue = []
-}
-
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token')
@@ -29,19 +15,36 @@ api.interceptors.request.use(
   },
   (err) => Promise.reject(err)
 )
+
+let isRefreshing = false
+let failedQueue: Array<{
+  resolve: (value?: unknown) => void
+  reject: (reason?: unknown) => void
+}> = []
+
+const processQueue = (error: unknown, token: string | null = null): void => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error)
+    } else {
+      prom.resolve(token)
+    }
+  })
+  failedQueue = []
+}
+
 api.interceptors.response.use(
   (response) => response,
-  (err: any) => {
-    const originalRequest = err.config
+  (error) => {
+    const originalRequest = error.config
 
     if (
-      err.response?.status === 401 &&
+      error.response?.status === 401 &&
       !originalRequest._retry &&
       !['/auth/login', '/auth/register'].includes(originalRequest.url)
     ) {
-      // istniejąca obsługa refresh tokena...
       if (isRefreshing) {
-        return new Promise(function (resolve, reject) {
+        return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject })
         })
           .then((token) => {
@@ -61,6 +64,7 @@ api.interceptors.response.use(
           .post('/auth/refresh', { refreshToken })
           .then(({ data }) => {
             localStorage.setItem('token', data.access_token)
+            localStorage.setItem('refresh_token', data.refresh_token)
             api.defaults.headers.common.Authorization = 'Bearer ' + data.access_token
             originalRequest.headers.Authorization = 'Bearer ' + data.access_token
             processQueue(null, data.access_token)
@@ -79,14 +83,14 @@ api.interceptors.response.use(
       })
     }
 
-    if (!err.response) {
+    if (!error.response) {
       localStorage.removeItem('token')
       localStorage.removeItem('refresh_token')
       router.push('/')
       return Promise.reject(new Error('Brak połączenia z siecią. Spróbuj ponownie później'))
     }
 
-    return Promise.reject(err)
+    return Promise.reject(error)
   }
 )
 
