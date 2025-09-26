@@ -5,102 +5,53 @@ import { onMounted, ref, watch } from 'vue'
 
 const generalStore = useGeneralStore()
 
-const changeResolution = (e: Event): void => {
-  const target = e.target as HTMLSelectElement
-
-  window.electron.ipcRenderer.invoke('change-resolution', target.value)
-}
-
 const sliderRef = ref<HTMLInputElement | null>(null)
 const displayRef = ref<HTMLInputElement | null>(null)
 
-const ram = ref<number>(11)
-const version = ref<string>('PokemonGoGo.pl')
-const displayMode = ref<string>('')
-const theme = ref<string>('')
-const autoUpdate = ref<boolean>(false)
-
 const percent = ref(0)
 
-const quickRam = ref('6GB')
-
-const saveSettings = (): void => {
-  const settings = {
-    ram: ram.value,
-    version: version.value,
-    resolution: generalStore.settings.resolution,
-    displayMode: displayMode.value,
-    theme: theme.value,
-    autoUpdate: autoUpdate.value
-  }
-  localStorage.setItem('launcherSettings', JSON.stringify(settings))
-  showToast('Zapisano ustawienia.')
-}
-
-const loadSettings = (): void => {
-  const savedSettings = localStorage.getItem('launcherSettings')
-  if (!savedSettings) return
-  try {
-    const settings = JSON.parse(savedSettings) as {
-      ram?: number | string
-      version?: string
-      resolution?: string
-      displayMode?: string
-      theme?: string
-      autoUpdate?: boolean
-    }
-    if (settings.ram) {
-      ram.value = Number(settings.ram)
-      quickRam.value = `${settings.ram}GB`
-    }
-    if (settings.version) version.value = settings.version || ''
-    if (settings.resolution) generalStore.settings.resolution = settings.resolution || ''
-    if (settings.displayMode) displayMode.value = settings.displayMode || ''
-    if (settings.theme) theme.value = settings.theme || ''
-    if (typeof settings.autoUpdate === 'boolean') autoUpdate.value = settings.autoUpdate
-  } catch {
-    // ignore parse errors
-  }
-}
-
-const resetSettings = (): void => {
-  localStorage.removeItem('launcherSettings')
-  ram.value = 6
-  version.value = 'PokemonGoGo.pl'
-  generalStore.settings.resolution = '1280x720'
-  displayMode.value = 'Okno'
-  theme.value = 'Dark'
-  autoUpdate.value = false
-  quickRam.value = '6GB'
-  showToast('Przywrócono domyślne ustawienia', 'success')
+const changeResolution = (e: Event): void => {
+  const target = e.target as HTMLSelectElement
+  window.electron.ipcRenderer.invoke('change-resolution', target.value)
 }
 
 watch(
-  () => ram.value,
+  () => generalStore.settings.ram,
   (newVal) => {
     if (sliderRef.value) {
-      percent.value = calculateValueFromPercentage(newVal, sliderRef.value?.offsetWidth)
+      percent.value = calculateValueFromPercentage(newVal, sliderRef.value.offsetWidth)
     }
-    quickRam.value = `${newVal}GB`
     if (displayRef.value) {
       displayRef.value.textContent = `${newVal}GB`
       displayRef.value.style.left = percent.value + 'px'
     }
-  }
+  },
+  { immediate: true }
 )
 
 onMounted(() => {
-  loadSettings()
+  generalStore.loadSettings()
   if (sliderRef.value) {
-    percent.value = calculateValueFromPercentage(ram.value, sliderRef.value?.offsetWidth)
+    percent.value = calculateValueFromPercentage(
+      generalStore.settings.ram,
+      sliderRef.value.offsetWidth
+    )
   }
-  quickRam.value = `${ram.value}GB`
-
   if (displayRef.value) {
-    displayRef.value.textContent = `${ram.value}GB`
+    displayRef.value.textContent = `${generalStore.settings.ram}GB`
     displayRef.value.style.left = percent.value + 'px'
   }
 })
+
+const saveSettings = (): void => {
+  generalStore.saveSettings()
+  showToast('Zapisano ustawienia.')
+}
+
+const resetSettings = (): void => {
+  generalStore.resetSettings()
+  showToast('Przywrócono domyślne ustawienia', 'success')
+}
 </script>
 
 <template>
@@ -123,7 +74,7 @@ onMounted(() => {
               <input
                 id="ramSlider"
                 ref="sliderRef"
-                v-model="ram"
+                v-model="generalStore.settings.ram"
                 type="range"
                 :min="6"
                 :max="16"
@@ -156,8 +107,20 @@ onMounted(() => {
           <div class="setting-group">
             <label>Tryb wyświetlania gry</label>
             <div class="toggle-group">
-              <button class="toggle-option active">Okno</button>
-              <button class="toggle-option">Pełny ekran</button>
+              <button
+                class="toggle-option"
+                :class="{ active: generalStore.settings.displayMode === 'Okno' }"
+                @click="generalStore.settings.displayMode = 'Okno'"
+              >
+                Okno
+              </button>
+              <button
+                class="toggle-option"
+                :class="{ active: generalStore.settings.displayMode === 'Pełny ekran' }"
+                @click="generalStore.settings.displayMode = 'Pełny ekran'"
+              >
+                Pełny ekran
+              </button>
             </div>
           </div>
         </div>

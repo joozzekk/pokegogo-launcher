@@ -1,41 +1,12 @@
 <script lang="ts" setup>
-import { createParticles, showToast } from '@renderer/utils'
-import { onMounted, ref } from 'vue'
+import { showToast } from '@renderer/utils'
+import { onMounted } from 'vue'
 import { initNavigation } from '@renderer/assets/scripts/navigation'
 import { updateServerStatus } from '@renderer/assets/scripts//server-status'
-import useUserStore from '@renderer/stores/user-store'
+import LaunchButton from './LaunchButton.vue'
+import useGeneralStore from '@renderer/stores/general-store'
 
-const currentState = ref<string>('')
-const isOpeningGame = ref<boolean>(false)
-const accountType = localStorage.getItem('LOGIN_TYPE')
-const mcToken = localStorage.getItem('mcToken')
-const userStore = useUserStore()
-
-window.electron.ipcRenderer.on('show-log', (_event, data: string, ended?: boolean) => {
-  if (!ended) {
-    currentState.value = data
-    return
-  }
-
-  currentState.value = ''
-})
-
-const handleLaunchGame = async (e: Event): Promise<void> => {
-  isOpeningGame.value = true
-  createParticles(e.target as HTMLElement)
-
-  const res = await window.electron.ipcRenderer.invoke('launch-game', {
-    token: accountType === 'microsoft' ? mcToken : JSON.stringify(userStore.user),
-    mcVersion: '1.21.1',
-    javaVersion: '21',
-    resolution: '1280x720',
-    accountType
-  })
-
-  if (res) {
-    showToast(`${res}`)
-  }
-}
+const generalStore = useGeneralStore()
 
 onMounted(() => {
   initNavigation()
@@ -109,30 +80,14 @@ onMounted(() => {
           </div>
         </div>
 
-        <button
-          id="launchBtn"
-          class="launch-button"
-          :disabled="isOpeningGame"
-          @click="handleLaunchGame"
-        >
-          <div class="launch-button-bg"></div>
-          <div class="title">
-            <template v-if="!isOpeningGame">
-              <i class="fas fa-play"></i>
-              <span>URUCHOM GRĘ</span>
-            </template>
-            <template v-else>
-              <i class="fas fa-spinner"></i>
-              <span>URUCHAMIANIE..</span>
-            </template>
-          </div>
-          <small v-show="currentState?.length">{{ currentState }}</small>
-        </button>
+        <LaunchButton />
 
         <div class="quick-settings">
           <div class="quick-setting">
             <i class="fas fa-memory"></i>
-            <span>RAM: <strong id="quickRam">4GB</strong></span>
+            <span
+              >RAM: <strong id="quickRam">{{ generalStore.settings.ram }}GB</strong></span
+            >
           </div>
           <div class="quick-setting">
             <i class="fas fa-microchip"></i>

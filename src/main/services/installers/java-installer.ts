@@ -2,7 +2,7 @@ import { exec } from 'child_process'
 import { platform, arch } from 'os'
 import { mkdirSync, promises as fsPromises } from 'fs'
 import path from 'path'
-import { app } from 'electron'
+import { app, ipcMain } from 'electron'
 import { downloadFile, ensureDir } from '../../utils'
 
 const JAR_URLS = {

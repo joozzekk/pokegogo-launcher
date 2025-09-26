@@ -1,5 +1,5 @@
 import ftp from 'basic-ftp'
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, ipcMain } from 'electron'
 import fs from 'fs'
 import path from 'path'
 import crypto from 'crypto'
@@ -60,33 +60,46 @@ async function downloadAll(
   localDir: string,
   log: (data: string, isEnded?: boolean) => void,
   isFirstInstall: boolean,
-  importantFolders: string[]
+  importantFolders: string[],
+  signal: AbortSignal
 ): Promise<void> {
+  if (signal.aborted) {
+    return
+  }
+
   await fs.promises.mkdir(localDir, { recursive: true })
   const changed = await safeCd(client, remoteDir)
   if (!changed) return
 
-  // Wczytujemy lokalne hashe dla tego folderu (jeśli istnieją)
   const localHashes = await readHashesFile(localDir)
-
   const list = await client.list()
+
   let downloadedFiles = 0
   const totalFiles = list.filter((f) => !f.isDirectory).length
 
   for (const file of list) {
+    if (signal.aborted) {
+      return // stop downloading if aborted
+    }
+
     const remotePath = path.posix.join(remoteDir, file.name)
     const localPath = path.join(localDir, file.name)
 
     if (file.isDirectory) {
-      await downloadAll(client, remotePath, localPath, log, isFirstInstall, importantFolders)
+      await downloadAll(
+        client,
+        remotePath,
+        localPath,
+        log,
+        isFirstInstall,
+        importantFolders,
+        signal
+      )
     } else {
-      if (file.name.endsWith('.sha256') || file.name === 'hashes.txt') {
-        continue
-      }
+      if (file.name.endsWith('.sha256') || file.name === 'hashes.txt') continue
 
       let downloadFile = true
 
-      // Jeśli mamy hash z pliku hashes.txt, to porównaj ze stanem lokalnym
       if (localHashes[file.name]) {
         try {
           const localHash = await getFileHash(localPath)
@@ -95,11 +108,9 @@ async function downloadAll(
             log(`Plik ${file.name} jest aktualny, pomijam pobieranie.`)
           }
         } catch {
-          // Plik lokalny nie istnieje lub błąd haszowania - pobieramy
           downloadFile = true
         }
       } else {
-        // Brak informacji w hashes.txt - pobieramy tylko jeśli pliku lokalnego nie ma
         try {
           await fs.promises.access(localPath)
           downloadFile = false
@@ -118,7 +129,7 @@ async function downloadAll(
   }
 }
 
-export async function copyMCFiles(mainWindow: BrowserWindow): Promise<void> {
+export async function copyMCFiles(mainWindow: BrowserWindow, signal: AbortSignal): Promise<any> {
   const client = new ftp.Client(1000 * 120)
   const localRoot = path.join(app.getPath('userData'), 'mcfiles')
   const markerFile = path.join(localRoot, '.mcfiles_installed')
@@ -141,7 +152,6 @@ export async function copyMCFiles(mainWindow: BrowserWindow): Promise<void> {
     const pwd = await client.pwd()
     const remoteURL = pwd + '/mc'
 
-    mainWindow.webContents.send('show-toast', 'Weryfikowanie minecraft..')
     await downloadAll(
       client,
       remoteURL,
@@ -150,15 +160,19 @@ export async function copyMCFiles(mainWindow: BrowserWindow): Promise<void> {
         mainWindow.webContents.send('show-log', data)
       },
       isFirstInstall,
-      importantFolders
+      importantFolders,
+      signal
     )
+
+    if (signal.aborted) {
+      return 'stop'
+    }
 
     if (isFirstInstall) {
       await fs.promises.writeFile(markerFile, 'installed')
     }
 
     mainWindow.webContents.send('show-log', '', true)
-    mainWindow.webContents.send('show-toast', 'Pomyślnie zweryfikowano Minecraft.')
   } catch (err) {
     console.error(err)
   } finally {

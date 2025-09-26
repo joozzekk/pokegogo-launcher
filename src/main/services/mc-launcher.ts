@@ -1,6 +1,6 @@
 import { Authenticator, Client } from 'minecraft-launcher-core'
 import path from 'path'
-import { app } from 'electron'
+import { app, BrowserWindow, ipcMain } from 'electron'
 
 const toMCLC = (token: string): unknown => {
   const data = JSON.parse(token)
@@ -37,6 +37,7 @@ const nonPremiumToMCLC = async (json: string): Promise<unknown> => {
 }
 
 export async function launchMinecraft(
+  win: BrowserWindow,
   version: string,
   token: string,
   resolution: string,
@@ -48,28 +49,33 @@ export async function launchMinecraft(
 
   const [width, height] = resolution.split('x').map((v: string) => parseInt(v))
 
-  await client
-    .launch({
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      authorization: accountType === 'microsoft' ? toMCLC(token) : await nonPremiumToMCLC(token),
-      root: minecraftDir,
-      version: {
-        number: version,
-        type: 'release',
-        custom: '1.21.1-fabric'
-      },
-      window: {
-        width,
-        height
-      },
-      memory: {
-        max: '16G',
-        min: '6G'
-      }
-    })
-    .then(console.log)
-    .catch(console.log)
+  const process = await client.launch({
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    authorization: accountType === 'microsoft' ? toMCLC(token) : await nonPremiumToMCLC(token),
+    root: minecraftDir,
+    version: {
+      number: version,
+      type: 'release',
+      custom: '1.21.1-fabric'
+    },
+    window: {
+      width,
+      height
+    },
+    memory: {
+      max: '16G',
+      min: '6G'
+    }
+  })
+
+  ipcMain.handle('exit-launch', () => {
+    client.emit('close', 1)
+    process?.kill('SIGTERM')
+    ipcMain.removeHandler('exit-launch')
+  })
+
+  win.webContents.send('change-launch-state', JSON.stringify('minecraft-start'))
 
   client.on('debug', console.log)
   client.on('data', console.log)

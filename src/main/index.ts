@@ -2,25 +2,24 @@ import { app, BrowserWindow } from 'electron'
 import { electronApp, optimizer } from '@electron-toolkit/utils'
 import useWindowService from './services/window-service'
 import { useAppUpdater } from './services/app-updater'
-import { useLoginService } from './services/login-service'
-import { useLaunchService } from './services/launch-service'
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   electronApp.setAppUserModelId('pl.pokemongogo')
 
-  const { createWindow } = useWindowService()
-  let mainWindow = createWindow()
-  useAppUpdater(mainWindow)
-  useLoginService()
-  useLaunchService(mainWindow)
+  const { createMainWindow, createLoadingWindow } = useWindowService()
+  const mainWindow = createMainWindow()
+  const { startApp } = createLoadingWindow()
+  const appUpdater = useAppUpdater(mainWindow)
+
+  await startApp(appUpdater, mainWindow)
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  app.on('activate', function () {
+  app.on('activate', async () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      mainWindow = createWindow()
+      await startApp(appUpdater, mainWindow)
     }
   })
 })
