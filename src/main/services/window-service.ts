@@ -91,7 +91,7 @@ const createLoadingWindow = (): {
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     loadingWindow.loadURL(process.env['ELECTRON_RENDERER_URL'] + '/loading')
   } else {
-    loadingWindow.loadFile(join(__dirname, '../renderer/index.html'))
+    loadingWindow.loadFile(join(__dirname, '../renderer/loading.html'))
   }
 
   loadingWindow.on('ready-to-show', () => {
@@ -102,27 +102,32 @@ const createLoadingWindow = (): {
     loadingWindow.show()
 
     loadingWindow.webContents.send('load:status', JSON.stringify('check-for-update'))
-    const res = await appUpdater.checkForUpdates()
+    try {
+      const res = await appUpdater.checkForUpdates()
 
-    if (res?.isUpdateAvailable) {
-      loadingWindow.webContents.send('load:status', JSON.stringify('updating'))
-      await appUpdater.downloadUpdate()
-      appUpdater.quitAndInstall(true, true)
+      if (res?.isUpdateAvailable) {
+        loadingWindow.webContents.send('load:status', JSON.stringify('updating'))
+        await appUpdater.downloadUpdate()
+        appUpdater.quitAndInstall(true, true)
+      }
+    } catch (err) {
+      console.log(err)
+    } finally {
+      setTimeout(() => {
+        loadingWindow.webContents.send('load:status', JSON.stringify('starting'))
+
+        useLoginService()
+        useLaunchService(mainWindow)
+      }, 1500)
+
+      setTimeout(() => {
+        loadingWindow.webContents.send('load:status', JSON.stringify('app-started'))
+        loadingWindow.close()
+        loadingWindow.webContents.close()
+        mainWindow.show()
+        mainWindow.focus()
+      }, 2500)
     }
-
-    setTimeout(() => {
-      loadingWindow.webContents.send('load:status', JSON.stringify('starting'))
-
-      useLoginService()
-      useLaunchService(mainWindow)
-    }, 1500)
-
-    setTimeout(() => {
-      loadingWindow.webContents.send('load:status', JSON.stringify('app-started'))
-      loadingWindow.close()
-      mainWindow.show()
-      mainWindow.focus()
-    }, 2500)
   }
 
   return {

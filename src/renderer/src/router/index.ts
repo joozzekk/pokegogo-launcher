@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
 
 import LoginPage from '@renderer/components/LoginPage.vue'
 import Launcher from '@renderer/components/Launcher.vue'
@@ -25,6 +25,6 @@ const routes = [
 ]
 
 export const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHashHistory(),
   routes
 })

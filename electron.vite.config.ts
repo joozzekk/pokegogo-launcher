@@ -15,6 +15,14 @@ export default defineConfig({
         '@renderer': resolve('src/renderer/src')
       }
     },
+    build: {
+      rollupOptions: {
+        input: {
+          main: resolve(__dirname, 'src/renderer/index.html'),
+          loading: resolve(__dirname, 'src/renderer/loading.html')
+        }
+      }
+    },
     plugins: [vue()]
   }
 })
