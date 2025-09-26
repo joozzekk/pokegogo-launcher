@@ -1,14 +1,8 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
 :root {
   --primary1: #0aefff;
   --primary2: #03a2ad;
   --bg-primary: #000000;
-  --bg-card: rgba(17, 17, 20, 0.95);
+  --bg-card: rgba(17, 17, 20, 0.6);
   --bg-input: rgba(26, 26, 31, 0.8);
   --text-primary: #ffffff;
   --text-secondary: #b4b4b8;
@@ -25,7 +19,7 @@ body {
   background: var(--bg-primary);
   color: var(--text-primary);
   min-height: 100vh;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 .background {
@@ -46,7 +40,7 @@ body {
     rgba(10, 239, 255, 0.15) 0%,
     var(--bg-primary) 100%
   );
-  animation: gradientShift 10s ease-in-out infinite alternate;
+  animation: gradientLoginShift 10s ease-in-out infinite alternate;
 }
 
 .floating-blocks {
@@ -61,8 +55,9 @@ body {
   background: linear-gradient(45deg, var(--primary1), var(--primary2));
   opacity: 0.03;
   border-radius: 4px;
-  animation: float 20s linear infinite;
+  animation: login-float 20s linear infinite;
 }
+
 .block-1 {
   width: 40px;
   height: 40px;
@@ -70,6 +65,7 @@ body {
   left: 10%;
   animation-delay: -2s;
 }
+
 .block-2 {
   width: 60px;
   height: 60px;
@@ -77,6 +73,7 @@ body {
   left: 80%;
   animation-delay: -8s;
 }
+
 .block-3 {
   width: 30px;
   height: 30px;
@@ -85,7 +82,7 @@ body {
   animation-delay: -15s;
 }
 
-@keyframes gradientShift {
+@keyframes gradientLoginShift {
   0% {
     transform: scale(1) rotate(0deg);
   }
@@ -94,7 +91,7 @@ body {
   }
 }
 
-@keyframes float {
+@keyframes login-float {
   0% {
     transform: translateY(0px) rotate(0deg);
   }
@@ -654,9 +651,6 @@ body {
 }
 
 @media (max-width: 768px) {
-  .container {
-    padding: 0.6rem;
-  }
   .form-container {
     padding: 2rem 1rem;
   }

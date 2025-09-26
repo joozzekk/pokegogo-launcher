@@ -5,8 +5,8 @@
   --bg-dark: #0a0c10;
   --bg-medium: #0f1117;
   --bg-light: #1a1d25;
-  --bg-card: rgba(26, 29, 37, 1);
-  --bg-toast: rgba(26, 29, 37, 1);
+  --bg-card: rgba(26, 29, 37, 0.6);
+  --bg-toast: rgba(26, 29, 37, 0.6);
   --text-primary: #ffffff;
   --text-secondary: #94a3b8;
   --text-muted: #64748b;

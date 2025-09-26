@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import '@renderer/assets/base.css'
 import { showToast } from './utils'
 import useGeneralStore from './stores/general-store'
 
@@ -21,3 +20,7 @@ window.electron?.ipcRenderer?.on('update-available', (_, isUpdate: boolean) => {
 <template>
   <RouterView />
 </template>
+
+<style lang="css">
+@import '@renderer/assets/base.css';
+</style>

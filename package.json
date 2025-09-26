@@ -1,6 +1,6 @@
 {
   "name": "pokemongogo-launcher",
-  "version": "0.1.7-dev",
+  "version": "0.1.8-dev2",
   "description": "A minecraft launcher for PokemonGoGo server",
   "main": "./out/main/index.js",
   "author": "Dominik Jóźwicki <joozvvicki@gmail.com>",

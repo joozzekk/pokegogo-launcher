@@ -68,6 +68,12 @@ onMounted(() => {
   --bg-primary: #000000;
 }
 
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
 .container {
   width: 100%;
   height: 100vh;
@@ -75,6 +81,7 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
 }
 
 .loading-container {
@@ -83,8 +90,6 @@ onMounted(() => {
   justify-content: center;
   align-items: center;
   text-align: center;
-  width: 100%;
-  max-width: 400px;
 }
 
 .logo-container {
@@ -98,6 +103,7 @@ onMounted(() => {
   margin-bottom: 32px;
   box-shadow: 0 8px 24px #0aefff33;
   animation: pulse 2s ease-in-out infinite;
+  overflow: hidden;
 }
 
 .logo {
