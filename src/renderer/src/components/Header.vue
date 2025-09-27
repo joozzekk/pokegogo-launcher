@@ -30,6 +30,10 @@ const handleInstallUpdate = async (): Promise<void> => {
   isInstallingUpdate.value = false
 }
 
+const parsedAppVersion = computed(() => {
+  return generalStore.appVersion.split('-')[1]
+})
+
 onMounted(() => {
   updateInterval.value = setInterval(() => {
     window.electron.ipcRenderer.invoke('check-for-update')
@@ -49,7 +53,7 @@ onUnmounted(() => {
         <img :src="logo" width="100%" />
       </div>
       <h1>PokeGoGo</h1>
-      <span class="applogo-badge">{{ generalStore.appVersion }}</span>
+      <span class="applogo-badge">{{ parsedAppVersion }}</span>
     </div>
     <div v-if="$route.path.includes('/app')" class="breadcrumbs">
       <i class="fa fa-home" @click="$router.push('/app/home')" /> >

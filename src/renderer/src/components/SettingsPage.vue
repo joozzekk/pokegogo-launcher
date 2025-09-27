@@ -219,4 +219,5 @@ const resetSettings = (): void => {
       </div>
     </div>
   </div>
+  <div class="app-version">{{ generalStore.appVersion }}</div>
 </template>

@@ -1264,3 +1264,10 @@ body {
 .toast.error {
   border-color: #ef4444;
 }
+
+.app-version {
+  position: absolute;
+  bottom: 0.25rem;
+  right: 1rem;
+  color: rgba(255, 255, 255, 0.3);
+}
