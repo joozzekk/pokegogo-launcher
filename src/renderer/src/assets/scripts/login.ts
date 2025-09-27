@@ -33,7 +33,7 @@ class AppState {
   }
 }
 
-class pokemongogo {
+export class PokeGoGoLogin {
   state: AppState
 
   constructor() {
@@ -355,7 +355,7 @@ class pokemongogo {
     }
     return isValid
   }
-  x
+
   validateRegisterForm(data): boolean {
     let isValid = true
     if (!this.validateNick('register-nick')) isValid = false
@@ -493,12 +493,3 @@ class pokemongogo {
     }, 2000)
   }
 }
-
-let pokemonApp
-
-document.addEventListener('DOMContentLoaded', () => {
-  pokemonApp = new pokemongogo()
-})
-
-// @ts-ignore (define in dts)
-window.pokemonApp = pokemonApp

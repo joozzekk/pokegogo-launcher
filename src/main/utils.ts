@@ -1,3 +1,4 @@
+import os from 'os'
 import { createWriteStream, existsSync, mkdirSync, statSync, unlinkSync } from 'fs'
 import https from 'https'
 import http from 'http'
@@ -45,4 +46,10 @@ export function downloadFile(url: string, dest: string): Promise<void> {
         reject(err)
       })
   })
+}
+
+export const getMaxRAMInGB = (): number => {
+  const totalMemoryBytes = os.totalmem()
+  const totalMemoryGB = totalMemoryBytes / 1024 ** 3
+  return Math.floor(totalMemoryGB)
 }

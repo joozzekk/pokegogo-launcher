@@ -5,6 +5,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 
 const generalStore = useGeneralStore()
 const updateInterval = ref<any>()
+const isInstallingUpdate = ref<boolean>(false)
 
 const maximizeWindow = (): void => {
   window.electron.ipcRenderer.send('window-maximize', generalStore.settings.resolution)
@@ -16,6 +17,7 @@ const minimizeWindow = (): void => {
 
 const closeWindow = (): void => {
   window.electron.ipcRenderer.send('window-close')
+  window.electron.ipcRenderer.invoke('exit-launch')
 }
 
 const isUpdateAvailable = computed(() => {
@@ -23,7 +25,9 @@ const isUpdateAvailable = computed(() => {
 })
 
 const handleInstallUpdate = async (): Promise<void> => {
-  window.electron.ipcRenderer.invoke('start-update')
+  isInstallingUpdate.value = true
+  await window.electron.ipcRenderer.invoke('start-update')
+  isInstallingUpdate.value = false
 }
 
 onMounted(() => {
@@ -44,7 +48,7 @@ onUnmounted(() => {
       <div class="applogo-icon">
         <img :src="logo" width="100%" />
       </div>
-      <h1>PokemonGoGo</h1>
+      <h1>PokeGoGo</h1>
       <span class="applogo-badge">{{ generalStore.appVersion }}</span>
     </div>
     <div v-if="$route.path.includes('/app')" class="breadcrumbs">
@@ -55,7 +59,8 @@ onUnmounted(() => {
     </div>
 
     <button v-if="isUpdateAvailable" class="nav-icon" @click="handleInstallUpdate">
-      <i class="fas fa-download"></i>
+      <i v-if="isInstallingUpdate" class="fas fa-download"></i>
+      <i v-else class="fas fa-spinner fa-spin"></i>
     </button>
     <div class="buttons">
       <button @click="minimizeWindow">
@@ -117,11 +122,13 @@ onUnmounted(() => {
   justify-content: center;
 }
 
-.buttons button:hover {
+.buttons button:hover,
+.buttons button:focus {
   background: rgba(34, 192, 197, 0.2);
 }
 
-.buttons button.red:hover {
+.buttons button.red:hover,
+.buttons button.red:focus {
   background: rgba(197, 34, 48, 0.4) !important;
 }
 

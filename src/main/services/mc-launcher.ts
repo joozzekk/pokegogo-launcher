@@ -1,6 +1,7 @@
 import { Authenticator, Client } from 'minecraft-launcher-core'
 import path from 'path'
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain, screen } from 'electron'
+import { getMaxRAMInGB } from '../utils'
 
 const toMCLC = (token: string): unknown => {
   const data = JSON.parse(token)
@@ -40,14 +41,23 @@ export async function launchMinecraft(
   win: BrowserWindow,
   version: string,
   token: string,
-  resolution: string,
+  settings: {
+    ram: number
+    resolution: string
+    displayMode: string
+  },
   accountType: string
 ): Promise<void> {
   const baseDir = app.getPath('userData')
   const minecraftDir = path.join(baseDir, 'mcfiles')
   const client = new Client()
 
-  const [width, height] = resolution.split('x').map((v: string) => parseInt(v))
+  const isFullScreen = settings.displayMode === 'Pełny ekran' ? true : false
+  const { width: fullWidth, height: fullHeight } = screen.getPrimaryDisplay().bounds
+  const [width, height] = isFullScreen
+    ? [fullWidth, fullHeight]
+    : settings.resolution.split('x').map((v: string) => parseInt(v))
+  const maxRAM = getMaxRAMInGB()
 
   const process = await client.launch({
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -61,11 +71,12 @@ export async function launchMinecraft(
     },
     window: {
       width,
-      height
+      height,
+      fullscreen: settings.displayMode === 'Pełny ekran' ? true : false
     },
     memory: {
-      max: '16G',
-      min: '6G'
+      max: `${Math.floor(0.75 * maxRAM)}G`,
+      min: `${settings.ram}G`
     }
   })
 
@@ -81,5 +92,8 @@ export async function launchMinecraft(
   client.on('data', console.log)
   client.on('error', console.log)
   client.on('progress', console.log)
-  client.on('close', () => console.log('Minecraft został zamknięty'))
+  client.on('close', () => {
+    win.webContents.send('change-launch-state', JSON.stringify('start'))
+    console.log('Minecraft został zamknięty')
+  })
 }

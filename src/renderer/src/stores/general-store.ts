@@ -8,6 +8,7 @@ const useGeneralStore = defineStore('general', () => {
   const settings = reactive({
     resolution: '1366x768',
     ram: 6,
+    maxRAM: 16,
     version: 'PokemonGoGo.pl',
     displayMode: 'Okno',
     theme: 'Dark',
@@ -16,6 +17,10 @@ const useGeneralStore = defineStore('general', () => {
 
   const changeVersion = (newVer: string): void => {
     appVersion.value = newVer
+  }
+
+  const changeMaxRAM = (maxRam: number): void => {
+    settings.maxRAM = maxRam
   }
 
   const setUpdateAvailable = (update: boolean): void => {
@@ -56,6 +61,7 @@ const useGeneralStore = defineStore('general', () => {
     settings,
     appVersion,
     changeVersion,
+    changeMaxRAM,
     isUpdateAvailable,
     setUpdateAvailable,
     loadSettings,

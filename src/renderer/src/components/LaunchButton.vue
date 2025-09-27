@@ -56,7 +56,11 @@ const handleLaunchGame = async (e: Event): Promise<void> => {
     token: accountType === 'microsoft' ? mcToken : JSON.stringify(userStore.user),
     mcVersion: '1.21.1',
     javaVersion: '21',
-    resolution: generalStore.settings.resolution,
+    settings: {
+      resolution: generalStore.settings.resolution,
+      ram: generalStore.settings.ram,
+      displayMode: generalStore.settings.displayMode
+    },
     accountType
   })
 
@@ -90,7 +94,12 @@ const handleKillVerify = async (): Promise<void> => {
         </div>
       </template>
       <div v-else class="launch-running">
-        <div class="title">
+        <div
+          class="title"
+          :class="{
+            'margin-title': !['minecraft-start', 'start'].includes(currentState)
+          }"
+        >
           <i class="fas fa-spinner fa-spin"></i>
           <span>{{ state }}</span>
         </div>
@@ -161,7 +170,11 @@ const handleKillVerify = async (): Promise<void> => {
 
 .launch-button .title {
   display: flex;
+  align-items: center;
   gap: 0.9rem;
+}
+
+.margin-title {
   margin-bottom: 0.5rem;
 }
 
@@ -184,7 +197,8 @@ const handleKillVerify = async (): Promise<void> => {
   left: 100%;
 }
 
-.launch-button:hover {
+.launch-button:hover,
+.launch-button:focus {
   transform: translateY(-3px);
   box-shadow: 0 10px 2.25rem rgba(34, 151, 197, 0.4);
 }

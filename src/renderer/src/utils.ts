@@ -67,8 +67,12 @@ export const showToast = (message: string, type = 'success'): void => {
   }, 3000)
 }
 
-export const calculateValueFromPercentage = (value: number, sliderWidth: number): number => {
+export const calculateValueFromPercentage = (
+  value: number,
+  sliderWidth: number,
+  maxNumber: number = 16
+): number => {
   const min = 6
-  const max = 16
+  const max = maxNumber
   return Math.fround(((value - min) / (max - min)) * sliderWidth)
 }

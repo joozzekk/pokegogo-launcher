@@ -5,6 +5,7 @@ import icon from '../../../resources/icon.png?asset'
 import { AppUpdater } from 'electron-updater'
 import { useLoginService } from './login-service'
 import { useLaunchService } from './launch-service'
+import { getMaxRAMInGB } from '../utils'
 
 const createMainWindow = (): BrowserWindow => {
   const mainWindow = new BrowserWindow({
@@ -25,6 +26,7 @@ const createMainWindow = (): BrowserWindow => {
   })
 
   mainWindow.on('ready-to-show', () => {
+    mainWindow.webContents.send('change-max-ram', Math.floor(getMaxRAMInGB() * 0.75))
     mainWindow.webContents.send('change-version', app.getVersion())
   })
 

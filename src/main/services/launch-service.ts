@@ -22,7 +22,7 @@ export const useLaunchService = (win: BrowserWindow): void => {
     currentAbortController = null
 
     if (res !== 'stop') {
-      await launchMinecraft(win, data.mcVersion, data.token, data.resolution, data.accountType)
+      await launchMinecraft(win, data.mcVersion, data.token, data.settings, data.accountType)
     }
   })
 

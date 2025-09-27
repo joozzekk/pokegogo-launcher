@@ -19,7 +19,11 @@ watch(
   () => generalStore.settings.ram,
   (newVal) => {
     if (sliderRef.value) {
-      percent.value = calculateValueFromPercentage(newVal, sliderRef.value.offsetWidth)
+      percent.value = calculateValueFromPercentage(
+        newVal,
+        sliderRef.value.offsetWidth,
+        generalStore.settings.maxRAM
+      )
     }
     if (displayRef.value) {
       displayRef.value.textContent = `${newVal}GB`
@@ -34,7 +38,8 @@ onMounted(() => {
   if (sliderRef.value) {
     percent.value = calculateValueFromPercentage(
       generalStore.settings.ram,
-      sliderRef.value.offsetWidth
+      sliderRef.value.offsetWidth,
+      generalStore.settings.maxRAM
     )
   }
   if (displayRef.value) {
@@ -77,14 +82,16 @@ const resetSettings = (): void => {
                 v-model="generalStore.settings.ram"
                 type="range"
                 :min="6"
-                :max="16"
-                :step="1"
+                :max="generalStore.settings.maxRAM"
+                :step="0.5"
               />
               <div id="ramDisplay" ref="displayRef" class="ram-display">6 GB</div>
               <div class="ram-markers">
                 <span>6GB</span>
-                <span>11GB</span>
-                <span>16GB</span>
+                <span
+                  >{{ 6 + parseFloat(((generalStore.settings.maxRAM - 6) / 2).toFixed(1)) }}GB</span
+                >
+                <span>{{ generalStore.settings.maxRAM }}GB</span>
               </div>
             </div>
           </div>
@@ -137,7 +144,7 @@ const resetSettings = (): void => {
 
           <div class="setting-group">
             <label>Wersja Java</label>
-            <select class="setting-select">
+            <select class="setting-select" disabled>
               <option value="21">Java 21 (Zalecana)</option>
             </select>
           </div>

@@ -1,6 +1,23 @@
 <script lang="ts" setup>
-import '@renderer/assets/scripts/login'
 import Header from './Header.vue'
+import { onMounted } from 'vue'
+import { PokeGoGoLogin } from '@renderer/assets/scripts/login'
+
+const handleDiscordLink = (): void => {
+  window.open('https://discord.gg/nKgfmbCD', '_blank')
+}
+
+const handleRulesLink = (): void => {
+  window.open('https://www.pokemongogo.pl/#regulamin', '_blank')
+}
+
+const handleHelpLink = (): void => {
+  window.open('https://www.pokemongogo.pl/#faq', '_blank')
+}
+
+onMounted(() => {
+  new PokeGoGoLogin()
+})
 </script>
 
 <template>
@@ -70,9 +87,8 @@ import Header from './Header.vue'
               <div id="login-password-error" class="error-message"></div>
             </div>
 
-            <button type="submit" class="btn-login-primary">
+            <button class="btn-login-primary">
               <span>Zaloguj się</span>
-              <div class="btn-glow"></div>
             </button>
 
             <div class="divider"><span>lub</span></div>
@@ -83,7 +99,7 @@ import Header from './Header.vue'
             </button>
             <div>
               <p style="text-align: center; margin-top: 30px">
-                Nie pamięttasz hasła? <button type="button" class="btn">Przypomnij hasło</button>
+                Nie pamiętasz hasła? <button type="button" class="btn">Przypomnij hasło</button>
               </p>
             </div>
           </form>
@@ -167,16 +183,15 @@ import Header from './Header.vue'
             </div>
 
             <div class="form-group">
-              <label class="checkbox-wrapper">
+              <label for="terms-checkbox" class="checkbox-wrapper">
                 <input id="terms-checkbox" type="checkbox" required />
                 <span class="checkmark"></span>
                 <span class="checkbox-text">Akceptuję regulamin</span>
               </label>
             </div>
 
-            <button type="submit" class="btn-login-primary">
+            <button class="btn-login-primary">
               <span>Utwórz konto</span>
-              <div class="btn-glow"></div>
             </button>
 
             <div class="form-switch">
@@ -189,19 +204,15 @@ import Header from './Header.vue'
     </div>
     <footer class="footer">
       <div class="footer-links">
-        <a href="#" class="footer-link">
+        <a href="#" class="footer-link" @click="handleDiscordLink">
           <i class="fab fa-discord"></i>
           <span>Discord</span>
         </a>
-        <a href="#" class="footer-link">
+        <a href="#" class="footer-link" @click="handleRulesLink">
           <i class="fas fa-file-contract"></i>
           <span>Regulamin</span>
         </a>
-        <a href="#" class="footer-link">
-          <i class="fas fa-envelope"></i>
-          <span>Kontakt</span>
-        </a>
-        <a href="#" class="footer-link">
+        <a href="#" class="footer-link" @click="handleHelpLink">
           <i class="fas fa-question-circle"></i>
           <span>Pomoc</span>
         </a>

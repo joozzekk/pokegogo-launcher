@@ -5,7 +5,7 @@
   --bg-dark: #0a0c10;
   --bg-medium: #0f1117;
   --bg-light: #1a1d25;
-  --bg-card: rgba(26, 29, 37, 0.6);
+  --bg-card: rgba(17, 17, 20, 0.6);
   --bg-toast: rgba(26, 29, 37, 0.6);
   --text-primary: #ffffff;
   --text-secondary: #94a3b8;
@@ -22,6 +22,15 @@
   padding: 0;
   box-sizing: border-box;
   font-size: 13px;
+}
+
+button:hover,
+button:focus,
+a:focus,
+a:hover,
+select:focus,
+select:hover {
+  outline: none;
 }
 
 *::-webkit-scrollbar {
@@ -177,7 +186,6 @@ body {
   background: var(--gradient-primary);
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  text-transform: uppercase;
   letter-spacing: 1px;
 }
 
@@ -260,7 +268,8 @@ body {
   transition: all 0.15s ease-in-out;
 }
 
-.player-logout:hover {
+.player-logout:hover,
+.player-logout:focus {
   color: var(--primary);
 }
 
@@ -388,12 +397,14 @@ body {
   transition: height 0.3s ease;
 }
 
-.nav-item:hover {
+.nav-item:hover,
+.nav-item:focus {
   color: var(--text-primary);
   background: rgba(34, 159, 197, 0.1);
 }
 
-.nav-item:hover .nav-icon {
+.nav-item:hover .nav-icon,
+.nav-item:focus .nav-icon {
   background: rgba(34, 137, 197, 0.2);
   color: var(--primary);
 }
@@ -484,6 +495,7 @@ body {
 
 .launch-title {
   display: flex;
+  align-items: center;
   gap: 1rem;
 }
 
@@ -512,10 +524,13 @@ body {
   border-radius: 10px;
   font-size: 1rem;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s ease-in-out;
 }
 
-.version-selector select:hover {
+.version-selector select:hover,
+.version-selector select:focus,
+.setting-select:hover,
+.setting-select:focus {
   border-color: var(--primary);
 }
 
@@ -649,6 +664,7 @@ body {
 
 .news-title {
   display: flex;
+  align-items: center;
   gap: 1rem;
 }
 
@@ -1066,18 +1082,25 @@ body {
   color: white;
 }
 
-.btn-primary:hover {
+.btn-primary:hover,
+.btn-primary:focus,
+.toggle-option:focus,
+.toggle-option:hover {
   transform: translateY(-2px);
   box-shadow: 0 5px 20px rgba(34, 173, 197, 0.3);
 }
 
-.btn-secondary {
+.btn-secondary,
+.toggle-option:not(.active):focus,
+.toggle-option:not(.active):hover {
   background: var(--bg-light);
   color: var(--text-primary);
   border: 1px solid var(--border);
+  box-shadow: none;
 }
 
-.btn-secondary:hover {
+.btn-secondary:hover,
+.btn-secondary:focus {
   background: rgba(34, 137, 197, 0.1);
 }
 
