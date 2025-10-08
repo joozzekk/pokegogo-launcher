@@ -7,22 +7,21 @@ const app = createApp(App)
 app.use(router)
 app.use(createPinia())
 
-const token = localStorage.getItem('token')
+router.beforeEach(async (to, _from, next) => {
+  const token = localStorage.getItem('token')
 
-router.beforeEach(async (to, from, next) => {
-  if (to.path.includes('/loading') && !from.path.includes('/loading')) {
-    next()
-    return
-  }
-
-  if (token) {
-    if (!to.path.includes('/app')) {
+  if (token?.length) {
+    if (to.path.startsWith('/app')) {
+      next()
+    } else {
       next('/app/home')
+    }
+  } else {
+    if (to.path.startsWith('/app')) {
+      next('/')
     } else {
       next()
     }
-  } else {
-    next()
   }
 })
 

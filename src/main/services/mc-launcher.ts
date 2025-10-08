@@ -2,6 +2,7 @@ import { Authenticator, Client } from 'minecraft-launcher-core'
 import path from 'path'
 import { app, BrowserWindow, ipcMain, screen } from 'electron'
 import { getMaxRAMInGB } from '../utils'
+import os from 'os'
 
 const toMCLC = (token: string): unknown => {
   const data = JSON.parse(token)
@@ -48,10 +49,15 @@ export async function launchMinecraft(
   },
   accountType: string
 ): Promise<void> {
+  const plt = os.platform()
   const baseDir = app.getPath('userData')
   const minecraftDir = path.join(baseDir, 'mcfiles')
   const client = new Client()
 
+  // use the java from C:/Program Files/Java if on Windows
+  // otherwise use the system java
+  const javaPath =
+    plt === 'win32' ? 'C:\\Program Files\\Java\\jdk-21\\bin\\java.exe' : '/usr/bin/java'
   const isFullScreen = settings.displayMode === 'Pełny ekran' ? true : false
   const { width: fullWidth, height: fullHeight } = screen.getPrimaryDisplay().bounds
   const [width, height] = isFullScreen
@@ -64,6 +70,7 @@ export async function launchMinecraft(
     // @ts-ignore
     authorization: accountType === 'microsoft' ? toMCLC(token) : await nonPremiumToMCLC(token),
     root: minecraftDir,
+    javaPath,
     version: {
       number: version,
       type: 'release',
@@ -80,20 +87,28 @@ export async function launchMinecraft(
     }
   })
 
+  if (ipcMain.listenerCount('exit-launch') > 0) {
+    ipcMain.removeHandler('exit-launch')
+  }
+
   ipcMain.handle('exit-launch', () => {
     client.emit('close', 1)
     process?.kill('SIGTERM')
-    ipcMain.removeHandler('exit-launch')
   })
 
   win.webContents.send('change-launch-state', JSON.stringify('minecraft-start'))
 
-  client.on('debug', console.log)
-  client.on('data', console.log)
-  client.on('error', console.log)
-  client.on('progress', console.log)
+  client.on('debug', (...args) => console.log('DEBUG', ...args))
+  client.on('data', (data) => {
+    if (data.includes('Initializing Client')) {
+      win.webContents.send('change-launch-state', JSON.stringify('minecraft-started'))
+    }
+    console.log('DATA', data)
+  })
+  client.on('error', (...args) => console.log('ERROR', ...args))
+  client.on('progress', (...args) => console.log('PROGRESS', ...args))
   client.on('close', () => {
-    win.webContents.send('change-launch-state', JSON.stringify('start'))
+    win.webContents.send('change-launch-state', JSON.stringify('minecraft-closed'))
     console.log('Minecraft został zamknięty')
   })
 }

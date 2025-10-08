@@ -63,8 +63,8 @@ onUnmounted(() => {
     </div>
 
     <button v-if="isUpdateAvailable" class="nav-icon" @click="handleInstallUpdate">
-      <i v-if class="fas fa-spinner fa-spin"></i>
-      <i v-else="isInstallingUpdate" class="fas fa-download"></i>
+      <i v-if="isInstallingUpdate" class="fas fa-spinner fa-spin"></i>
+      <i v-else class="fas fa-download"></i>
     </button>
     <div class="buttons">
       <button @click="minimizeWindow">

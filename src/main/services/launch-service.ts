@@ -29,8 +29,10 @@ export const useLaunchService = (win: BrowserWindow): void => {
   ipcMain.handle('exit-verify', () => {
     if (currentAbortController) {
       currentAbortController.abort()
-      win.webContents.send('change-launch-state', JSON.stringify('start'))
       win.webContents.send('show-log', '', true)
+      return Promise.resolve()
     }
+
+    return Promise.resolve()
   })
 }

@@ -1,56 +1,58 @@
 <script lang="ts" setup>
+import { refreshMicrosoftToken } from '@renderer/services/refresh-service'
 import useGeneralStore from '@renderer/stores/general-store'
 import useUserStore from '@renderer/stores/user-store'
 import { createParticles, showToast } from '@renderer/utils'
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 
 const generalStore = useGeneralStore()
-const isOpeningGame = ref<boolean>(false)
-const currentState = ref<string>('start')
-const currentLog = ref<string>('')
 
 const states = {
   start: 'Uruchamianie..',
   'java-install': 'Instalowanie Javy..',
   'files-verify': 'Weryfikowanie plików..',
-  'minecraft-start': 'Uruchamianie gry..'
+  'minecraft-start': 'Uruchamianie gry..',
+  'minecraft-started': 'Minecraft jest uruchomiony...'
 }
 
-window.electron.ipcRenderer.on('change-launch-state', (_event, state: string) => {
-  currentState.value = JSON.parse(state)
-})
-
-window.electron.ipcRenderer.on('show-log', (_event, data: string, ended?: boolean) => {
-  if (!ended) {
-    currentLog.value = data
-    return
-  }
-
-  currentLog.value = ''
-})
-
 const accountType = localStorage.getItem('LOGIN_TYPE')
-const mcToken = localStorage.getItem('mcToken')
 const userStore = useUserStore()
 
 const handleToggleGame = async (e: Event): Promise<void> => {
-  switch (currentState.value) {
-    case 'files-verify':
-      handleKillVerify()
-      isOpeningGame.value = false
-      break
-    case 'minecraft-start':
-      handleKillGame()
-      isOpeningGame.value = false
-      break
-    default:
-      handleLaunchGame(e)
+  try {
+    switch (generalStore.currentState) {
+      case 'files-verify':
+        await handleKillVerify()
+        break
+      case 'minecraft-started':
+      case 'minecraft-start':
+        await handleKillGame()
+        break
+      case 'minecraft-closed':
+        generalStore.setIsOpeningGame(false)
+        generalStore.setCurrentState('start')
+        break
+      default:
+        await handleLaunchGame(e)
+    }
+  } catch (err) {
+    console.error(err)
+    showToast('Wystąpił błąd podczas uruchamiania gry.', 'error')
+    generalStore.setIsOpeningGame(false)
   }
 }
 
 const handleLaunchGame = async (e: Event): Promise<void> => {
-  isOpeningGame.value = true
+  generalStore.setIsOpeningGame(true)
   createParticles(e.target as HTMLElement)
+
+  const mcToken = localStorage.getItem('mcToken')
+
+  if (accountType === 'microsoft' && mcToken?.includes('exp')) {
+    const exp = JSON.parse(mcToken as string).exp
+    const now = Math.floor(Date.now() / 1000)
+    if (now >= exp) await refreshMicrosoftToken(localStorage.getItem('token'))
+  }
 
   const res = await window.electron.ipcRenderer.invoke('launch-game', {
     token: accountType === 'microsoft' ? mcToken : JSON.stringify(userStore.user),
@@ -70,24 +72,44 @@ const handleLaunchGame = async (e: Event): Promise<void> => {
 }
 
 const state = computed(() => {
-  return states[currentState.value]
+  return states[generalStore.currentState]
 })
 
 const handleKillGame = async (): Promise<void> => {
   await window.electron.ipcRenderer.invoke('exit-launch')
+  generalStore.setCurrentState('start')
+  generalStore.setIsOpeningGame(false)
 }
 
 const handleKillVerify = async (): Promise<void> => {
   await window.electron.ipcRenderer.invoke('exit-verify')
-  isOpeningGame.value = false
+  generalStore.setCurrentState('start')
+  generalStore.setIsOpeningGame(false)
 }
+
+window.electron.ipcRenderer.on('change-launch-state', (_event, state: string) => {
+  const parsedState = JSON.parse(state)
+  generalStore.setCurrentState(parsedState)
+})
+
+window.electron.ipcRenderer.on('show-log', (_event, data: string, ended?: string) => {
+  if (!ended) {
+    generalStore.setCurrentLog(data)
+    return
+  }
+
+  generalStore.setCurrentLog('')
+})
 </script>
 
 <template>
-  <div class="launch-button-container" :class="{ 'margin-64': currentState === 'files-verify' }">
+  <div
+    class="launch-button-container"
+    :class="{ 'margin-64': generalStore.currentState === 'files-verify' }"
+  >
     <button id="launchBtn" class="launch-button" @click="(e) => handleToggleGame(e)">
       <div class="launch-button-bg"></div>
-      <template v-if="!isOpeningGame">
+      <template v-if="!generalStore.isOpeningGame">
         <div class="title">
           <i class="fas fa-play"></i>
           <span>URUCHOM GRĘ</span>
@@ -97,20 +119,21 @@ const handleKillVerify = async (): Promise<void> => {
         <div
           class="title"
           :class="{
-            'margin-title': !['minecraft-start', 'start'].includes(currentState)
+            'margin-title': generalStore.isOpeningGame
           }"
         >
-          <i class="fas fa-spinner fa-spin"></i>
+          <i v-if="generalStore.isOpeningGame" class="fas fa-spinner fa-spin"></i>
           <span>{{ state }}</span>
         </div>
-        <span v-if="!['minecraft-start', 'start'].includes(currentState)" class="info"
-          >Kliknij, aby anulować</span
-        >
+        <span v-if="generalStore.isOpeningGame" class="info">Kliknij, aby przerwać</span>
       </div>
     </button>
     <Transition name="slide-down">
-      <div v-if="currentState === 'files-verify'" class="launch-button-info">
-        {{ currentLog }}
+      <div
+        v-if="generalStore.currentState === 'files-verify' && generalStore.currentLog.length"
+        class="launch-button-info"
+      >
+        {{ generalStore.currentLog }}
       </div>
     </Transition>
   </div>

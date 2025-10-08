@@ -13,7 +13,7 @@ const JAR_URLS = {
   }
 }
 
-function checkJavaInstalled(): Promise<boolean> {
+function checkJavaInstalled(): Promise<boolean | string> {
   return new Promise((resolve) => {
     exec('java -version', (error) => {
       resolve(!error)

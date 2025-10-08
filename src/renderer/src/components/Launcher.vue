@@ -1,30 +1,28 @@
 <script lang="ts" setup>
-import { onMounted } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { initAnimations } from '@renderer/assets/scripts/animations'
 
 import Header from '@renderer/components/Header.vue'
 import Sidebar from '@renderer/components/Sidebar.vue'
-const token = localStorage.getItem('token')
+import { refreshMicrosoftToken } from '@renderer/services/refresh-service'
 
-onMounted(() => {
+const refreshInterval = ref<any>(null)
+
+onMounted(async () => {
   initAnimations()
 
-  if (token) {
-    setInterval(
+  if (localStorage.getItem('LOGIN_TYPE')?.includes('microsoft') && localStorage.getItem('token')) {
+    refreshInterval.value = setInterval(
       async () => {
-        const { refreshToken, mcToken } = await window.electron.ipcRenderer.invoke(
-          'refresh-token',
-          token
-        )
-
-        console.log('RefreshToken: ', refreshToken)
-        console.log('MCToken Data: ', JSON.parse(mcToken))
-        localStorage.setItem('token', refreshToken)
-        localStorage.setItem('mcToken', mcToken)
+        await refreshMicrosoftToken(localStorage.getItem('token'))
       },
-      1000 * 60 * 30
+      1000 * 60 * 5
     )
   }
+})
+
+onUnmounted(() => {
+  clearInterval(refreshInterval.value)
 })
 </script>
 

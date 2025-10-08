@@ -10,6 +10,7 @@ const accountType = localStorage.getItem('LOGIN_TYPE')
 const userStore = useUserStore()
 
 const handleLogout = async (): Promise<void> => {
+  localStorage.removeItem('LOGIN_TYPE')
   localStorage.removeItem('token')
   switch (accountType) {
     case 'backend':
@@ -18,9 +19,10 @@ const handleLogout = async (): Promise<void> => {
     case 'microsoft':
       localStorage.removeItem('mcToken')
       break
+    default:
   }
 
-  location.reload()
+  router.push('/')
 }
 
 const handleChangeRoute = (newRoute: string): void => {

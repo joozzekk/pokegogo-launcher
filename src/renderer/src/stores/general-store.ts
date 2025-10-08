@@ -15,6 +15,23 @@ const useGeneralStore = defineStore('general', () => {
     autoUpdate: false
   })
 
+  const isOpeningGame = ref<boolean>(false)
+  const currentState = ref<string>('start')
+  const currentLog = ref<string>('')
+
+  // Funkcje do aktualizacji tych stanów
+  const setIsOpeningGame = (value: boolean): void => {
+    isOpeningGame.value = value
+  }
+
+  const setCurrentState = (value: string): void => {
+    currentState.value = value
+  }
+
+  const setCurrentLog = (value: string): void => {
+    currentLog.value = value
+  }
+
   const changeVersion = (newVer: string): void => {
     appVersion.value = newVer
   }
@@ -66,7 +83,13 @@ const useGeneralStore = defineStore('general', () => {
     setUpdateAvailable,
     loadSettings,
     saveSettings,
-    resetSettings
+    resetSettings,
+    isOpeningGame,
+    currentState,
+    currentLog,
+    setIsOpeningGame,
+    setCurrentState,
+    setCurrentLog
   }
 })
 
