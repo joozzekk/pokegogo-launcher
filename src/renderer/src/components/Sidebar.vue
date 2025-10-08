@@ -1,20 +1,64 @@
 <script setup lang="ts">
+import { fetchProfile } from '@renderer/api/endpoints'
+import useUserStore from '@renderer/stores/user-store'
 import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const playerName = ref<string>('guest')
+const accountType = localStorage.getItem('LOGIN_TYPE')
+const userStore = useUserStore()
 
 const handleLogout = async (): Promise<void> => {
+  localStorage.removeItem('LOGIN_TYPE')
   localStorage.removeItem('token')
-  location.reload()
+  switch (accountType) {
+    case 'backend':
+      localStorage.removeItem('refresh_token')
+      break
+    case 'microsoft':
+      localStorage.removeItem('mcToken')
+      break
+    default:
+  }
+
+  router.push('/')
 }
 
-onMounted(() => {
-  const dataStr = localStorage.getItem('token')
-  if (dataStr) {
-    const data = JSON.parse(JSON.parse(dataStr))
-    const profile = data?.profile
-    playerName.value = profile?.name
+const handleChangeRoute = (newRoute: string): void => {
+  router.push(newRoute)
+}
+
+const fetchProfileData = async (): Promise<void> => {
+  if (!userStore.user?.uuid) {
+    const profile = await fetchProfile()
+
+    userStore.setUser(profile)
+    console.log(new Date(profile.exp * 1000))
   }
+
+  playerName.value = userStore.user?.nickname ?? 'guest'
+}
+
+const loadProfile = async (): Promise<void> => {
+  const json = localStorage.getItem('mcToken')
+
+  switch (accountType) {
+    case 'backend':
+      await fetchProfileData()
+      break
+    case 'microsoft':
+      if (json) {
+        const data = JSON.parse(json)
+        const profile = data?.profile
+        playerName.value = profile?.name
+      }
+      break
+  }
+}
+
+onMounted(async () => {
+  await loadProfile()
 })
 </script>
 
@@ -44,34 +88,62 @@ onMounted(() => {
         </button>
       </div>
 
-      <a href="#" class="nav-item active" data-page="home">
+      <a
+        href="#"
+        class="nav-item"
+        :class="{
+          active: $route.path === '/app/home'
+        }"
+        @click="handleChangeRoute('/app/home')"
+      >
         <div class="nav-icon">
           <i class="fas fa-home"></i>
         </div>
         <span>Home</span>
         <div class="nav-indicator"></div>
       </a>
-      <a href="#" class="nav-item" data-page="shop">
+      <a
+        href="#"
+        class="nav-item"
+        :class="{
+          active: $route.path === '/app/shop'
+        }"
+        @click="handleChangeRoute('/app/shop')"
+      >
         <div class="nav-icon">
           <i class="fas fa-shopping-cart"></i>
         </div>
         <span>Sklep</span>
         <div class="nav-indicator"></div>
       </a>
-      <a href="#" class="nav-item" data-page="settings">
+      <a
+        href="#"
+        class="nav-item"
+        :class="{
+          active: $route.path === '/app/settings'
+        }"
+        @click="handleChangeRoute('/app/settings')"
+      >
         <div class="nav-icon">
           <i class="fas fa-cog"></i>
         </div>
         <span>Ustawienia</span>
         <div class="nav-indicator"></div>
       </a>
-      <a href="#" class="nav-item" data-page="changelog">
+      <!-- <a
+        href="#"
+        class="nav-item"
+        :class="{
+          active: $route.path === '/app/changelog'
+        }"
+        @click="handleChangeRoute('/app/changelog')"
+      >
         <div class="nav-icon">
           <i class="fas fa-list"></i>
         </div>
         <span>Changelog</span>
         <div class="nav-indicator"></div>
-      </a>
+      </a> -->
     </nav>
 
     <div class="sidebar-footer">

@@ -7,21 +7,22 @@ const app = createApp(App)
 app.use(router)
 app.use(createPinia())
 
-router.beforeEach((to, _from, next) => {
-  // TODO: add take token from electron and refresh token on electron
+router.beforeEach(async (to, _from, next) => {
   const token = localStorage.getItem('token')
 
-  if (token) {
-    if (to.path !== '/app') {
-      next('/app')
+  if (token?.length) {
+    if (to.path.startsWith('/app')) {
+      next()
+    } else {
+      next('/app/home')
+    }
+  } else {
+    if (to.path.startsWith('/app')) {
+      next('/')
     } else {
       next()
     }
-  } else {
-    next()
   }
 })
 
 app.mount('#app')
-
-//TODO: disable web contents on prod

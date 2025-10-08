@@ -1,43 +1,17 @@
 <script lang="ts" setup>
-import { createParticles, showToast } from '@renderer/utils'
-import { onMounted, ref } from 'vue'
+import { showToast } from '@renderer/utils'
+import { onMounted } from 'vue'
 import { initNavigation } from '@renderer/assets/scripts/navigation'
-import { initSettings, loadSettings } from '@renderer/assets/scripts/settings'
 import { updateServerStatus } from '@renderer/assets/scripts//server-status'
+import LaunchButton from './LaunchButton.vue'
+import useGeneralStore from '@renderer/stores/general-store'
 
-const currentState = ref<string>('')
-const isOpeningGame = ref<boolean>(false)
-const token = localStorage.getItem('token')
-
-window.electron.ipcRenderer.on('show-log', (_event, data: string, ended?: boolean) => {
-  if (!ended) {
-    currentState.value = data
-    return
-  }
-
-  currentState.value = ''
-})
-
-const handleLaunchGame = async (e: Event): Promise<void> => {
-  isOpeningGame.value = true
-  createParticles(e.target as HTMLElement)
-  const res = await window.electron.ipcRenderer.invoke('launch-game', {
-    token,
-    mcVersion: '1.21.1',
-    javaVersion: '21'
-  })
-
-  if (res) {
-    showToast(`${res}`)
-  }
-}
+const generalStore = useGeneralStore()
 
 onMounted(() => {
   initNavigation()
-  initSettings()
   updateServerStatus()
   setInterval(updateServerStatus, 30000)
-  loadSettings()
 
   document.querySelectorAll<HTMLElement>('.news-item, .news-featured').forEach((item) => {
     item.addEventListener('click', function () {
@@ -50,8 +24,6 @@ onMounted(() => {
       }, 200)
     })
   })
-
-  showToast('Testowy toast')
 })
 </script>
 
@@ -60,7 +32,13 @@ onMounted(() => {
     <div class="home-grid">
       <div class="launch-panel">
         <div class="launch-header">
-          <h2>Graj Teraz</h2>
+          <div class="launch-title">
+            <div class="nav-icon">
+              <i class="fas fa-play"></i>
+            </div>
+            <h2>Graj Teraz</h2>
+          </div>
+
           <div class="version-selector">
             <select id="versionSelect">
               <option value="Cobblemon">PokemonGoGo.pl</option>
@@ -102,30 +80,14 @@ onMounted(() => {
           </div>
         </div>
 
-        <button
-          id="launchBtn"
-          class="launch-button"
-          :disabled="isOpeningGame"
-          @click="handleLaunchGame"
-        >
-          <div class="launch-button-bg"></div>
-          <div class="title">
-            <template v-if="!isOpeningGame">
-              <i class="fas fa-play"></i>
-              <span>URUCHOM GRĘ</span>
-            </template>
-            <template v-else>
-              <i class="fas fa-spinner"></i>
-              <span>URUCHAMIANIE..</span>
-            </template>
-          </div>
-          <small v-show="currentState?.length">{{ currentState }}</small>
-        </button>
+        <LaunchButton />
 
         <div class="quick-settings">
           <div class="quick-setting">
             <i class="fas fa-memory"></i>
-            <span>RAM: <strong id="quickRam">4GB</strong></span>
+            <span
+              >RAM: <strong id="quickRam">{{ generalStore.settings.ram }}GB</strong></span
+            >
           </div>
           <div class="quick-setting">
             <i class="fas fa-microchip"></i>
@@ -136,7 +98,12 @@ onMounted(() => {
 
       <div class="news-panel">
         <div class="news-header">
-          <h2>Aktualności</h2>
+          <div class="news-title">
+            <div class="nav-icon">
+              <i class="fas fa-bell"></i>
+            </div>
+            <h2>Aktualności</h2>
+          </div>
         </div>
 
         <div class="news-featured">
@@ -145,9 +112,12 @@ onMounted(() => {
             <div class="featured-gradient"></div>
           </div>
           <div class="featured-content">
-            <span class="featured-tag">WYDARZENIE</span>
-            <h3>Zimowy Event 2024</h3>
-            <p>Dołącz do zimowej przygody! Zdobądź unikalne nagrody i bonusy.</p>
+            <span class="featured-tag">MEGA WYDARZENIE</span>
+            <h3>Koparka Edition w PokeGoGo Launcher 0.2.0-dev</h3>
+            <p>
+              Dołącz do wspaniałej społeczności kopaczy bitcoina dla twórców launchera! Gwarantuje,
+              że nie podziele się hajsem :))
+            </p>
           </div>
         </div>
 

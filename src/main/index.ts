@@ -1,84 +1,25 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
-import { electronApp, is, optimizer } from '@electron-toolkit/utils'
+import { app, BrowserWindow } from 'electron'
+import { electronApp, optimizer } from '@electron-toolkit/utils'
 import useWindowService from './services/window-service'
-import { installJava } from './services/installers/java-installer'
-import { copyMCFiles } from './services/installers/mc-installer'
-import { launchMinecraft } from './services/mc-launcher'
-import { Auth } from 'msmc'
-import { getAutoUpdater } from './services/electron-updater'
+import { useAppUpdater } from './services/app-updater'
 
-app.whenReady().then(() => {
-  const autoUpdater = getAutoUpdater()
-  const { createWindow } = useWindowService()
-
-  if (!is.dev) autoUpdater.checkForUpdatesAndNotify()
-  const mainWindow = createWindow()
-
-  autoUpdater.on('update-available', () => {
-    mainWindow.webContents.send('update-available', true)
-  })
-  autoUpdater.on('update-not-available', () => {
-    mainWindow.webContents.send('update-available', false)
-  })
-  autoUpdater.on('error', (err) => {
-    console.log(err)
-  })
-  autoUpdater.on('update-downloaded', () => {
-    mainWindow.webContents.send('update-available', false)
-  })
-
+app.whenReady().then(async () => {
   electronApp.setAppUserModelId('pl.pokemongogo')
+
+  const { createMainWindow, createLoadingWindow } = useWindowService()
+  const mainWindow = createMainWindow()
+  const { startApp } = createLoadingWindow()
+  const appUpdater = useAppUpdater(mainWindow)
+
+  await startApp(appUpdater, mainWindow)
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  ipcMain.handle(
-    'launch-game',
-    async (
-      _event,
-      data: {
-        javaVersion: string
-        mcVersion: string
-        token: string
-      }
-    ) => {
-      try {
-        await installJava(data.javaVersion)
-        await copyMCFiles(mainWindow)
-        await launchMinecraft(data.mcVersion, data.token)
-        return 'Pomyślnie zainstalowno wszystkie pakiety!'
-      } catch (error) {
-        return `${error}`
-      }
-    }
-  )
-
-  ipcMain.handle('change-resolution', (_, newResolution: string) => {
-    const [width, height] = newResolution.split('x').map((v: string) => parseInt(v))
-
-    mainWindow.setBounds({
-      width,
-      height
-    })
-    mainWindow.center()
-  })
-
-  ipcMain.handle('login', async () => {
-    const authManager = new Auth('select_account')
-    const xboxManager = await authManager.launch('electron')
-    const token = await xboxManager.getMinecraft()
-
-    return JSON.stringify(JSON.stringify(token))
-  })
-
-  ipcMain.handle('start-update', async () => {
-    autoUpdater.quitAndInstall()
-  })
-
-  app.on('activate', function () {
+  app.on('activate', async () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow()
+      await startApp(appUpdater, mainWindow)
     }
   })
 })

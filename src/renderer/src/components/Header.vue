@@ -1,18 +1,23 @@
 <script lang="ts" setup>
 import logo from '@renderer/assets/logo.png'
 import useGeneralStore from '@renderer/stores/general-store'
-import { computed } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 
 const generalStore = useGeneralStore()
+const updateInterval = ref<any>()
+const isInstallingUpdate = ref<boolean>(false)
 
 const maximizeWindow = (): void => {
-  window.electron.ipcRenderer.send('window-maximize')
+  window.electron.ipcRenderer.send('window-maximize', generalStore.settings.resolution)
 }
+
 const minimizeWindow = (): void => {
   window.electron.ipcRenderer.send('window-minimize')
 }
+
 const closeWindow = (): void => {
   window.electron.ipcRenderer.send('window-close')
+  window.electron.ipcRenderer.invoke('exit-launch')
 }
 
 const isUpdateAvailable = computed(() => {
@@ -20,8 +25,25 @@ const isUpdateAvailable = computed(() => {
 })
 
 const handleInstallUpdate = async (): Promise<void> => {
-  window.electron.ipcRenderer.invoke('start-update')
+  isInstallingUpdate.value = true
+  await window.electron.ipcRenderer.invoke('start-update')
+  isInstallingUpdate.value = false
 }
+
+const parsedAppVersion = computed(() => {
+  return generalStore.appVersion.split('-')[1]
+})
+
+onMounted(() => {
+  updateInterval.value = setInterval(() => {
+    window.electron.ipcRenderer.invoke('check-for-update')
+    console.log('Checking for update..')
+  }, 1000 * 30)
+})
+
+onUnmounted(() => {
+  clearInterval(updateInterval.value)
+})
 </script>
 
 <template>
@@ -30,16 +52,19 @@ const handleInstallUpdate = async (): Promise<void> => {
       <div class="applogo-icon">
         <img :src="logo" width="100%" />
       </div>
-      <h1>PokemonGoGo</h1>
-      <span class="applogo-badge">{{ generalStore.appVersion }}</span>
+      <h1>PokeGoGo</h1>
+      <span class="applogo-badge">{{ parsedAppVersion }}</span>
     </div>
     <div v-if="$route.path.includes('/app')" class="breadcrumbs">
-      <i class="fa fa-home" /> >
-      <span class="active"></span>
+      <i class="fa fa-home" @click="$router.push('/app/home')" /> >
+      <span class="active">
+        {{ $route.name }}
+      </span>
     </div>
 
     <button v-if="isUpdateAvailable" class="nav-icon" @click="handleInstallUpdate">
-      <i class="fas fa-download"></i>
+      <i v-if="isInstallingUpdate" class="fas fa-spinner fa-spin"></i>
+      <i v-else class="fas fa-download"></i>
     </button>
     <div class="buttons">
       <button @click="minimizeWindow">
@@ -101,11 +126,13 @@ const handleInstallUpdate = async (): Promise<void> => {
   justify-content: center;
 }
 
-.buttons button:hover {
+.buttons button:hover,
+.buttons button:focus {
   background: rgba(34, 192, 197, 0.2);
 }
 
-.buttons button.red:hover {
+.buttons button.red:hover,
+.buttons button.red:focus {
   background: rgba(197, 34, 48, 0.4) !important;
 }
 

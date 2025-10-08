@@ -1,29 +1,76 @@
 <script lang="ts" setup>
-import { reactive } from 'vue'
+import useGeneralStore from '@renderer/stores/general-store'
+import { calculateValueFromPercentage, showToast } from '@renderer/utils'
+import { onMounted, ref, watch } from 'vue'
 
-const state = reactive({
-  javaVersion: '21',
-  selectedRAM: 6,
-  selectedResolution: '1280x720'
-})
+const generalStore = useGeneralStore()
+
+const sliderRef = ref<HTMLInputElement | null>(null)
+const displayRef = ref<HTMLInputElement | null>(null)
+
+const percent = ref(0)
 
 const changeResolution = (e: Event): void => {
   const target = e.target as HTMLSelectElement
-
   window.electron.ipcRenderer.invoke('change-resolution', target.value)
+}
+
+watch(
+  () => generalStore.settings.ram,
+  (newVal) => {
+    if (sliderRef.value) {
+      percent.value = calculateValueFromPercentage(
+        newVal,
+        sliderRef.value.offsetWidth,
+        generalStore.settings.maxRAM
+      )
+    }
+    if (displayRef.value) {
+      displayRef.value.textContent = `${newVal}GB`
+      displayRef.value.style.left = percent.value + 'px'
+    }
+  },
+  { immediate: true }
+)
+
+onMounted(() => {
+  generalStore.loadSettings()
+  if (sliderRef.value) {
+    percent.value = calculateValueFromPercentage(
+      generalStore.settings.ram,
+      sliderRef.value.offsetWidth,
+      generalStore.settings.maxRAM
+    )
+  }
+  if (displayRef.value) {
+    displayRef.value.textContent = `${generalStore.settings.ram}GB`
+    displayRef.value.style.left = percent.value + 'px'
+  }
+})
+
+const saveSettings = (): void => {
+  generalStore.saveSettings()
+  showToast('Zapisano ustawienia.')
+}
+
+const resetSettings = (): void => {
+  generalStore.resetSettings()
+  showToast('Przywrócono domyślne ustawienia', 'success')
 }
 </script>
 
 <template>
   <div id="settingsPage" class="page">
     <div class="settings-container">
-      <h2>Ustawienia</h2>
-
       <div class="settings-grid">
         <div class="settings-card">
           <div class="settings-card-header">
-            <i class="fas fa-gamepad"></i>
-            <h3>Ustawienia Gry</h3>
+            <div class="settings-card-title">
+              <div class="nav-icon">
+                <i class="fas fa-cog"></i>
+              </div>
+              <h2>Ustawienia gry</h2>
+            </div>
           </div>
 
           <div class="setting-group">
@@ -31,17 +78,20 @@ const changeResolution = (e: Event): void => {
             <div class="ram-slider-container">
               <input
                 id="ramSlider"
-                v-model="state.selectedRAM"
+                ref="sliderRef"
+                v-model="generalStore.settings.ram"
                 type="range"
-                min="6"
-                max="16"
-                step="1"
+                :min="6"
+                :max="generalStore.settings.maxRAM"
+                :step="0.5"
               />
-              <div id="ramDisplay" class="ram-display">6 GB</div>
+              <div id="ramDisplay" ref="displayRef" class="ram-display">6 GB</div>
               <div class="ram-markers">
                 <span>6GB</span>
-                <span>11GB</span>
-                <span>16GB</span>
+                <span
+                  >{{ 6 + parseFloat(((generalStore.settings.maxRAM - 6) / 2).toFixed(1)) }}GB</span
+                >
+                <span>{{ generalStore.settings.maxRAM }}GB</span>
               </div>
             </div>
           </div>
@@ -49,7 +99,7 @@ const changeResolution = (e: Event): void => {
           <div class="setting-group">
             <label>Rozdzielczość</label>
             <select
-              v-model="state.selectedResolution"
+              v-model="generalStore.settings.resolution"
               class="setting-select"
               @change="changeResolution"
             >
@@ -64,21 +114,37 @@ const changeResolution = (e: Event): void => {
           <div class="setting-group">
             <label>Tryb wyświetlania gry</label>
             <div class="toggle-group">
-              <button class="toggle-option active">Okno</button>
-              <button class="toggle-option">Pełny ekran</button>
+              <button
+                class="toggle-option"
+                :class="{ active: generalStore.settings.displayMode === 'Okno' }"
+                @click="generalStore.settings.displayMode = 'Okno'"
+              >
+                Okno
+              </button>
+              <button
+                class="toggle-option"
+                :class="{ active: generalStore.settings.displayMode === 'Pełny ekran' }"
+                @click="generalStore.settings.displayMode = 'Pełny ekran'"
+              >
+                Pełny ekran
+              </button>
             </div>
           </div>
         </div>
 
         <div class="settings-card">
           <div class="settings-card-header">
-            <i class="fas fa-coffee"></i>
-            <h3>Ustawienia Java</h3>
+            <div class="settings-card-title">
+              <div class="nav-icon">
+                <i class="fas fa-coffee"></i>
+              </div>
+              <h2>Ustawienia Javy</h2>
+            </div>
           </div>
 
           <div class="setting-group">
             <label>Wersja Java</label>
-            <select v-model="state.javaVersion" class="setting-select">
+            <select class="setting-select" disabled>
               <option value="21">Java 21 (Zalecana)</option>
             </select>
           </div>
@@ -142,15 +208,16 @@ const changeResolution = (e: Event): void => {
       </div>
 
       <div class="settings-actions">
-        <button id="saveSettings" class="btn-primary">
+        <button id="saveSettings" class="btn-primary" @click="saveSettings">
           <i class="fas fa-save"></i>
           Zapisz zmiany
         </button>
-        <button id="resetSettings" class="btn-secondary">
+        <button id="resetSettings" class="btn-secondary" @click="resetSettings">
           <i class="fas fa-undo"></i>
           Przywróć domyślne
         </button>
       </div>
     </div>
   </div>
+  <div class="app-version">{{ generalStore.appVersion }}</div>
 </template>

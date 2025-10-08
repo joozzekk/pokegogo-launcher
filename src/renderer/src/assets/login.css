@@ -1,14 +1,8 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
 :root {
   --primary1: #0aefff;
   --primary2: #03a2ad;
   --bg-primary: #000000;
-  --bg-card: rgba(17, 17, 20, 0.95);
+  --bg-card: rgba(17, 17, 20, 0.6);
   --bg-input: rgba(26, 26, 31, 0.8);
   --text-primary: #ffffff;
   --text-secondary: #b4b4b8;
@@ -25,7 +19,7 @@ body {
   background: var(--bg-primary);
   color: var(--text-primary);
   min-height: 100vh;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 .background {
@@ -46,7 +40,7 @@ body {
     rgba(10, 239, 255, 0.15) 0%,
     var(--bg-primary) 100%
   );
-  animation: gradientShift 10s ease-in-out infinite alternate;
+  animation: gradientLoginShift 10s ease-in-out infinite alternate;
 }
 
 .floating-blocks {
@@ -61,8 +55,9 @@ body {
   background: linear-gradient(45deg, var(--primary1), var(--primary2));
   opacity: 0.03;
   border-radius: 4px;
-  animation: float 20s linear infinite;
+  animation: login-float 20s linear infinite;
 }
+
 .block-1 {
   width: 40px;
   height: 40px;
@@ -70,6 +65,7 @@ body {
   left: 10%;
   animation-delay: -2s;
 }
+
 .block-2 {
   width: 60px;
   height: 60px;
@@ -77,6 +73,7 @@ body {
   left: 80%;
   animation-delay: -8s;
 }
+
 .block-3 {
   width: 30px;
   height: 30px;
@@ -85,7 +82,7 @@ body {
   animation-delay: -15s;
 }
 
-@keyframes gradientShift {
+@keyframes gradientLoginShift {
   0% {
     transform: scale(1) rotate(0deg);
   }
@@ -94,7 +91,7 @@ body {
   }
 }
 
-@keyframes float {
+@keyframes login-float {
   0% {
     transform: translateY(0px) rotate(0deg);
   }
@@ -174,6 +171,7 @@ body {
   background: #1a1a1f;
   border-bottom: 1px solid var(--border-primary);
 }
+
 .tab-btn {
   flex: 1;
   background: none;
@@ -190,13 +188,17 @@ body {
   gap: 10px;
   z-index: 2;
 }
+
 .tab-btn.active {
   color: var(--primary1);
 }
-.tab-btn:hover:not(.active) {
+
+.tab-btn:hover,
+.tab-btn:focus {
   color: var(--text-primary);
   background: rgba(255, 255, 255, 0.05);
 }
+
 .tab-indicator {
   position: absolute;
   bottom: 0;
@@ -228,8 +230,10 @@ body {
   transform: translateX(100%);
   transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   pointer-events: none;
+  display: none;
 }
 .form-container.active {
+  display: block;
   position: static;
   opacity: 1;
   transform: translateX(0);
@@ -328,20 +332,22 @@ body {
   transition: var(--transition);
   z-index: 2;
 }
-.password-toggle:hover {
+.password-toggle:hover,
+.password-toggle:focus {
   color: var(--primary1);
 }
 
 .checkbox-wrapper {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   cursor: pointer;
   gap: 12px;
   font-size: 0.9rem;
   line-height: 1.5;
 }
 .checkbox-wrapper input[type='checkbox'] {
-  display: none;
+  position: absolute;
+  visibility: hidden;
 }
 .checkmark {
   width: 20px;
@@ -399,10 +405,19 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 1rem;
   transition: all 0.3s ease;
-  background: linear-gradient(45deg, var(--primary1), var(--primary2));
-  color: var(--bg-primary);
+}
+
+.btn-login-primary {
+  background: var(--gradient-primary);
+  color: white;
+}
+
+.btn-login-primary:hover,
+.btn-login-primary:focus {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 20px rgba(34, 173, 197, 0.3);
 }
 
 .btn-microsoft {
@@ -410,7 +425,9 @@ body {
   color: white;
 }
 .btn-login-primary:hover,
-.btn-microsoft:hover {
+.btn-login-primary:focus,
+.btn-microsoft:hover,
+.btn-microsoft:focus {
   transform: translateY(-2px);
   box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
 }
@@ -425,7 +442,7 @@ body {
   transition: left 0.5s;
 }
 
-.btn-login-primary:hover .btn-glow {
+.btn-login-primary:hover .btn-glow .btn-login-primary:focus .btn-glow {
   left: 100%;
 }
 
@@ -470,6 +487,12 @@ body {
   font-weight: 500;
   transition: var(--transition);
 }
+
+.switch-btn:hover,
+.switch-btn:focus {
+  color: var(--primary2);
+}
+
 .btn {
   background: none;
   border: none;
@@ -479,6 +502,11 @@ body {
   font-size: inherit;
   font-weight: 500;
   transition: var(--transition);
+}
+
+.btn:hover,
+.btn:focus {
+  color: var(--primary2);
 }
 
 .error-message {
@@ -654,9 +682,6 @@ body {
 }
 
 @media (max-width: 768px) {
-  .container {
-    padding: 0.6rem;
-  }
   .form-container {
     padding: 2rem 1rem;
   }
@@ -711,7 +736,8 @@ body {
   border-radius: var(--border-radius-small);
 }
 
-.footer-link:hover {
+.footer-link:hover,
+.footer-link:focus {
   color: var(--primary-green);
   background: rgba(255, 255, 255, 0.05);
 }
