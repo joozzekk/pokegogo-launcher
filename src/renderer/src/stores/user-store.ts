@@ -4,7 +4,8 @@ import { useRouter } from 'vue-router'
 
 interface IUser {
   uuid: string
-  nickname: string
+  nickname?: string
+  name: string
   email?: string
 }
 

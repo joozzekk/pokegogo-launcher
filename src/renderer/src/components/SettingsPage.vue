@@ -107,7 +107,11 @@ const handleChangePassword = async (): Promise<void> => {
   if (!isValid || !userStore.user) return
 
   try {
-    const res = await changePassword(userStore.user?.nickname, state.old, state.new)
+    const res = await changePassword(
+      userStore.user?.nickname ?? userStore.user.name,
+      state.old,
+      state.new
+    )
 
     if (res) {
       showToast('Pomyślnie zmieniono hasło', 'success')
@@ -135,7 +139,7 @@ const handleChangeEmail = async (): Promise<void> => {
   if (!isValid || !userStore.user) return
 
   try {
-    const res = await changeEmail(userStore.user?.nickname, state.email)
+    const res = await changeEmail(userStore.user?.nickname ?? userStore.user.name, state.email)
 
     if (res) {
       showToast('Pomyślnie zmieniono email', 'success')

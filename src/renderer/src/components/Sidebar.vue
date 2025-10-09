@@ -5,7 +5,7 @@ import { useRouter } from 'vue-router'
 
 const userStore = useUserStore()
 const router = useRouter()
-const playerName = computed(() => userStore.user?.nickname ?? 'Guest')
+const playerName = computed(() => userStore.user?.nickname ?? userStore.user?.name ?? 'Guest')
 
 const handleChangeRoute = (newRoute: string): void => {
   router.push(newRoute)
