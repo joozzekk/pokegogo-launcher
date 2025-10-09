@@ -12,7 +12,8 @@ const states = {
   'java-install': 'Instalowanie Javy..',
   'files-verify': 'Weryfikowanie plików..',
   'minecraft-start': 'Uruchamianie gry..',
-  'minecraft-started': 'Minecraft jest uruchomiony...'
+  'minecraft-started': 'Minecraft jest uruchomiony...',
+  'minecraft-closed': 'Minecraft został zamknięty.'
 }
 
 const accountType = localStorage.getItem('LOGIN_TYPE')

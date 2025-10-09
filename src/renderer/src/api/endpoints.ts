@@ -31,3 +31,26 @@ export const fetchProfile = async (): Promise<any> => {
 
   return res.data
 }
+
+export const changePassword = async (
+  nickname: string,
+  oldPassword: string,
+  newPassword: string
+): Promise<any> => {
+  const res = await api.post('/auth/change-password', {
+    nickname,
+    oldPassword,
+    newPassword
+  })
+
+  return res.data
+}
+
+export const changeEmail = async (nickname: string, newEmail: string): Promise<any> => {
+  const res = await api.post('/auth/change-email', {
+    nickname,
+    newEmail
+  })
+
+  return res.data
+}

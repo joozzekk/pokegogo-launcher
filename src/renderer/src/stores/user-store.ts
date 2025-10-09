@@ -1,13 +1,17 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 
 interface IUser {
   uuid: string
   nickname: string
+  email?: string
 }
 
 const useUserStore = defineStore('user', () => {
   const user = ref(null as IUser | null)
+  const accountType = localStorage.getItem('LOGIN_TYPE')
+  const router = useRouter()
 
   const setUser = (newUser: IUser): void => {
     user.value = newUser
@@ -17,10 +21,28 @@ const useUserStore = defineStore('user', () => {
     user.value = null
   }
 
+  const logout = async (): Promise<void> => {
+    resetUser()
+    localStorage.removeItem('LOGIN_TYPE')
+    localStorage.removeItem('token')
+    switch (accountType) {
+      case 'backend':
+        localStorage.removeItem('refresh_token')
+        break
+      case 'microsoft':
+        localStorage.removeItem('mcToken')
+        break
+    }
+
+    router.push('/')
+  }
+
   return {
     user,
+    accountType,
     setUser,
-    resetUser
+    resetUser,
+    logout
   }
 })
 

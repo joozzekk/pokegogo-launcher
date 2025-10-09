@@ -1,9 +1,53 @@
 <script lang="ts" setup>
+import { changeEmail, changePassword } from '@renderer/api/endpoints'
 import useGeneralStore from '@renderer/stores/general-store'
+import useUserStore from '@renderer/stores/user-store'
 import { calculateValueFromPercentage, showToast } from '@renderer/utils'
-import { onMounted, ref, watch } from 'vue'
+import useVuelidate from '@vuelidate/core'
+import { helpers, required, sameAs } from '@vuelidate/validators'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 
+const userStore = useUserStore()
 const generalStore = useGeneralStore()
+const accountType = localStorage.getItem('LOGIN_TYPE')
+
+const state = reactive({
+  email: userStore.user?.email ?? '',
+  old: '',
+  new: '',
+  repeatNew: '',
+  showedOld: false,
+  showedNew: false,
+  showedRepeatNew: false
+})
+
+const rules = computed(() => ({
+  old: {
+    required: helpers.withMessage('To pole jest wymagane', required)
+  },
+  new: {
+    required: helpers.withMessage('To pole jest wymagane', required),
+    sameAs: helpers.withMessage('Hasła muszą być identyczne', sameAs(state.repeatNew))
+  },
+  repeatNew: {
+    required: helpers.withMessage('To pole jest wymagane', required),
+    sameAs: helpers.withMessage('Hasła muszą być identyczne', sameAs(state.new))
+  }
+}))
+
+const v$ = useVuelidate(rules, state)
+const emailV$ = useVuelidate(
+  {
+    email: {
+      required: helpers.withMessage('To pole jest wymagane', required),
+      email: helpers.withMessage('Nieprawidłowy adres email', (value: string) => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        return emailRegex.test(value)
+      })
+    }
+  },
+  state
+)
 
 const sliderRef = ref<HTMLInputElement | null>(null)
 const displayRef = ref<HTMLInputElement | null>(null)
@@ -46,6 +90,8 @@ onMounted(() => {
     displayRef.value.textContent = `${generalStore.settings.ram}GB`
     displayRef.value.style.left = percent.value + 'px'
   }
+
+  state.email = userStore.user?.email ?? ''
 })
 
 const saveSettings = (): void => {
@@ -56,6 +102,46 @@ const saveSettings = (): void => {
 const resetSettings = (): void => {
   generalStore.resetSettings()
   showToast('Przywrócono domyślne ustawienia', 'success')
+}
+
+const handleChangePassword = async (): Promise<void> => {
+  const isValid = await v$.value.$validate()
+  if (!isValid) return
+
+  try {
+    const res = await changePassword(userStore.user?.nickname, state.old, state.new)
+
+    if (res) {
+      showToast('Pomyślnie zmieniono hasło', 'success')
+      state.old = ''
+      state.new = ''
+      state.repeatNew = ''
+      v$.value.$reset()
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (_) {
+    showToast('Nie udało się zmienić hasła', 'error')
+    return
+  }
+}
+
+const handleChangeEmail = async (): Promise<void> => {
+  const isValid = await emailV$.value.$validate()
+  if (!isValid) return
+
+  try {
+    const res = await changeEmail(userStore.user?.nickname, state.email)
+
+    if (res) {
+      showToast('Pomyślnie zmieniono email', 'success')
+      emailV$.value.$reset()
+      await userStore.logout()
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (_) {
+    showToast('Nie udało się zmienić email', 'error')
+    return
+  }
 }
 </script>
 
@@ -136,6 +222,129 @@ const resetSettings = (): void => {
           <div class="settings-card-header">
             <div class="settings-card-title">
               <div class="nav-icon">
+                <i class="fas fa-user"></i>
+              </div>
+              <h2>Ustawienia Konta</h2>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div class="input-wrapper">
+              <i class="fas fa-lock input-icon"></i>
+              <input
+                id="login-email"
+                v-model="state.email"
+                type="email"
+                class="form-input"
+                placeholder="Adres email"
+                :class="{ invalid: emailV$.email.$error }"
+                required
+              />
+              <div class="input-line"></div>
+            </div>
+            <div class="error-message" :class="{ show: emailV$.email.$error }">
+              {{ emailV$.email.$errors[0]?.$message }}
+            </div>
+          </div>
+
+          <button id="saveSettings" class="btn-primary mb-5" @click="handleChangeEmail">
+            <i class="fas fa-edit"></i>
+            Zmień email
+          </button>
+
+          <template v-if="accountType === 'backend'">
+            <div class="form-group">
+              <div class="input-wrapper">
+                <i class="fas fa-lock input-icon"></i>
+                <input
+                  v-model="state.old"
+                  :type="!state.showedOld ? 'password' : 'text'"
+                  class="form-input"
+                  placeholder="Stare hasło"
+                  :class="{ invalid: v$.old.$error }"
+                  required
+                />
+                <button
+                  id="login-toggle"
+                  type="button"
+                  class="password-toggle"
+                  @click="state.showedOld = !state.showedOld"
+                >
+                  <i v-if="state.showedOld" class="far fa-eye-slash"></i>
+                  <i v-else class="far fa-eye"></i>
+                </button>
+                <div class="input-line"></div>
+              </div>
+              <div class="error-message" :class="{ show: v$.old.$error }">
+                {{ v$.old.$errors[0]?.$message }}
+              </div>
+            </div>
+
+            <div class="form-group">
+              <div class="input-wrapper">
+                <i class="fas fa-lock input-icon"></i>
+                <input
+                  v-model="state.new"
+                  :type="!state.showedNew ? 'password' : 'text'"
+                  class="form-input"
+                  placeholder="Hasło"
+                  :class="{ invalid: v$.new.$error }"
+                  required
+                />
+                <button
+                  id="login-toggle"
+                  type="button"
+                  class="password-toggle"
+                  @click="state.showedNew = !state.showedNew"
+                >
+                  <i v-if="state.showedNew" class="far fa-eye-slash"></i>
+                  <i v-else class="far fa-eye"></i>
+                </button>
+                <div class="input-line"></div>
+              </div>
+              <div class="error-message" :class="{ show: v$.new.$error }">
+                {{ v$.new.$errors[0]?.$message }}
+              </div>
+            </div>
+
+            <div class="form-group">
+              <div class="input-wrapper">
+                <i class="fas fa-lock input-icon"></i>
+                <input
+                  v-model="state.repeatNew"
+                  :type="!state.showedRepeatNew ? 'password' : 'text'"
+                  class="form-input"
+                  placeholder="Potwórz hasło"
+                  :class="{ invalid: v$.repeatNew.$error }"
+                  required
+                />
+                <button
+                  id="login-toggle"
+                  type="button"
+                  class="password-toggle"
+                  @click="state.showedRepeatNew = !state.showedRepeatNew"
+                >
+                  <i v-if="state.showedRepeatNew" class="far fa-eye-slash"></i>
+                  <i v-else class="far fa-eye"></i>
+                </button>
+                <div class="input-line"></div>
+              </div>
+              <div class="error-message" :class="{ show: v$.repeatNew.$error }">
+                {{ v$.repeatNew.$errors[0]?.$message }}
+              </div>
+            </div>
+
+            <button class="btn-primary" @click="handleChangePassword">
+              <i class="fas fa-edit"></i>
+              Zmień hasło
+            </button>
+          </template>
+        </div>
+
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <div class="settings-card-title">
+              <div class="nav-icon">
                 <i class="fas fa-coffee"></i>
               </div>
               <h2>Ustawienia Javy</h2>
@@ -155,56 +364,7 @@ const resetSettings = (): void => {
 -XX:+UnlockExperimentalVMOptions -XX:+UseG1GC
             </textarea>
           </div>
-
-          <!-- <div class="setting-group">
-            <label>Optymalizacja</label>
-            <div class="checkbox-group">
-              <label class="checkbox">
-                <input type="checkbox" checked />
-                <span>Użyj G1GC</span>
-              </label>
-              <label class="checkbox">
-                <input type="checkbox" checked />
-                <span>Optymalizacja CPU</span>
-              </label>
-            </div>
-          </div> -->
         </div>
-
-        <!-- <div class="settings-card">
-          <div class="settings-card-header">
-            <i class="fas fa-rocket"></i>
-            <h3>Ustawienia Launchera</h3>
-          </div>
-
-          <div class="setting-group">
-            <label>Motywy</label>
-            <div class="theme-selector">
-              <div class="theme-option active" data-theme="dark">
-                <div class="theme-preview dark"></div>
-                <span>Ciemny</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="setting-group">
-            <label>Opcje</label>
-            <div class="checkbox-group">
-              <label class="checkbox">
-                <input type="checkbox" checked />
-                <span>Automatyczne aktualizacje</span>
-              </label>
-              <label class="checkbox">
-                <input type="checkbox" />
-                <span>Minimalizuj po uruchomieniu</span>
-              </label>
-              <label class="checkbox">
-                <input type="checkbox" checked />
-                <span>Powiadomienia Discord</span>
-              </label>
-            </div>
-          </div>
-        </div> -->
       </div>
 
       <div class="settings-actions">

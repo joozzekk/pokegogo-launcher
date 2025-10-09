@@ -258,11 +258,13 @@ body {
 }
 
 .form-group {
-  margin-bottom: 1.8rem;
+  margin-bottom: 1.5rem;
   position: relative;
 }
 .input-wrapper {
   position: relative;
+  overflow: hidden;
+  border-radius: var(--border-radius-small);
 }
 .form-input {
   width: 100%;
@@ -755,4 +757,8 @@ body {
   to {
     opacity: 1;
   }
+}
+
+.mb-5 {
+  margin-bottom: 1.25rem;
 }
