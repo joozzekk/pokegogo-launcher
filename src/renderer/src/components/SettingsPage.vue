@@ -90,8 +90,6 @@ onMounted(() => {
     displayRef.value.textContent = `${generalStore.settings.ram}GB`
     displayRef.value.style.left = percent.value + 'px'
   }
-
-  state.email = userStore.user?.email ?? ''
 })
 
 const saveSettings = (): void => {
@@ -106,7 +104,7 @@ const resetSettings = (): void => {
 
 const handleChangePassword = async (): Promise<void> => {
   const isValid = await v$.value.$validate()
-  if (!isValid) return
+  if (!isValid || !userStore.user) return
 
   try {
     const res = await changePassword(userStore.user?.nickname, state.old, state.new)
@@ -125,9 +123,16 @@ const handleChangePassword = async (): Promise<void> => {
   }
 }
 
+watch(
+  () => userStore.user,
+  (newUser) => {
+    state.email = newUser?.email ?? ''
+  }
+)
+
 const handleChangeEmail = async (): Promise<void> => {
   const isValid = await emailV$.value.$validate()
-  if (!isValid) return
+  if (!isValid || !userStore.user) return
 
   try {
     const res = await changeEmail(userStore.user?.nickname, state.email)
