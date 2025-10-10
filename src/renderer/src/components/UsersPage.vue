@@ -82,7 +82,7 @@ onMounted(async () => {
               <th>Nick gracza</th>
               <th>ID gracza</th>
               <th>HWID</th>
-              <th>Akcje</th>
+              <th></th>
             </tr>
           </thead>
           <tbody id="logsTableBody">
@@ -111,7 +111,7 @@ onMounted(async () => {
                 <td style="font-family: monospace; font-size: 0.9rem">
                   {{ player?.machineId ? player.machineId.slice(0, 30) + '...' : '(Brak)' }}
                 </td>
-                <td>
+                <td class="reverse">
                   <button class="show-more-btn" @click="togglePlayerDetails(player.uuid)">
                     <i
                       :class="
@@ -230,7 +230,7 @@ onMounted(async () => {
   background: var(--bg-input);
   border: 2px solid var(--border-primary);
   border-radius: var(--border-radius-small);
-  padding: 16px 20px 16px 50px;
+  padding: 1rem 1.25rem 1rem 3.5rem;
   font-size: 1rem;
   color: var(--text-primary);
   font-family: inherit;
@@ -272,6 +272,10 @@ onMounted(async () => {
   gap: 10px;
   white-space: nowrap;
 }
+.reverse {
+  display: flex;
+  flex-direction: row-reverse;
+}
 .search-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
@@ -283,12 +287,12 @@ onMounted(async () => {
 }
 .logs-table {
   width: 100%;
-  height: 100%;
+  margin-bottom: 6.8rem;
   border-collapse: collapse;
 }
 .logs-table th {
   background: rgba(26, 26, 31, 1);
-  padding: 1.5rem 1.25rem;
+  padding: 0.8rem 1.1rem;
   text-align: left;
   font-weight: 600;
   color: var(--primary1);
@@ -298,7 +302,7 @@ onMounted(async () => {
   z-index: 10;
 }
 .logs-table td {
-  padding: 1.5rem 1.1rem;
+  padding: 0.8rem 1.1rem;
   border-bottom: 1px solid var(--border-primary);
   color: var(--text-border);
 }
@@ -322,7 +326,7 @@ onMounted(async () => {
 }
 .show-more-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+  box-shadow: 0 0 15px rgba(0, 136, 255, 0.3);
 }
 .player-details {
   display: block;
@@ -334,7 +338,7 @@ onMounted(async () => {
 .player-details-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
+  gap: 1rem;
 }
 .detail-item {
   background: var(--bg-input);
@@ -386,20 +390,12 @@ onMounted(async () => {
   }
 }
 @media (max-width: 768px) {
-  .container {
-    padding: 15px;
-  }
   .search-bar {
     flex-direction: column;
     align-items: stretch;
   }
   .search-input-wrapper {
     min-width: auto;
-  }
-  .logs-table th,
-  .logs-table td {
-    padding: 12px 8px;
-    font-size: 0.9rem;
   }
   .player-details-grid {
     grid-template-columns: 1fr;

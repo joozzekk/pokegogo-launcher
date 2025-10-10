@@ -8,6 +8,7 @@ import { useLaunchService } from './launch-service'
 import { getMaxRAMInGB } from '../utils'
 import { machineId } from 'node-machine-id'
 import { address } from 'address/promises'
+import { createTray } from './tray-service'
 
 const createMainWindow = (): BrowserWindow => {
   const mainWindow = new BrowserWindow({
@@ -26,6 +27,8 @@ const createMainWindow = (): BrowserWindow => {
       sandbox: false
     }
   })
+
+  createTray(mainWindow)
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.webContents.send('change-max-ram', Math.floor(getMaxRAMInGB() * 0.75))

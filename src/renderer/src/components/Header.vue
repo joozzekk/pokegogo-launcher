@@ -4,6 +4,7 @@ import useGeneralStore from '@renderer/stores/general-store'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 
 const generalStore = useGeneralStore()
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const updateInterval = ref<any>()
 const isInstallingUpdate = ref<boolean>(false)
 

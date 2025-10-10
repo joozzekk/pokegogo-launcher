@@ -102,13 +102,13 @@ export async function launchMinecraft(
   client.on('data', (data) => {
     if (data.includes('Initializing Client')) {
       win.webContents.send('change-launch-state', JSON.stringify('minecraft-started'))
+      win.hide()
     }
-    console.log('DATA', data)
   })
   client.on('error', (...args) => console.log('ERROR', ...args))
   client.on('progress', (...args) => console.log('PROGRESS', ...args))
   client.on('close', () => {
     win.webContents.send('change-launch-state', JSON.stringify('minecraft-closed'))
-    console.log('Minecraft został zamknięty')
+    win.show()
   })
 }

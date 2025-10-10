@@ -129,7 +129,10 @@ async function downloadAll(
   }
 }
 
-export async function copyMCFiles(mainWindow: BrowserWindow, signal: AbortSignal): Promise<any> {
+export async function copyMCFiles(
+  mainWindow: BrowserWindow,
+  signal: AbortSignal
+): Promise<string | undefined> {
   const client = new ftp.Client(1000 * 120)
   const localRoot = path.join(app.getPath('userData'), 'mcfiles')
   const markerFile = path.join(localRoot, '.mcfiles_installed')
@@ -178,4 +181,5 @@ export async function copyMCFiles(mainWindow: BrowserWindow, signal: AbortSignal
   } finally {
     client.close()
   }
+  return
 }

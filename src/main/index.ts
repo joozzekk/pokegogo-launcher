@@ -1,3 +1,4 @@
+import { installExtension, VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 import { app, BrowserWindow } from 'electron'
 import { electronApp, optimizer } from '@electron-toolkit/utils'
 import useWindowService from './services/window-service'
@@ -12,6 +13,7 @@ app.whenReady().then(async () => {
   const appUpdater = useAppUpdater(mainWindow)
 
   await startApp(appUpdater, mainWindow)
+  await installExtension(VUEJS_DEVTOOLS)
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)

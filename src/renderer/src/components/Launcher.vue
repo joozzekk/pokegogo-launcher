@@ -14,6 +14,7 @@ import {
 } from '@renderer/api/endpoints'
 import useGeneralStore from '@renderer/stores/general-store'
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const refreshInterval = ref<any>(null)
 const generalStore = useGeneralStore()
 const accountType = localStorage.getItem('LOGIN_TYPE')
