@@ -2,7 +2,7 @@
 import { changeEmail, changePassword } from '@renderer/api/endpoints'
 import useGeneralStore from '@renderer/stores/general-store'
 import useUserStore from '@renderer/stores/user-store'
-import { calculateValueFromPercentage, showToast } from '@renderer/utils'
+import { calculateValueFromPercentage, MIN_RAM, showToast } from '@renderer/utils'
 import useVuelidate from '@vuelidate/core'
 import { helpers, required, sameAs } from '@vuelidate/validators'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
@@ -172,15 +172,17 @@ const handleChangeEmail = async (): Promise<void> => {
                 ref="sliderRef"
                 v-model="generalStore.settings.ram"
                 type="range"
-                :min="6"
+                :min="MIN_RAM"
                 :max="generalStore.settings.maxRAM"
                 :step="0.5"
               />
               <div id="ramDisplay" ref="displayRef" class="ram-display">6 GB</div>
               <div class="ram-markers">
-                <span>6GB</span>
+                <span>{{ MIN_RAM }}GB</span>
                 <span
-                  >{{ 6 + parseFloat(((generalStore.settings.maxRAM - 6) / 2).toFixed(1)) }}GB</span
+                  >{{
+                    MIN_RAM + parseFloat(((generalStore.settings.maxRAM - MIN_RAM) / 2).toFixed(1))
+                  }}GB</span
                 >
                 <span>{{ generalStore.settings.maxRAM }}GB</span>
               </div>
@@ -218,6 +220,62 @@ const handleChangeEmail = async (): Promise<void> => {
                 @click="generalStore.settings.displayMode = 'Pełny ekran'"
               >
                 Pełny ekran
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <div class="settings-card-title">
+              <div class="nav-icon">
+                <i class="fas fa-coffee"></i>
+              </div>
+              <h2>Ustawienia Javy</h2>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <label>Wersja Java</label>
+            <select class="setting-select" disabled>
+              <option value="21">Java 21 (Zalecana)</option>
+            </select>
+          </div>
+
+          <div class="setting-group">
+            <label>Argumenty JVM</label>
+            <textarea class="jvm-args" disabled style="resize: none !important; color: #787878">
+-XX:+UnlockExperimentalVMOptions -XX:+UseG1GC
+            </textarea>
+          </div>
+        </div>
+
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <div class="settings-card-title">
+              <div class="nav-icon">
+                <i class="fas fa-user"></i>
+              </div>
+              <h2>Ustawienia launchera</h2>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <label>Wyłączanie launchera</label>
+            <div class="toggle-group">
+              <button
+                class="toggle-option"
+                :class="{ active: generalStore.settings.hideToTray === true }"
+                @click="generalStore.setHideToTray(true)"
+              >
+                Do zasobnika
+              </button>
+              <button
+                class="toggle-option"
+                :class="{ active: generalStore.settings.hideToTray === false }"
+                @click="generalStore.setHideToTray(false)"
+              >
+                Całkowite wyłączanie
               </button>
             </div>
           </div>
@@ -344,31 +402,6 @@ const handleChangeEmail = async (): Promise<void> => {
               Zmień hasło
             </button>
           </template>
-        </div>
-
-        <div class="settings-card">
-          <div class="settings-card-header">
-            <div class="settings-card-title">
-              <div class="nav-icon">
-                <i class="fas fa-coffee"></i>
-              </div>
-              <h2>Ustawienia Javy</h2>
-            </div>
-          </div>
-
-          <div class="setting-group">
-            <label>Wersja Java</label>
-            <select class="setting-select" disabled>
-              <option value="21">Java 21 (Zalecana)</option>
-            </select>
-          </div>
-
-          <div class="setting-group">
-            <label>Argumenty JVM</label>
-            <textarea class="jvm-args" disabled style="resize: none !important; color: #787878">
--XX:+UnlockExperimentalVMOptions -XX:+UseG1GC
-            </textarea>
-          </div>
         </div>
       </div>
 

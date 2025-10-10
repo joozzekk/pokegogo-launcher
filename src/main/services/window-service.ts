@@ -63,9 +63,9 @@ const createMainWindow = (): BrowserWindow => {
     }
   })
 
-  ipcMain.on('window-close', () => {
+  ipcMain.on('window-close', (_, isHideToTray: boolean = true) => {
     const win = BrowserWindow.getFocusedWindow()
-    if (win) win.close()
+    if (win) isHideToTray ? win.hide() : win.close()
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {

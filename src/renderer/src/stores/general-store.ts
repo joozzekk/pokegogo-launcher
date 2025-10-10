@@ -1,3 +1,4 @@
+import { MIN_RAM } from '@renderer/utils'
 import { defineStore } from 'pinia'
 import { reactive, ref } from 'vue'
 
@@ -5,18 +6,23 @@ const useGeneralStore = defineStore('general', () => {
   const appVersion = ref<string>('dev')
   const isUpdateAvailable = ref<boolean>(false)
 
-  const settings = reactive({
+  const initialSettings = {
+    hideToTray: true,
     machineId: '',
     macAddress: '',
     ipAddress: '',
     resolution: '1366x768',
-    ram: 6,
+    ram: MIN_RAM,
     maxRAM: 16,
     version: 'PokemonGoGo.pl',
     displayMode: 'Okno',
     theme: 'Dark',
     autoUpdate: false
-  })
+  }
+
+  const savedSettings = localStorage.getItem('launcherSettings')
+
+  const settings = reactive(savedSettings ? JSON.parse(savedSettings) : initialSettings)
 
   const isOpeningGame = ref<boolean>(false)
   const currentState = ref<string>('start')
@@ -47,11 +53,17 @@ const useGeneralStore = defineStore('general', () => {
     isUpdateAvailable.value = update
   }
 
+  const setHideToTray = (hide: boolean): void => {
+    settings.hideToTray = hide
+  }
+
   const loadSettings = (): void => {
     const savedSettings = localStorage.getItem('launcherSettings')
     if (!savedSettings) return
     try {
       const loaded = JSON.parse(savedSettings)
+
+      if (loaded.hideToTray) settings.hideToTray = loaded.hideToTray
       if (loaded.resolution) settings.resolution = loaded.resolution
       if (loaded.ram) settings.ram = Number(loaded.ram)
       if (loaded.version) settings.version = loaded.version
@@ -68,7 +80,8 @@ const useGeneralStore = defineStore('general', () => {
   }
 
   const resetSettings = (): void => {
-    settings.ram = 6
+    settings.hideToTray = true
+    settings.ram = MIN_RAM
     settings.version = 'PokemonGoGo.pl'
     settings.resolution = '1280x720'
     settings.displayMode = 'Okno'
@@ -99,7 +112,8 @@ const useGeneralStore = defineStore('general', () => {
     setIsOpeningGame,
     setCurrentState,
     setCurrentLog,
-    setMachineData
+    setMachineData,
+    setHideToTray
   }
 })
 

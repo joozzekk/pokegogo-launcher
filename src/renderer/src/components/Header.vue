@@ -17,7 +17,7 @@ const minimizeWindow = (): void => {
 }
 
 const closeWindow = (): void => {
-  window.electron.ipcRenderer.send('window-close')
+  window.electron.ipcRenderer.send('window-close', generalStore.settings.hideToTray)
   window.electron.ipcRenderer.invoke('exit-launch')
 }
 

@@ -4,7 +4,7 @@ import { IUser } from '@renderer/env'
 import useUserStore from '@renderer/stores/user-store'
 import { showToast } from '@renderer/utils'
 import { format } from 'date-fns'
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 
 const userStore = useUserStore()
 
@@ -44,11 +44,11 @@ watch(searchQuery, () => {
 })
 
 function togglePlayerDetails(uuid: string): void {
-  if (expandedPlayer.value?.uuid === uuid) {
+  if (expandedPlayer.value && getPlayerID(expandedPlayer.value) === uuid) {
     expandedPlayer.value = null
     return
   }
-  expandedPlayer.value = allPlayers.value?.find((p) => p.uuid === uuid) ?? null
+  expandedPlayer.value = allPlayers.value?.find((p) => getPlayerID(p) === uuid) ?? null
 }
 
 const copyUUID = (uuid: string): void => {
@@ -82,6 +82,15 @@ const handleLauncherUnban = async (uuid: string): Promise<void> => {
   // await loadPlayerData()
   showToast('Pomyślnie odbanowano użytkownika ', 'success')
   // }
+}
+
+const getPlayerID = (player: IUser): string => {
+  if (player?.mcid) {
+    return player.mcid
+  }
+
+  if (player?.uuid) return player.uuid
+  return '(Brak)'
 }
 
 onMounted(async () => {
@@ -123,13 +132,13 @@ onMounted(async () => {
             </tr>
           </thead>
           <tbody id="logsTableBody">
-            <template v-for="player in filteredPlayers" :key="player.uuid">
+            <template v-for="player in filteredPlayers" :key="getPlayerID(player)">
               <tr>
                 <td>
                   <strong>{{ player.nickname }}</strong>
                 </td>
                 <td>
-                  {{ player?.mcid ? player.mcid : player?.uuid ? player.uuid : '(Brak)' }}
+                  {{ getPlayerID(player) }}
                   <span
                     class="copy-btn"
                     @click="
@@ -173,14 +182,18 @@ onMounted(async () => {
                     >
                       <i :class="'fas fa-ban'"></i>
                     </button>
-                    <button v-else class="unban-btn" @click="handleLauncherUnban(player.uuid)">
+                    <button
+                      v-else
+                      class="unban-btn"
+                      @click="handleLauncherUnban(getPlayerID(player))"
+                    >
                       <i :class="'fas fa-rotate-left'"></i>
                     </button>
                   </template>
-                  <button class="show-more-btn" @click="togglePlayerDetails(player.uuid)">
+                  <button class="show-more-btn" @click="togglePlayerDetails(getPlayerID(player))">
                     <i
                       :class="
-                        expandedPlayer?.uuid === player.uuid
+                        !!expandedPlayer && getPlayerID(expandedPlayer) === getPlayerID(player)
                           ? 'fas fa-chevron-up'
                           : 'fas fa-chevron-down'
                       "
@@ -189,8 +202,8 @@ onMounted(async () => {
                 </td>
               </tr>
               <!-- Expanded details row right after player row -->
-              <tr v-if="expandedPlayer?.uuid === player.uuid">
-                <td colspan="4" style="padding: 0">
+              <tr v-if="!!expandedPlayer && getPlayerID(expandedPlayer) === getPlayerID(player)">
+                <td colspan="5" style="padding: 0">
                   <div class="player-details">
                     <div class="player-details-grid">
                       <div class="detail-item">
@@ -464,6 +477,7 @@ onMounted(async () => {
   animation: slideDown 0.3s ease-out;
 }
 .player-details-grid {
+  width: 100%;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1rem;

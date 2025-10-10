@@ -1,3 +1,5 @@
+export const MIN_RAM = 5
+
 export const createParticles = (element: HTMLElement): void => {
   const rect = element.getBoundingClientRect()
   const particles = 20
@@ -72,7 +74,7 @@ export const calculateValueFromPercentage = (
   sliderWidth: number,
   maxNumber: number = 16
 ): number => {
-  const min = 6
+  const min = MIN_RAM
   const max = maxNumber
   return Math.fround(((value - min) / (max - min)) * sliderWidth)
 }
