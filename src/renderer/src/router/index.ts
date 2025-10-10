@@ -7,6 +7,7 @@ import ChangelogPage from '@renderer/components/ChangelogPage.vue'
 import SettingsPage from '@renderer/components/SettingsPage.vue'
 import ShopPage from '@renderer/components/ShopPage.vue'
 import LoadingPage from '@renderer/components/LoadingPage.vue'
+import UsersPage from '@renderer/components/UsersPage.vue'
 
 const routes = [
   { path: '/', component: LoginPage },
@@ -19,7 +20,12 @@ const routes = [
       { path: 'home', name: 'home', component: HomePage },
       { path: 'shop', name: 'shop', component: ShopPage },
       { path: 'settings', name: 'settings', component: SettingsPage },
-      { path: 'changelog', name: 'changelog', component: ChangelogPage }
+      { path: 'changelog', name: 'changelog', component: ChangelogPage },
+      {
+        path: 'users',
+        name: 'users',
+        component: UsersPage
+      }
     ]
   }
 ]

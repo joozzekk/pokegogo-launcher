@@ -2,13 +2,6 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
-interface IUser {
-  uuid: string
-  nickname?: string
-  name: string
-  email?: string
-}
-
 const useUserStore = defineStore('user', () => {
   const user = ref(null as IUser | null)
   const accountType = localStorage.getItem('LOGIN_TYPE')

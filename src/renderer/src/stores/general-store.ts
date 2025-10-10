@@ -6,6 +6,9 @@ const useGeneralStore = defineStore('general', () => {
   const isUpdateAvailable = ref<boolean>(false)
 
   const settings = reactive({
+    machineId: '',
+    macAddress: '',
+    ipAddress: '',
     resolution: '1366x768',
     ram: 6,
     maxRAM: 16,
@@ -74,6 +77,12 @@ const useGeneralStore = defineStore('general', () => {
     saveSettings()
   }
 
+  const setMachineData = (machineId: string, macAdress: string, ipAddress: string): void => {
+    settings.machineId = machineId
+    settings.macAddress = macAdress
+    settings.ipAddress = ipAddress
+  }
+
   return {
     settings,
     appVersion,
@@ -89,7 +98,8 @@ const useGeneralStore = defineStore('general', () => {
     currentLog,
     setIsOpeningGame,
     setCurrentState,
-    setCurrentLog
+    setCurrentLog,
+    setMachineData
   }
 })
 

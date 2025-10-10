@@ -75,11 +75,27 @@ const handleChangeRoute = (newRoute: string): void => {
         @click="handleChangeRoute('/app/settings')"
       >
         <div class="nav-icon">
-          <i class="fas fa-cog"></i>
+          <i class="fas fa-list"></i>
         </div>
         <span>Ustawienia</span>
         <div class="nav-indicator"></div>
       </a>
+      <a
+        v-if="userStore.user?.role === 'admin'"
+        href="#"
+        class="nav-item"
+        :class="{
+          active: $route.path === '/app/users'
+        }"
+        @click="handleChangeRoute('/app/users')"
+      >
+        <div class="nav-icon">
+          <i class="fas fa-users"></i>
+        </div>
+        <span>Użytkownicy</span>
+        <div class="nav-indicator"></div>
+      </a>
+
       <!-- <a
         href="#"
         class="nav-item"

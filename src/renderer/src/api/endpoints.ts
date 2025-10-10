@@ -1,3 +1,4 @@
+import { type IUser } from '@renderer/env'
 import api from '@renderer/utils/client'
 
 export const fetchLogin = async (
@@ -51,6 +52,50 @@ export const changeEmail = async (nickname: string, newEmail: string): Promise<a
     nickname,
     newEmail
   })
+
+  return res.data
+}
+
+export const fetchAllPlayers = async (nickname: string): Promise<any> => {
+  const res = await api.post('/users/all', {
+    nickname
+  })
+
+  return res.data
+}
+
+export const updateMachineData = async (
+  nickname: string,
+  data: {
+    machineId: string
+    macAddress: string
+    ipAddress: string
+  }
+): Promise<any> => {
+  const res = await api.post('/users/machine-data', {
+    nickname,
+    ...data
+  })
+
+  return res.data
+}
+
+export const updateProfileData = async (
+  nickname: string,
+  data: {
+    accountType: string
+  }
+): Promise<any> => {
+  const res = await api.post('/users/profile-data', {
+    nickname,
+    ...data
+  })
+
+  return res.data
+}
+
+export const updateBackendUserFromMicrosoft = async (data: Partial<IUser>): Promise<any> => {
+  const res = await api.post('/users/from-microsoft', data)
 
   return res.data
 }

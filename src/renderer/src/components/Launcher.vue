@@ -6,9 +6,16 @@ import Header from '@renderer/components/Header.vue'
 import Sidebar from '@renderer/components/Sidebar.vue'
 import { refreshMicrosoftToken } from '@renderer/services/refresh-service'
 import useUserStore from '@renderer/stores/user-store'
-import { fetchProfile } from '@renderer/api/endpoints'
+import {
+  fetchProfile,
+  updateBackendUserFromMicrosoft,
+  updateMachineData,
+  updateProfileData
+} from '@renderer/api/endpoints'
+import useGeneralStore from '@renderer/stores/general-store'
 
 const refreshInterval = ref<any>(null)
+const generalStore = useGeneralStore()
 const accountType = localStorage.getItem('LOGIN_TYPE')
 const userStore = useUserStore()
 
@@ -33,7 +40,11 @@ const loadProfile = async (): Promise<void> => {
       if (json) {
         const data = JSON.parse(json)
         const profile = data?.profile
-        userStore.setUser(profile)
+        userStore.setUser({
+          ...profile,
+          uuid: profile.id,
+          nickname: profile.name
+        })
       }
       break
   }
@@ -42,7 +53,7 @@ const loadProfile = async (): Promise<void> => {
 onMounted(async () => {
   initAnimations()
 
-  if (localStorage.getItem('LOGIN_TYPE')?.includes('microsoft') && localStorage.getItem('token')) {
+  if (accountType?.includes('microsoft') && localStorage.getItem('token')) {
     refreshInterval.value = setInterval(
       async () => {
         await refreshMicrosoftToken(localStorage.getItem('token'))
@@ -51,6 +62,33 @@ onMounted(async () => {
     )
   }
   await loadProfile()
+
+  if (localStorage.getItem('mcToken')) {
+    const userData = await updateBackendUserFromMicrosoft({
+      nickname: userStore.user?.name,
+      mcid: userStore.user?.uuid
+    })
+
+    userStore.setUser({
+      ...userStore.user,
+      ...userData
+    })
+  }
+
+  const machineData = await window.electron?.ipcRenderer?.invoke('machine-data')
+  generalStore.setMachineData(machineData.machineId, machineData.macAddress, machineData.ipAddress)
+
+  if (userStore.user) {
+    await updateProfileData(userStore.user?.nickname, {
+      accountType: accountType ?? ''
+    })
+  }
+
+  await updateMachineData(userStore.user?.nickname, {
+    machineId: generalStore.settings.machineId,
+    macAddress: generalStore.settings.macAddress,
+    ipAddress: generalStore.settings.ipAddress
+  })
 })
 
 onUnmounted(() => {

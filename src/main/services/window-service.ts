@@ -6,6 +6,8 @@ import { AppUpdater } from 'electron-updater'
 import { useLoginService } from './login-service'
 import { useLaunchService } from './launch-service'
 import { getMaxRAMInGB } from '../utils'
+import { machineId } from 'node-machine-id'
+import { address } from 'address/promises'
 
 const createMainWindow = (): BrowserWindow => {
   const mainWindow = new BrowserWindow({
@@ -28,6 +30,16 @@ const createMainWindow = (): BrowserWindow => {
   mainWindow.on('ready-to-show', () => {
     mainWindow.webContents.send('change-max-ram', Math.floor(getMaxRAMInGB() * 0.75))
     mainWindow.webContents.send('change-version', app.getVersion())
+  })
+
+  ipcMain.handle('machine-data', async () => {
+    const hwid = await machineId()
+    const addr = await address()
+    return {
+      machineId: hwid,
+      macAddress: addr?.mac,
+      ipAddress: addr?.ip
+    }
   })
 
   ipcMain.on('window-minimize', () => {

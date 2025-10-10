@@ -34,7 +34,7 @@ const parsedAppVersion = computed(() => {
   return generalStore.appVersion.split('-')[1]
 })
 
-onMounted(() => {
+onMounted(async () => {
   updateInterval.value = setInterval(() => {
     window.electron.ipcRenderer.invoke('check-for-update')
     console.log('Checking for update..')

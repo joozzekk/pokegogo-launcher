@@ -11,3 +11,19 @@ interface ImportMeta {
 interface global {
   PokeGoGoLogin: class
 }
+
+export interface IUser {
+  uuid: string
+  mcid: string
+  email: string
+  nickname: string
+  createdAt: string
+  isBanned: boolean
+  machineId?: string
+  lastLoginAt: string
+  totalPlayTime: string
+  accountType: string
+  macAddress: string
+  ipAddress: string
+  role: string
+}

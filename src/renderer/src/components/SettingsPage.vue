@@ -77,7 +77,7 @@ watch(
   { immediate: true }
 )
 
-onMounted(() => {
+onMounted(async () => {
   generalStore.loadSettings()
   if (sliderRef.value) {
     percent.value = calculateValueFromPercentage(
