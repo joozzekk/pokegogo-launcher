@@ -4,7 +4,7 @@ import { IUser } from '@renderer/env'
 import useUserStore from '@renderer/stores/user-store'
 import { showToast } from '@renderer/utils'
 import { format } from 'date-fns'
-import { ref, onMounted, watch, computed } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 
 const userStore = useUserStore()
 
@@ -33,7 +33,7 @@ watch(searchQuery, () => {
   filteredPlayers.value = allPlayers.value.filter(
     (p) =>
       p.nickname.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      p.uuid.includes(searchQuery.value)
+      getPlayerID(p).includes(searchQuery.value)
   )
 
   if (!filteredPlayers.value?.length) {
@@ -60,7 +60,7 @@ const handleLauncherBan = async (uuid: string): Promise<void> => {
 
   // const res = await banPlayer(userStore.user?.nickname, uuid)
 
-  const player = allPlayers.value?.find((p) => p.uuid === uuid)
+  const player = allPlayers.value?.find((p) => getPlayerID(p) === uuid)
   if (!player) return
 
   player.isBanned = true
@@ -73,7 +73,7 @@ const handleLauncherUnban = async (uuid: string): Promise<void> => {
   if (!userStore.user) return
 
   // const res = await unbanPlayer(userStore.user?.nickname, uuid)
-  const player = allPlayers.value?.find((p) => p.uuid === uuid)
+  const player = allPlayers.value?.find((p) => getPlayerID(p) === uuid)
   if (!player) return
 
   player.isBanned = false
@@ -85,10 +85,8 @@ const handleLauncherUnban = async (uuid: string): Promise<void> => {
 }
 
 const getPlayerID = (player: IUser): string => {
-  if (player?.mcid) {
-    return player.mcid
-  }
-
+  console.log(player)
+  if (player?.mcid) return player.mcid
   if (player?.uuid) return player.uuid
   return '(Brak)'
 }
@@ -178,7 +176,7 @@ onMounted(async () => {
                     <button
                       v-if="!player?.isBanned"
                       class="ban-btn"
-                      @click="handleLauncherBan(player.uuid)"
+                      @click="handleLauncherBan(getPlayerID(player))"
                     >
                       <i :class="'fas fa-ban'"></i>
                     </button>
