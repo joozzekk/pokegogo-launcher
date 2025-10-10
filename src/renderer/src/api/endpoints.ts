@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { type IUser } from '@renderer/env'
 import api from '@renderer/utils/client'
 
@@ -96,6 +97,26 @@ export const updateProfileData = async (
 
 export const updateBackendUserFromMicrosoft = async (data: Partial<IUser>): Promise<any> => {
   const res = await api.post('/users/from-microsoft', data)
+
+  return res.data
+}
+
+export const banPlayer = async (nickname: string, uuid: string, pin: string): Promise<any> => {
+  const res = await api.post('/users/launcher-ban', {
+    nickname,
+    uuid,
+    pin
+  })
+
+  return res.data
+}
+
+export const unbanPlayer = async (nickname: string, uuid: string, pin: string): Promise<any> => {
+  const res = await api.post('/users/launcher-unban', {
+    nickname,
+    uuid,
+    pin
+  })
 
   return res.data
 }

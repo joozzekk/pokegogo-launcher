@@ -2,6 +2,7 @@
 import { fetchAllPlayers } from '@renderer/api/endpoints'
 import { IUser } from '@renderer/env'
 import useUserStore from '@renderer/stores/user-store'
+import { showToast } from '@renderer/utils'
 import { format } from 'date-fns'
 import { ref, onMounted, watch } from 'vue'
 
@@ -29,8 +30,10 @@ async function loadPlayerData(): Promise<void> {
 }
 
 watch(searchQuery, () => {
-  filteredPlayers.value = allPlayers.value.filter((p) =>
-    p.nickname.toLowerCase().includes(searchQuery.value.toLowerCase())
+  filteredPlayers.value = allPlayers.value.filter(
+    (p) =>
+      p.nickname.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      p.uuid.includes(searchQuery.value)
   )
 
   if (!filteredPlayers.value?.length) {
@@ -46,6 +49,39 @@ function togglePlayerDetails(uuid: string): void {
     return
   }
   expandedPlayer.value = allPlayers.value?.find((p) => p.uuid === uuid) ?? null
+}
+
+const copyUUID = (uuid: string): void => {
+  navigator.clipboard.writeText(uuid)
+}
+
+const handleLauncherBan = async (uuid: string): Promise<void> => {
+  if (!userStore.user) return
+
+  // const res = await banPlayer(userStore.user?.nickname, uuid)
+
+  const player = allPlayers.value?.find((p) => p.uuid === uuid)
+  if (!player) return
+
+  player.isBanned = true
+  // if (res) {
+  // await loadPlayerData()
+  showToast('Pomyślnie zbanowano użytkownika ', 'error')
+  // }
+}
+const handleLauncherUnban = async (uuid: string): Promise<void> => {
+  if (!userStore.user) return
+
+  // const res = await unbanPlayer(userStore.user?.nickname, uuid)
+  const player = allPlayers.value?.find((p) => p.uuid === uuid)
+  if (!player) return
+
+  player.isBanned = false
+
+  // if (res) {
+  // await loadPlayerData()
+  showToast('Pomyślnie odbanowano użytkownika ', 'success')
+  // }
 }
 
 onMounted(async () => {
@@ -79,9 +115,10 @@ onMounted(async () => {
         <table v-else class="logs-table">
           <thead>
             <tr>
-              <th>Nick gracza</th>
-              <th>ID gracza</th>
-              <th>HWID</th>
+              <th>Nick</th>
+              <th>ID</th>
+              <th>Status konta</th>
+              <th>Online?</th>
               <th></th>
             </tr>
           </thead>
@@ -90,28 +127,56 @@ onMounted(async () => {
               <tr>
                 <td>
                   <strong>{{ player.nickname }}</strong>
+                </td>
+                <td>
+                  {{ player?.mcid ? player.mcid : player?.uuid ? player.uuid : '(Brak)' }}
                   <span
-                    v-if="player.isBanned"
-                    style="
-                      background: #ff4757;
-                      color: white;
+                    class="copy-btn"
+                    @click="
+                      copyUUID(player?.mcid ? player.mcid : player?.uuid ? player.uuid : '(brak)')
+                    "
+                  >
+                    <i class="fa fa-copy" />
+                  </span>
+                </td>
+                <td style="font-family: monospace; font-size: 0.9rem">
+                  <span
+                    :style="`
+                      background: ${player.isBanned ? '#ff4757' : '#47ff57'} ;
+                      color: ${player.isBanned ? 'white' : 'black'};
                       padding: 2px 8px;
                       border-radius: 4px;
                       font-size: 0.75rem;
-                      font-weight: 500;
+                      font-weight: 800;
                       margin-left: 8px;
-                    "
+                    `"
                   >
-                    BANNED
+                    {{ player.isBanned ? 'BANNED' : 'ACTIVE' }}
                   </span>
                 </td>
                 <td>
-                  {{ player?.uuid ? player.uuid.slice(0, 16) + '...' : '(Brak)' }}
+                  <div style="display: flex; gap: 0.5rem; align-items: center">
+                    <div
+                      class="online-dot"
+                      :style="{ background: !player?.isOnline ? '#ff4757' : '#00ff88' }"
+                    ></div>
+                    {{ player.isOnline ? 'Online' : 'Offline' }}
+                  </div>
                 </td>
-                <td style="font-family: monospace; font-size: 0.9rem">
-                  {{ player?.machineId ? player.machineId.slice(0, 30) + '...' : '(Brak)' }}
-                </td>
+
                 <td class="reverse">
+                  <template v-if="player?.role !== 'admin'">
+                    <button
+                      v-if="!player?.isBanned"
+                      class="ban-btn"
+                      @click="handleLauncherBan(player.uuid)"
+                    >
+                      <i :class="'fas fa-ban'"></i>
+                    </button>
+                    <button v-else class="unban-btn" @click="handleLauncherUnban(player.uuid)">
+                      <i :class="'fas fa-rotate-left'"></i>
+                    </button>
+                  </template>
                   <button class="show-more-btn" @click="togglePlayerDetails(player.uuid)">
                     <i
                       :class="
@@ -120,9 +185,6 @@ onMounted(async () => {
                           : 'fas fa-chevron-down'
                       "
                     ></i>
-                    <span>{{
-                      expandedPlayer?.uuid === player.uuid ? 'Ukryj szczegóły' : 'Pokaż więcej'
-                    }}</span>
                   </button>
                 </td>
               </tr>
@@ -275,6 +337,7 @@ onMounted(async () => {
 .reverse {
   display: flex;
   flex-direction: row-reverse;
+  gap: 0.5rem;
 }
 .search-btn:hover {
   transform: translateY(-2px);
@@ -310,12 +373,28 @@ onMounted(async () => {
 .logs-table tr:hover {
   background: rgba(255, 255, 255, 0.03);
 }
+
+.copy-btn {
+  margin-left: 0.4rem;
+  padding: 0.2rem;
+  border-radius: 0.1rem;
+  background: rgba(0, 0, 0, 0.3);
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.copy-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.2);
+}
+
 .show-more-btn {
   background: linear-gradient(45deg, var(--primary1), var(--primary2));
   color: var(--bg-primary);
   border: none;
   border-radius: var(--border-radius-small);
-  padding: 8px 16px;
+  padding: 0.5rem;
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
@@ -323,6 +402,55 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.online-dot {
+  bottom: 4px;
+  right: -2px;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--bg-dark);
+  border-radius: 50%;
+}
+
+.unban-btn {
+  background: rgba(0, 255, 0, 0.6);
+  color: var(--bg-primary);
+  border: none;
+  border-radius: var(--border-radius-small);
+  padding: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: lightgreen;
+}
+
+.ban-btn {
+  background: rgba(255, 0, 0, 0.3);
+  color: var(--bg-primary);
+  border: none;
+  border-radius: var(--border-radius-small);
+  padding: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: red;
+}
+.unban-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+}
+.ban-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 15px rgba(255, 0, 0, 0.3);
 }
 .show-more-btn:hover {
   transform: translateY(-1px);

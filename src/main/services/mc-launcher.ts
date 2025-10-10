@@ -109,6 +109,7 @@ export async function launchMinecraft(
   client.on('progress', (...args) => console.log('PROGRESS', ...args))
   client.on('close', () => {
     win.webContents.send('change-launch-state', JSON.stringify('minecraft-closed'))
+    ipcMain.removeHandler('exit-launch')
     win.show()
   })
 }

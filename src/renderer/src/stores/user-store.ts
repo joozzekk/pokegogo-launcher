@@ -28,9 +28,9 @@ const useUserStore = defineStore('user', () => {
         localStorage.removeItem('mcToken')
         break
     }
+    router.push('/')
 
     await window.electron?.ipcRenderer?.invoke('exit-launch')
-    router.push('/')
   }
 
   return {
