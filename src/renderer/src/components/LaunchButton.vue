@@ -91,6 +91,13 @@ const handleKillVerify = async (): Promise<void> => {
 window.electron.ipcRenderer.on('change-launch-state', (_event, state: string) => {
   const parsedState = JSON.parse(state)
   generalStore.setCurrentState(parsedState)
+
+  if (parsedState === 'minecraft-closed') {
+    setTimeout(() => {
+      generalStore.setCurrentState('start')
+      generalStore.setIsOpeningGame(false)
+    }, 500)
+  }
 })
 
 window.electron.ipcRenderer.on('show-log', (_event, data: string, ended?: string) => {
