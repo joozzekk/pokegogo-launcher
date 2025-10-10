@@ -16,6 +16,8 @@ const noResultsVisible = ref(false)
 
 async function loadPlayerData(): Promise<void> {
   isLoadingPlayers.value = true
+  if (!userStore.user) return
+
   const res = await fetchAllPlayers(userStore.user.nickname)
 
   if (res) {
@@ -200,6 +202,8 @@ onMounted(async () => {
 
 <style scoped>
 .logs-card {
+  width: 100%;
+  height: calc(100vh - 2.5rem - 65px);
   background: var(--bg-card);
   backdrop-filter: blur(20px);
   border: 1px solid var(--border-primary);
@@ -209,21 +213,11 @@ onMounted(async () => {
   animation: fadeInUp 0.8s ease-out 0.2s both;
   position: relative;
 }
-.logs-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, var(--primary1), var(--primary2));
-}
 .search-bar {
   padding: 1.5rem;
   border-bottom: 1px solid var(--border-primary);
   display: flex;
   align-items: center;
-  gap: 20px;
   flex-wrap: wrap;
 }
 .search-input-wrapper {
@@ -283,16 +277,18 @@ onMounted(async () => {
   box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
 }
 .logs-table-wrapper {
-  max-height: 530px;
+  width: 100%;
+  height: 100%;
   overflow-y: auto;
 }
 .logs-table {
   width: 100%;
+  height: 100%;
   border-collapse: collapse;
 }
 .logs-table th {
   background: rgba(26, 26, 31, 1);
-  padding: 20px 15px;
+  padding: 1.5rem 1.25rem;
   text-align: left;
   font-weight: 600;
   color: var(--primary1);
@@ -302,7 +298,7 @@ onMounted(async () => {
   z-index: 10;
 }
 .logs-table td {
-  padding: 18px 15px;
+  padding: 1.5rem 1.1rem;
   border-bottom: 1px solid var(--border-primary);
   color: var(--text-border);
 }
@@ -364,7 +360,6 @@ onMounted(async () => {
 }
 .no-results i {
   font-size: 3rem;
-  margin-bottom: 15px;
   opacity: 0.5;
 }
 @keyframes slideDown {
@@ -376,7 +371,6 @@ onMounted(async () => {
   }
   to {
     opacity: 1;
-    max-height: 530px;
     padding-top: 20px;
     padding-bottom: 20px;
   }

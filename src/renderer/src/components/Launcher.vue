@@ -65,7 +65,7 @@ onMounted(async () => {
 
   if (localStorage.getItem('mcToken')) {
     const userData = await updateBackendUserFromMicrosoft({
-      nickname: userStore.user?.name,
+      nickname: userStore.user?.nickname,
       mcid: userStore.user?.uuid
     })
 
@@ -79,16 +79,16 @@ onMounted(async () => {
   generalStore.setMachineData(machineData.machineId, machineData.macAddress, machineData.ipAddress)
 
   if (userStore.user) {
-    await updateProfileData(userStore.user?.nickname, {
+    await updateProfileData(userStore.user.nickname, {
       accountType: accountType ?? ''
     })
-  }
 
-  await updateMachineData(userStore.user?.nickname, {
-    machineId: generalStore.settings.machineId,
-    macAddress: generalStore.settings.macAddress,
-    ipAddress: generalStore.settings.ipAddress
-  })
+    await updateMachineData(userStore.user.nickname, {
+      machineId: generalStore.settings.machineId,
+      macAddress: generalStore.settings.macAddress,
+      ipAddress: generalStore.settings.ipAddress
+    })
+  }
 })
 
 onUnmounted(() => {
