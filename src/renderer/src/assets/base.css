@@ -369,6 +369,10 @@ body {
   overflow: hidden;
 }
 
+.nav-item:hover {
+  cursor: pointer;
+}
+
 .nav-icon {
   width: 35px;
   height: 35px;

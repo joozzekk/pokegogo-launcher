@@ -8,7 +8,7 @@ window.electron?.ipcRenderer?.on('toast:show', (_, data: string) => {
   showToast(`${data}`)
 })
 
-window.electron?.ipcRenderer?.on('change:app-version', (_, ver: string) => {
+window.electron?.ipcRenderer?.on('change:version', (_, ver: string) => {
   generalStore.changeVersion(ver)
 })
 

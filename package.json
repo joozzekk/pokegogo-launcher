@@ -1,5 +1,6 @@
 {
   "name": "pokemongogo-launcher",
+  "appId": "pl.pokemongogo.launcher",
   "version": "0.1.15-dev",
   "description": "A minecraft launcher for PokemonGoGo server",
   "main": "./out/main/index.js",

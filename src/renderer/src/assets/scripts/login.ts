@@ -377,7 +377,7 @@ export class PokeGoGoLogin {
     try {
       this.showLoading('Logowanie przez Microsoft...')
       const { refreshToken, mcToken }: { mcToken: string; refreshToken: string } =
-        await window.electron.ipcRenderer.invoke('login')
+        await window.electron.ipcRenderer.invoke('auth:login')
 
       localStorage.setItem('token', refreshToken)
       localStorage.setItem('mcToken', mcToken)

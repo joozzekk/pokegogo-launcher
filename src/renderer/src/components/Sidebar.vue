@@ -6,6 +6,7 @@ import { useRouter } from 'vue-router'
 const userStore = useUserStore()
 const router = useRouter()
 const playerName = computed(() => userStore.user?.nickname ?? 'Guest')
+const hasAdmin = computed(() => userStore.user?.role === 'admin')
 
 const handleChangeRoute = (newRoute: string): void => {
   router.push(newRoute)
@@ -39,7 +40,6 @@ const handleChangeRoute = (newRoute: string): void => {
       </div>
 
       <a
-        href="#"
         class="nav-item"
         :class="{
           active: $route.path === '/app/home'
@@ -53,7 +53,6 @@ const handleChangeRoute = (newRoute: string): void => {
         <div class="nav-indicator"></div>
       </a>
       <a
-        href="#"
         class="nav-item"
         :class="{
           active: $route.path === '/app/shop'
@@ -67,7 +66,6 @@ const handleChangeRoute = (newRoute: string): void => {
         <div class="nav-indicator"></div>
       </a>
       <a
-        href="#"
         class="nav-item"
         :class="{
           active: $route.path === '/app/settings'
@@ -81,8 +79,7 @@ const handleChangeRoute = (newRoute: string): void => {
         <div class="nav-indicator"></div>
       </a>
       <a
-        v-if="userStore.user?.role === 'admin'"
-        href="#"
+        v-if="hasAdmin"
         class="nav-item"
         :class="{
           active: $route.path === '/app/users'

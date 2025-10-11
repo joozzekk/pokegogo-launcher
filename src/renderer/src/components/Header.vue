@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import logo from '@renderer/assets/logo.png'
 import useGeneralStore from '@renderer/stores/general-store'
+import { showToast } from '@renderer/utils'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 
 const generalStore = useGeneralStore()
@@ -27,19 +28,36 @@ const isUpdateAvailable = computed(() => {
 
 const handleInstallUpdate = async (): Promise<void> => {
   isInstallingUpdate.value = true
-  await window.electron.ipcRenderer.invoke('update:start')
-  isInstallingUpdate.value = false
+  try {
+    await window.electron.ipcRenderer.invoke('update:start')
+  } catch (err) {
+    showToast('Wystąpił błąd podczas aktualizacji. Spróbuj ponownie później.', 'error')
+    console.log(err)
+  } finally {
+    isInstallingUpdate.value = false
+  }
 }
 
 const parsedAppVersion = computed(() => {
   return generalStore.appVersion.split('-')[1]
 })
 
+const checkUpdate = async (): Promise<void> => {
+  console.log('Checking for update..')
+  const res = await window.electron.ipcRenderer.invoke(
+    'update:check',
+    generalStore.settings.showNotifications
+  )
+
+  if (res) {
+    generalStore.setUpdateAvailable(res)
+  }
+}
+
 onMounted(async () => {
-  updateInterval.value = setInterval(() => {
-    window.electron.ipcRenderer.invoke('update:check')
-    console.log('Checking for update..')
-  }, 1000 * 30)
+  await checkUpdate()
+
+  updateInterval.value = setInterval(checkUpdate, 1000 * 30)
 })
 
 onUnmounted(() => {

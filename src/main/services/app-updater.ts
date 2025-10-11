@@ -1,8 +1,10 @@
 import { type AppUpdater } from 'electron-updater'
 import { getAutoUpdater } from './electron-updater'
-import { ipcMain, type BrowserWindow } from 'electron'
+import { ipcMain, Notification, type BrowserWindow } from 'electron'
+import update from '../../../resources/update.png?asset'
 
 export const useAppUpdater = (win: BrowserWindow): AppUpdater => {
+  let notified = false
   const autoUpdater = getAutoUpdater()
 
   autoUpdater.on('update-available', () => {
@@ -18,12 +20,27 @@ export const useAppUpdater = (win: BrowserWindow): AppUpdater => {
     win.webContents.send('update:available', false)
   })
 
-  ipcMain.handle('update:check', async () => {
+  ipcMain.handle('update:check', async (_event, showNotifications: boolean) => {
     const res = await autoUpdater.checkForUpdates()
 
-    console.log(res)
+    if (res?.isUpdateAvailable && showNotifications) {
+      const updateNotify = new Notification({
+        icon: update,
+        title: 'Hej, nowa wersja launchera już czeka 👻',
+        body: 'Pobierz najnowszą wersję launchera i już teraz ciesz się najnowszymi funkcjami 😉'
+      })
 
-    return autoUpdater.currentVersion !== res?.updateInfo?.version
+      updateNotify.on('click', () => {
+        win.show()
+      })
+
+      if (!notified) {
+        updateNotify.show()
+        notified = true
+      }
+    }
+
+    return res?.isUpdateAvailable
   })
 
   ipcMain.handle('update:start', async () => {

@@ -7,6 +7,7 @@ const useGeneralStore = defineStore('general', () => {
   const isUpdateAvailable = ref<boolean>(false)
 
   const initialSettings = {
+    showNotifications: true,
     hideToTray: true,
     machineId: '',
     macAddress: '',
@@ -22,7 +23,14 @@ const useGeneralStore = defineStore('general', () => {
 
   const savedSettings = localStorage.getItem('launcherSettings')
 
-  const settings = reactive(savedSettings ? JSON.parse(savedSettings) : initialSettings)
+  const settings = reactive(
+    savedSettings
+      ? {
+          ...initialSettings,
+          ...JSON.parse(savedSettings)
+        }
+      : initialSettings
+  )
 
   const isOpeningGame = ref<boolean>(false)
   const currentState = ref<string>('start')
@@ -63,6 +71,7 @@ const useGeneralStore = defineStore('general', () => {
     try {
       const loaded = JSON.parse(savedSettings)
 
+      if (loaded.showNotifications) settings.showNotifications = loaded.showNotifications
       if (loaded.hideToTray) settings.hideToTray = loaded.hideToTray
       if (loaded.resolution) settings.resolution = loaded.resolution
       if (loaded.ram) settings.ram = Number(loaded.ram)
@@ -80,6 +89,7 @@ const useGeneralStore = defineStore('general', () => {
   }
 
   const resetSettings = (): void => {
+    settings.showNotifications = true
     settings.hideToTray = true
     settings.ram = MIN_RAM
     settings.version = 'PokemonGoGo.pl'
@@ -94,6 +104,10 @@ const useGeneralStore = defineStore('general', () => {
     settings.machineId = machineId
     settings.macAddress = macAdress
     settings.ipAddress = ipAddress
+  }
+
+  const setShowNotifications = (show: boolean): void => {
+    settings.showNotifications = show
   }
 
   return {
@@ -113,7 +127,8 @@ const useGeneralStore = defineStore('general', () => {
     setCurrentState,
     setCurrentLog,
     setMachineData,
-    setHideToTray
+    setHideToTray,
+    setShowNotifications
   }
 })
 

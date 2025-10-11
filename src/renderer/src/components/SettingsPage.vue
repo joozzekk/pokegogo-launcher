@@ -261,6 +261,26 @@ const handleChangeEmail = async (): Promise<void> => {
           </div>
 
           <div class="setting-group">
+            <label>Otrzymywanie powiadmień</label>
+            <div class="toggle-group">
+              <button
+                class="toggle-option"
+                :class="{ active: generalStore.settings.showNotifications === true }"
+                @click="generalStore.setShowNotifications(true)"
+              >
+                Otrzymuj
+              </button>
+              <button
+                class="toggle-option"
+                :class="{ active: generalStore.settings.showNotifications === false }"
+                @click="generalStore.setShowNotifications(false)"
+              >
+                Nie powiadamiaj
+              </button>
+            </div>
+          </div>
+
+          <div class="setting-group">
             <label>Wyłączanie launchera</label>
             <div class="toggle-group">
               <button

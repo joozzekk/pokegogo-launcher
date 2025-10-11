@@ -1,5 +1,5 @@
 appId: pl.pokemongogo.launcher
-productName: PokemonGoGo Launcher
+productName: PokeGoGo Launcher
 directories:
   buildResources: build
 files:
@@ -45,4 +45,4 @@ npmRebuild: false
 publish:
   - provider: github
     owner: joozzekk # nazwa użytkownika lub organizacji GitHub
-    repo: pokegogo-launcher # nazwa repozytorium na GitHub
+    repo: pokemongogo-launcher # nazwa repozytorium na GitHub

@@ -13,7 +13,7 @@ if (!gotTheLock) {
   let mainWindow: BrowserWindow | null = null
 
   app.whenReady().then(async () => {
-    electronApp.setAppUserModelId('pl.pokemongogo')
+    electronApp.setAppUserModelId('pl.pokemongogo.launcher')
 
     const { createMainWindow, createLoadingWindow } = useWindowService()
     mainWindow = createMainWindow()
