@@ -1,7 +1,7 @@
 import { createApp } from 'vue'
 import { router } from './router'
 import { createPinia } from 'pinia'
-import LoadingPage from './components/LoadingPage.vue'
+import LoadingPage from './pages/Loading.vue'
 
 const app = createApp(LoadingPage)
 app.use(router)

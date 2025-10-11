@@ -15,6 +15,7 @@ const useGeneralStore = defineStore('general', () => {
     resolution: '1366x768',
     ram: MIN_RAM,
     maxRAM: 16,
+    javaVersion: 21,
     version: 'PokemonGoGo.pl',
     displayMode: 'Okno',
     theme: 'Dark',
@@ -92,6 +93,7 @@ const useGeneralStore = defineStore('general', () => {
     settings.showNotifications = true
     settings.hideToTray = true
     settings.ram = MIN_RAM
+    settings.javaVersion = 21
     settings.version = 'PokemonGoGo.pl'
     settings.resolution = '1280x720'
     settings.displayMode = 'Okno'

@@ -1,29 +1,22 @@
 <script lang="ts" setup>
-import { showToast } from '@renderer/utils'
 import { onMounted } from 'vue'
 import { initNavigation } from '@renderer/assets/scripts/navigation'
-import { updateServerStatus } from '@renderer/assets/scripts//server-status'
-import LaunchButton from './LaunchButton.vue'
+import { updateServerStatus } from '@renderer/assets/scripts/server-status'
+import LaunchButton from '@renderer/components/buttons/LaunchButton.vue'
 import useGeneralStore from '@renderer/stores/general-store'
+import poke from '@renderer/assets/img/poke.png'
+import superEvent from '@renderer/assets/img/superEvent.png'
+import logo from '@renderer/assets/logo.png'
+import Select from '@renderer/components/Select.vue'
 
 const generalStore = useGeneralStore()
+
+const versions = [{ label: 'PokemonGoGo.pl', value: 'PokemonGoGo.pl' }]
 
 onMounted(() => {
   initNavigation()
   updateServerStatus()
   setInterval(updateServerStatus, 30000)
-
-  document.querySelectorAll<HTMLElement>('.news-item, .news-featured').forEach((item) => {
-    item.addEventListener('click', function () {
-      const title = this.querySelector<HTMLHeadingElement>('h3, h4')?.textContent || 'Artykuł'
-      showToast(`Otwieranie: ${title}`, 'success')
-
-      this.style.transform = 'scale(0.98)'
-      setTimeout(() => {
-        this.style.transform = ''
-      }, 200)
-    })
-  })
 })
 </script>
 
@@ -39,17 +32,12 @@ onMounted(() => {
             <h2>Graj Teraz</h2>
           </div>
 
-          <div class="version-selector">
-            <select id="versionSelect">
-              <option value="Cobblemon">PokemonGoGo.pl</option>
-            </select>
-            <i class="fas fa-chevron-down"></i>
-          </div>
+          <Select v-model="generalStore.settings.version" :options="versions" />
         </div>
 
         <div class="server-showcase">
           <div class="server-image">
-            <img src="https://picsum.photos/600/300?random=99" alt="Server" />
+            <img :src="poke" alt="PokeGoGo" />
             <div class="server-overlay">
               <span class="server-ip">PokemonGoGo.pl</span>
             </div>
@@ -108,15 +96,15 @@ onMounted(() => {
 
         <div class="news-featured">
           <div class="featured-image">
-            <img src="https://picsum.photos/800/400?random=10" alt="Featured" />
+            <img :src="superEvent" alt="Super Event" />
             <div class="featured-gradient"></div>
           </div>
+          <span class="featured-tag">MEGA WYDARZENIE</span>
           <div class="featured-content">
-            <span class="featured-tag">MEGA WYDARZENIE</span>
-            <h3>Koparka Edition w PokeGoGo Launcher 0.2.0-dev</h3>
+            <h3>Event HALLOWEEN!</h3>
             <p>
-              Dołącz do wspaniałej społeczności kopaczy bitcoina dla twórców launchera! Gwarantuje,
-              że nie podziele się hajsem :))
+              Baw się wspólnie ze znajomymi na evencie halloweenowym. Nowy content, unikalne
+              pokemony i wiele więcej!
             </p>
           </div>
         </div>
@@ -124,34 +112,23 @@ onMounted(() => {
         <div class="news-list">
           <article class="news-item">
             <div class="news-thumbnail">
-              <img src="https://picsum.photos/100/100?random=11" alt="News" />
+              <img :src="logo" alt="News" />
             </div>
             <div class="news-info">
-              <span class="news-date">15 Grudnia</span>
-              <h4>Nowa mapa PvP dostępna!</h4>
-              <p>Sprawdź nową arenę Colosseum...</p>
+              <span class="news-date">25 Października</span>
+              <h4>Aktualizacja 0.2.0</h4>
+              <p>Oficjalny start Launchera dla społeczności PokemonGoGo!</p>
             </div>
           </article>
 
           <article class="news-item">
             <div class="news-thumbnail">
-              <img src="https://picsum.photos/100/100?random=12" alt="News" />
+              <img :src="logo" alt="News" />
             </div>
             <div class="news-info">
-              <span class="news-date">14 Grudnia</span>
-              <h4>Update 2.5.0</h4>
-              <p>Poprawki wydajności i nowe funkcje...</p>
-            </div>
-          </article>
-
-          <article class="news-item">
-            <div class="news-thumbnail">
-              <img src="https://picsum.photos/100/100?random=13" alt="News" />
-            </div>
-            <div class="news-info">
-              <span class="news-date">13 Grudnia</span>
-              <h4>Turniej PvP - Zapisz się!</h4>
-              <p>Nagroda główna: 5000 PLN...</p>
+              <span class="news-date">23 Października</span>
+              <h4>Aktualizacja 0.1.19</h4>
+              <p>Otwarta beta launchera do testów dla społeczności</p>
             </div>
           </article>
         </div>

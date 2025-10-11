@@ -1,13 +1,13 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 
-import LoginPage from '@renderer/components/LoginPage.vue'
 import Launcher from '@renderer/components/Launcher.vue'
-import HomePage from '@renderer/components/HomePage.vue'
-import ChangelogPage from '@renderer/components/ChangelogPage.vue'
-import SettingsPage from '@renderer/components/SettingsPage.vue'
-import ShopPage from '@renderer/components/ShopPage.vue'
-import LoadingPage from '@renderer/components/LoadingPage.vue'
-import UsersPage from '@renderer/components/UsersPage.vue'
+import HomePage from '@renderer/pages/Home.vue'
+import LoginPage from '@renderer/pages/Login.vue'
+import ChangelogPage from '@renderer/pages/Changelog.vue'
+import SettingsPage from '@renderer/pages/Settings.vue'
+import ShopPage from '@renderer/pages/Shop.vue'
+import LoadingPage from '@renderer/pages/Loading.vue'
+import UsersPage from '@renderer/pages/Users.vue'
 
 const routes = [
   { path: '/', component: LoginPage },

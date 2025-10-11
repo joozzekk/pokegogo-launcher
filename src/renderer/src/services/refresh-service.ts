@@ -1,5 +1,5 @@
 export const refreshMicrosoftToken = async (token): Promise<void> => {
-  const { refreshToken, mcToken } = await window.electron.ipcRenderer.invoke(
+  const { refreshToken, mcToken } = await window.electron?.ipcRenderer?.invoke(
     'auth:refresh-token',
     token
   )

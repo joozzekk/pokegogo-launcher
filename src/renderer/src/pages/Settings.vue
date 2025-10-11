@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { changeEmail, changePassword } from '@renderer/api/endpoints'
+import Select from '@renderer/components/Select.vue'
 import useGeneralStore from '@renderer/stores/general-store'
 import useUserStore from '@renderer/stores/user-store'
 import { calculateValueFromPercentage, MIN_RAM, showToast } from '@renderer/utils'
@@ -51,12 +52,18 @@ const emailV$ = useVuelidate(
 
 const sliderRef = ref<HTMLInputElement | null>(null)
 const displayRef = ref<HTMLInputElement | null>(null)
+const javaVersions = [
+  {
+    label: 'Java 21 (Zalecana)',
+    value: 21
+  }
+]
 
 const percent = ref(0)
 
 const changeResolution = (e: Event): void => {
   const target = e.target as HTMLSelectElement
-  window.electron.ipcRenderer.invoke('change-resolution', target.value)
+  window.electron?.ipcRenderer?.invoke('change-resolution', target.value)
 }
 
 watch(
@@ -191,17 +198,29 @@ const handleChangeEmail = async (): Promise<void> => {
 
           <div class="setting-group">
             <label>Rozdzielczość</label>
-            <select
-              v-model="generalStore.settings.resolution"
-              class="setting-select"
-              @change="changeResolution"
-            >
-              <!-- <option value="1920x1080">1280x768 (4K UHD)</option> -->
-              <!-- <option value="1920x1080">2560x1440 (QHD)</option> -->
-              <option value="1920x1080">1920x1080 (Full HD)</option>
-              <option value="1366x768">1366x768</option>
-              <option value="1280x720">1280x720</option>
-            </select>
+            <div class="toggle-group">
+              <button
+                class="toggle-option"
+                :class="{ active: generalStore.settings.resolution === '1920x1080' }"
+                @click="generalStore.settings.resolution = '1920x1080'"
+              >
+                1920x1080
+              </button>
+              <button
+                class="toggle-option"
+                :class="{ active: generalStore.settings.resolution === '1366x768' }"
+                @click="generalStore.settings.resolution = '1366x768'"
+              >
+                1366x768
+              </button>
+              <button
+                class="toggle-option"
+                :class="{ active: generalStore.settings.resolution === '1200x720' }"
+                @click="generalStore.settings.resolution = '1200x720'"
+              >
+                1200x720
+              </button>
+            </div>
           </div>
 
           <div class="setting-group">
@@ -237,9 +256,7 @@ const handleChangeEmail = async (): Promise<void> => {
 
           <div class="setting-group">
             <label>Wersja Java</label>
-            <select class="setting-select" disabled>
-              <option value="21">Java 21 (Zalecana)</option>
-            </select>
+            <Select v-model="generalStore.settings.javaVersion" :options="javaVersions" disabled />
           </div>
 
           <div class="setting-group">

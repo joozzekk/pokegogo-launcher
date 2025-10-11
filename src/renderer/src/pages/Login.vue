@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import Header from './Header.vue'
+import Header from '@renderer/components/Header.vue'
 import { onMounted } from 'vue'
 import { PokeGoGoLogin } from '@renderer/assets/scripts/login'
 

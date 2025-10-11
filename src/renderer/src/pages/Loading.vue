@@ -13,7 +13,7 @@ const statuses = {
 }
 
 onMounted(() => {
-  window.electron.ipcRenderer?.on('load:status', (_, currentStatus: string) => {
+  window.electron?.ipcRenderer?.on('load:status', (_, currentStatus: string) => {
     let val = 0
     const parsedStatus = JSON.parse(currentStatus)
 

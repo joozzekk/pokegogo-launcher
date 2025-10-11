@@ -55,7 +55,7 @@ const handleLaunchGame = async (e: Event): Promise<void> => {
     if (now >= exp) await refreshMicrosoftToken(localStorage.getItem('token'))
   }
 
-  const res = await window.electron.ipcRenderer.invoke('launch-game', {
+  const res = await window.electron?.ipcRenderer?.invoke('launch-game', {
     token: accountType === 'microsoft' ? mcToken : JSON.stringify(userStore.user),
     mcVersion: '1.21.1',
     javaVersion: '21',
@@ -77,18 +77,18 @@ const state = computed(() => {
 })
 
 const handleKillGame = async (): Promise<void> => {
-  await window.electron.ipcRenderer.invoke('launch:exit')
+  await window.electron?.ipcRenderer?.invoke('launch:exit')
   generalStore.setCurrentState('start')
   generalStore.setIsOpeningGame(false)
 }
 
 const handleKillVerify = async (): Promise<void> => {
-  await window.electron.ipcRenderer.invoke('launch:exit-verify')
+  await window.electron?.ipcRenderer?.invoke('launch:exit-verify')
   generalStore.setCurrentState('start')
   generalStore.setIsOpeningGame(false)
 }
 
-window.electron.ipcRenderer.on('launch:change-state', (_event, state: string) => {
+window.electron?.ipcRenderer?.on('launch:change-state', (_event, state: string) => {
   const parsedState = JSON.parse(state)
   generalStore.setCurrentState(parsedState)
 
@@ -100,7 +100,7 @@ window.electron.ipcRenderer.on('launch:change-state', (_event, state: string) =>
   }
 })
 
-window.electron.ipcRenderer.on('launch:show-log', (_event, data: string, ended?: string) => {
+window.electron?.ipcRenderer?.on('launch:show-log', (_event, data: string, ended?: string) => {
   if (!ended) {
     generalStore.setCurrentLog(data)
     return
@@ -231,7 +231,7 @@ window.electron.ipcRenderer.on('launch:show-log', (_event, data: string, ended?:
 .launch-button:hover,
 .launch-button:focus {
   transform: translateY(-3px);
-  box-shadow: 0 10px 2.25rem rgba(34, 151, 197, 0.4);
+  box-shadow: 0 0.25rem 1rem rgba(34, 151, 197, 0.4);
 }
 
 .launch-button:active {

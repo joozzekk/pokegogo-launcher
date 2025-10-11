@@ -10,16 +10,16 @@ const updateInterval = ref<any>()
 const isInstallingUpdate = ref<boolean>(false)
 
 const maximizeWindow = (): void => {
-  window.electron.ipcRenderer.send('window:maximize', generalStore.settings.resolution)
+  window.electron?.ipcRenderer?.send('window:maximize', generalStore.settings.resolution)
 }
 
 const minimizeWindow = (): void => {
-  window.electron.ipcRenderer.send('window:minimize')
+  window.electron?.ipcRenderer?.send('window:minimize')
 }
 
 const closeWindow = (): void => {
-  window.electron.ipcRenderer.send('window:close', generalStore.settings.hideToTray)
-  window.electron.ipcRenderer.invoke('launch:exit')
+  window.electron?.ipcRenderer?.send('window:close', generalStore.settings.hideToTray)
+  window.electron?.ipcRenderer?.invoke('launch:exit')
 }
 
 const isUpdateAvailable = computed(() => {
@@ -29,7 +29,7 @@ const isUpdateAvailable = computed(() => {
 const handleInstallUpdate = async (): Promise<void> => {
   isInstallingUpdate.value = true
   try {
-    await window.electron.ipcRenderer.invoke('update:start')
+    await window.electron?.ipcRenderer?.invoke('update:start')
   } catch (err) {
     showToast('Wystąpił błąd podczas aktualizacji. Spróbuj ponownie później.', 'error')
     console.log(err)
@@ -44,7 +44,7 @@ const parsedAppVersion = computed(() => {
 
 const checkUpdate = async (): Promise<void> => {
   console.log('Checking for update..')
-  const res = await window.electron.ipcRenderer.invoke(
+  const res = await window.electron?.ipcRenderer?.invoke(
     'update:check',
     generalStore.settings.showNotifications
   )
