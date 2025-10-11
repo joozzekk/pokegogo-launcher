@@ -61,9 +61,8 @@ const javaVersions = [
 
 const percent = ref(0)
 
-const changeResolution = (e: Event): void => {
-  const target = e.target as HTMLSelectElement
-  window.electron?.ipcRenderer?.invoke('change-resolution', target.value)
+const changeResolution = (resolution: string): void => {
+  generalStore.settings.resolution = resolution
 }
 
 watch(
@@ -202,21 +201,21 @@ const handleChangeEmail = async (): Promise<void> => {
               <button
                 class="toggle-option"
                 :class="{ active: generalStore.settings.resolution === '1920x1080' }"
-                @click="generalStore.settings.resolution = '1920x1080'"
+                @click="changeResolution('1920x1080')"
               >
                 1920x1080
               </button>
               <button
                 class="toggle-option"
                 :class="{ active: generalStore.settings.resolution === '1366x768' }"
-                @click="generalStore.settings.resolution = '1366x768'"
+                @click="changeResolution('1366x768')"
               >
                 1366x768
               </button>
               <button
                 class="toggle-option"
                 :class="{ active: generalStore.settings.resolution === '1200x720' }"
-                @click="generalStore.settings.resolution = '1200x720'"
+                @click="changeResolution('1200x720')"
               >
                 1200x720
               </button>
