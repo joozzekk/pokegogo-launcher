@@ -15,7 +15,7 @@ export const useLaunchService = (win: BrowserWindow): void => {
     const signal = currentAbortController.signal
 
     await installJava(data.javaVersion)
-    win.webContents.send('change-launch-state', JSON.stringify('files-verify'))
+    win.webContents.send('launch:change-state', JSON.stringify('files-verify'))
 
     const res = await copyMCFiles(win, signal)
 
@@ -26,10 +26,10 @@ export const useLaunchService = (win: BrowserWindow): void => {
     }
   })
 
-  ipcMain.handle('exit-verify', () => {
+  ipcMain.handle('launch:exit-verify', () => {
     if (currentAbortController) {
       currentAbortController.abort()
-      win.webContents.send('show-log', '', true)
+      win.webContents.send('launch:show-log', '', true)
       return Promise.resolve()
     }
 

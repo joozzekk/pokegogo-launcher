@@ -77,18 +77,18 @@ const state = computed(() => {
 })
 
 const handleKillGame = async (): Promise<void> => {
-  await window.electron.ipcRenderer.invoke('exit-launch')
+  await window.electron.ipcRenderer.invoke('launch:exit')
   generalStore.setCurrentState('start')
   generalStore.setIsOpeningGame(false)
 }
 
 const handleKillVerify = async (): Promise<void> => {
-  await window.electron.ipcRenderer.invoke('exit-verify')
+  await window.electron.ipcRenderer.invoke('launch:exit-verify')
   generalStore.setCurrentState('start')
   generalStore.setIsOpeningGame(false)
 }
 
-window.electron.ipcRenderer.on('change-launch-state', (_event, state: string) => {
+window.electron.ipcRenderer.on('launch:change-state', (_event, state: string) => {
   const parsedState = JSON.parse(state)
   generalStore.setCurrentState(parsedState)
 
@@ -100,7 +100,7 @@ window.electron.ipcRenderer.on('change-launch-state', (_event, state: string) =>
   }
 })
 
-window.electron.ipcRenderer.on('show-log', (_event, data: string, ended?: string) => {
+window.electron.ipcRenderer.on('launch:show-log', (_event, data: string, ended?: string) => {
   if (!ended) {
     generalStore.setCurrentLog(data)
     return

@@ -28,11 +28,11 @@ const createMainWindow = (): BrowserWindow => {
   })
 
   mainWindow.on('ready-to-show', () => {
-    mainWindow.webContents.send('change-max-ram', Math.floor(getMaxRAMInGB() * 0.75))
-    mainWindow.webContents.send('change-version', app.getVersion())
+    mainWindow.webContents.send('change:max-ram', Math.floor(getMaxRAMInGB() * 0.75))
+    mainWindow.webContents.send('change:version', app.getVersion())
   })
 
-  ipcMain.handle('machine-data', async () => {
+  ipcMain.handle('data:machine', async () => {
     const hwid = await machineId()
     const addr = await address()
     return {
@@ -42,12 +42,12 @@ const createMainWindow = (): BrowserWindow => {
     }
   })
 
-  ipcMain.on('window-minimize', () => {
+  ipcMain.on('window:minimize', () => {
     const win = BrowserWindow.getFocusedWindow()
     if (win) win.minimize()
   })
 
-  ipcMain.on('window-maximize', () => {
+  ipcMain.on('window:maximize', () => {
     const win = BrowserWindow.getFocusedWindow()
 
     if (win) {
@@ -60,7 +60,7 @@ const createMainWindow = (): BrowserWindow => {
     }
   })
 
-  ipcMain.on('window-close', (_, isHideToTray: boolean = true) => {
+  ipcMain.on('window:close', (_, isHideToTray: boolean = true) => {
     const win = BrowserWindow.getFocusedWindow()
     if (win) isHideToTray ? win.hide() : win.close()
   })

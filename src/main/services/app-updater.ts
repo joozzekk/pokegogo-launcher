@@ -6,25 +6,27 @@ export const useAppUpdater = (win: BrowserWindow): AppUpdater => {
   const autoUpdater = getAutoUpdater()
 
   autoUpdater.on('update-available', () => {
-    win.webContents.send('update-available', true)
+    win.webContents.send('update:available', true)
   })
   autoUpdater.on('update-not-available', () => {
-    win.webContents.send('update-available', false)
+    win.webContents.send('update:available', false)
   })
   autoUpdater.on('error', (err) => {
     console.log(err)
   })
   autoUpdater.on('update-downloaded', () => {
-    win.webContents.send('update-available', false)
+    win.webContents.send('update:available', false)
   })
 
-  ipcMain.handle('check-for-update', async () => {
+  ipcMain.handle('update:check', async () => {
     const res = await autoUpdater.checkForUpdates()
+
+    console.log(res)
 
     return autoUpdater.currentVersion !== res?.updateInfo?.version
   })
 
-  ipcMain.handle('start-update', async () => {
+  ipcMain.handle('update:start', async () => {
     await autoUpdater.downloadUpdate()
     autoUpdater.quitAndInstall()
   })

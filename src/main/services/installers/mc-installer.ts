@@ -123,7 +123,7 @@ async function downloadAll(
       if (downloadFile) {
         await client.downloadTo(localPath, remotePath)
         downloadedFiles++
-        log(`Pobrano ${downloadedFiles}/${totalFiles} plików w ${remoteDir}`, true)
+        log(`Pobrano ${downloadedFiles}/${totalFiles} plików w ${remoteDir}`)
       }
     }
   }
@@ -160,7 +160,7 @@ export async function copyMCFiles(
       remoteURL,
       localRoot,
       (data: string) => {
-        mainWindow.webContents.send('show-log', data)
+        mainWindow.webContents.send('launch:show-log', data)
       },
       isFirstInstall,
       importantFolders,
@@ -175,7 +175,7 @@ export async function copyMCFiles(
       await fs.promises.writeFile(markerFile, 'installed')
     }
 
-    mainWindow.webContents.send('show-log', '', true)
+    mainWindow.webContents.send('launch:show-log', '', true)
   } catch (err) {
     console.error(err)
   } finally {

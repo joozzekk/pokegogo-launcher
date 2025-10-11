@@ -5,7 +5,7 @@ export const useLoginService = (): void => {
   const auth = new Auth('select_account')
 
   ipcMain.handle(
-    'refresh-token',
+    'auth:refresh-token',
     async (_, refreshToken: string): Promise<{ refreshToken: string; mcToken: string }> => {
       console.log('Refreshing token...')
       const xbox = await auth.refresh(refreshToken)
@@ -18,7 +18,7 @@ export const useLoginService = (): void => {
     }
   )
 
-  ipcMain.handle('login', async () => {
+  ipcMain.handle('auth:login', async () => {
     const xbox = await auth.launch('electron')
     const mc = await xbox.getMinecraft()
 

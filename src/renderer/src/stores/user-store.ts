@@ -30,7 +30,7 @@ const useUserStore = defineStore('user', () => {
     }
     router.push('/')
 
-    await window.electron?.ipcRenderer?.invoke('exit-launch')
+    await window.electron?.ipcRenderer?.invoke('launch:exit')
   }
 
   return {

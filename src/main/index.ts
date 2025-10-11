@@ -12,14 +12,6 @@ if (!gotTheLock) {
 } else {
   let mainWindow: BrowserWindow | null = null
 
-  app.on('second-instance', () => {
-    if (mainWindow) {
-      if (mainWindow.isMinimized()) mainWindow.restore()
-      mainWindow.show()
-      mainWindow.focus()
-    }
-  })
-
   app.whenReady().then(async () => {
     electronApp.setAppUserModelId('pl.pokemongogo')
 
@@ -39,9 +31,15 @@ if (!gotTheLock) {
 
   app.on('activate', async () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      if (mainWindow) {
-        await mainWindow.show()
-      }
+      if (mainWindow) mainWindow.show()
+    }
+  })
+
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore()
+      mainWindow.show()
+      mainWindow.focus()
     }
   })
 

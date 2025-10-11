@@ -76,7 +76,7 @@ onMounted(async () => {
     })
   }
 
-  const machineData = await window.electron?.ipcRenderer?.invoke('machine-data')
+  const machineData = await window.electron?.ipcRenderer?.invoke('data:machine')
   generalStore.setMachineData(machineData.machineId, machineData.macAddress, machineData.ipAddress)
 
   if (userStore.user) {

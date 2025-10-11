@@ -9,16 +9,16 @@ const updateInterval = ref<any>()
 const isInstallingUpdate = ref<boolean>(false)
 
 const maximizeWindow = (): void => {
-  window.electron.ipcRenderer.send('window-maximize', generalStore.settings.resolution)
+  window.electron.ipcRenderer.send('window:maximize', generalStore.settings.resolution)
 }
 
 const minimizeWindow = (): void => {
-  window.electron.ipcRenderer.send('window-minimize')
+  window.electron.ipcRenderer.send('window:minimize')
 }
 
 const closeWindow = (): void => {
-  window.electron.ipcRenderer.send('window-close', generalStore.settings.hideToTray)
-  window.electron.ipcRenderer.invoke('exit-launch')
+  window.electron.ipcRenderer.send('window:close', generalStore.settings.hideToTray)
+  window.electron.ipcRenderer.invoke('launch:exit')
 }
 
 const isUpdateAvailable = computed(() => {
@@ -27,7 +27,7 @@ const isUpdateAvailable = computed(() => {
 
 const handleInstallUpdate = async (): Promise<void> => {
   isInstallingUpdate.value = true
-  await window.electron.ipcRenderer.invoke('start-update')
+  await window.electron.ipcRenderer.invoke('update:start')
   isInstallingUpdate.value = false
 }
 
@@ -37,7 +37,7 @@ const parsedAppVersion = computed(() => {
 
 onMounted(async () => {
   updateInterval.value = setInterval(() => {
-    window.electron.ipcRenderer.invoke('check-for-update')
+    window.electron.ipcRenderer.invoke('update:check')
     console.log('Checking for update..')
   }, 1000 * 30)
 })

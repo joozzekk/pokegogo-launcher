@@ -87,29 +87,33 @@ export async function launchMinecraft(
     }
   })
 
-  if (ipcMain.listenerCount('exit-launch') > 0) {
-    ipcMain.removeHandler('exit-launch')
+  if (ipcMain.listenerCount('launch:exit') > 0) {
+    ipcMain.removeHandler('launch:exit')
   }
 
-  ipcMain.handle('exit-launch', () => {
+  ipcMain.handle('launch:exit', () => {
     client.emit('close', 1)
     process?.kill('SIGTERM')
   })
 
-  win.webContents.send('change-launch-state', JSON.stringify('minecraft-start'))
+  win.webContents.send('launch:change-state', JSON.stringify('minecraft-start'))
 
-  client.on('debug', (...args) => console.log('DEBUG', ...args))
+  client.on('debug', (data) => console.log('DEBUG', data))
   client.on('data', (data) => {
+    console.log('DATA', data)
+
     if (data.includes('Initializing Client')) {
-      win.webContents.send('change-launch-state', JSON.stringify('minecraft-started'))
+      win.webContents.send('launch:change-state', JSON.stringify('minecraft-started'))
       win.hide()
     }
   })
-  client.on('error', (...args) => console.log('ERROR', ...args))
-  client.on('progress', (...args) => console.log('PROGRESS', ...args))
+  client.on('error', (data) => console.log('ERROR', data))
+  client.on('progress', (data) => console.log('PROGRESS', data))
   client.on('close', () => {
-    win.webContents.send('change-launch-state', JSON.stringify('minecraft-closed'))
-    ipcMain.removeHandler('exit-launch')
+    win.webContents.send('launch:change-state', JSON.stringify('minecraft-closed'))
+    if (ipcMain.listenerCount('launch:exit') > 0) {
+      ipcMain.removeHandler('launch:exit')
+    }
     win.show()
   })
 }
