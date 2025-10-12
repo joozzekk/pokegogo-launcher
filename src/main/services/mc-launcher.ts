@@ -89,12 +89,12 @@ export async function launchMinecraft(
 
   if (ipcMain.listenerCount('launch:exit') > 0) {
     ipcMain.removeHandler('launch:exit')
+  } else {
+    ipcMain.handle('launch:exit', () => {
+      client.emit('close', 1)
+      process?.kill('SIGTERM')
+    })
   }
-
-  ipcMain.handle('launch:exit', () => {
-    client.emit('close', 1)
-    process?.kill('SIGTERM')
-  })
 
   win.webContents.send('launch:change-state', JSON.stringify('minecraft-start'))
 

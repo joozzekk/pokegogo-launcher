@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { connectPlayer, disconnectPlayer } from '@renderer/api/endpoints'
 import useGeneralStore from '@renderer/stores/general-store'
 import useUserStore from '@renderer/stores/user-store'
 import { createParticles, refreshMicrosoftToken, showToast } from '@renderer/utils'
@@ -87,15 +88,20 @@ const handleKillVerify = async (): Promise<void> => {
   generalStore.setIsOpeningGame(false)
 }
 
-window.electron?.ipcRenderer?.on('launch:change-state', (_event, state: string) => {
+window.electron?.ipcRenderer?.on('launch:change-state', async (_event, state: string) => {
   const parsedState = JSON.parse(state)
   generalStore.setCurrentState(parsedState)
+
+  if (parsedState === 'minecraft-started') {
+    await connectPlayer()
+  }
 
   if (parsedState === 'minecraft-closed') {
     setTimeout(() => {
       generalStore.setCurrentState('start')
       generalStore.setIsOpeningGame(false)
     }, 500)
+    await disconnectPlayer()
   }
 })
 

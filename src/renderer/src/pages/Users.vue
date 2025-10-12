@@ -4,7 +4,7 @@ import { IUser } from '@renderer/env'
 import useUserStore from '@renderer/stores/user-store'
 import { showToast } from '@renderer/utils'
 import { format } from 'date-fns'
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, onUnmounted } from 'vue'
 
 const userStore = useUserStore()
 
@@ -99,8 +99,17 @@ const getUserRole = (player: IUser): string => {
   }
 }
 
+const refreshPlayerList = ref()
+
 onMounted(async () => {
   await loadPlayerData()
+  refreshPlayerList.value = setInterval(async () => {
+    await loadPlayerData()
+  }, 1000 * 5)
+})
+
+onUnmounted(() => {
+  clearInterval(refreshPlayerList.value)
 })
 </script>
 
@@ -120,7 +129,10 @@ onMounted(async () => {
     </div>
 
     <div class="logs-table-wrapper">
-      <template v-if="isLoadingPlayers"> Ładowanie użytkowników.. </template>
+      <div v-if="isLoadingPlayers" class="loading-users">
+        <i :class="'fas fa-spinner fa-spin'"></i>
+        Ładowanie użytkowników..
+      </div>
       <template v-else>
         <div v-if="noResultsVisible" id="noResults" class="no-results">
           <i class="fas fa-search"></i>
@@ -135,7 +147,13 @@ onMounted(async () => {
               <th>ID</th>
               <th>Status konta</th>
               <th>Online?</th>
-              <th></th>
+              <th>
+                <div style="position: relative; display: flex; flex-direction: row-reverse">
+                  <button class="show-more-btn" @click="loadPlayerData">
+                    <i :class="'fas fa-refresh'"></i>
+                  </button>
+                </div>
+              </th>
             </tr>
           </thead>
           <tbody id="logsTableBody">
@@ -286,6 +304,14 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+.loading-users {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
+  justify-content: center;
+  height: 80%;
+}
 .logs-card {
   width: 100%;
   height: calc(100vh - 2.5rem - 65px);

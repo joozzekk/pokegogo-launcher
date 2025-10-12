@@ -110,3 +110,15 @@ export const unbanPlayer = async (uuid: string, pin: string): Promise<any> => {
 
   return res.data
 }
+
+export const connectPlayer = async (): Promise<any> => {
+  const res = await api.post('/users/connect')
+
+  return res.data
+}
+
+export const disconnectPlayer = async (): Promise<any> => {
+  const res = await api.post('/users/disconnect')
+
+  return res.data
+}
