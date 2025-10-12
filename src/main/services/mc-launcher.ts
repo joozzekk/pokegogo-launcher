@@ -42,6 +42,7 @@ export async function launchMinecraft(
   win: BrowserWindow,
   version: string,
   token: string,
+  accessToken: string,
   settings: {
     ram: number
     resolution: string
@@ -84,17 +85,15 @@ export async function launchMinecraft(
     memory: {
       max: `${Math.floor(0.75 * maxRAM)}G`,
       min: `${settings.ram}G`
-    }
+    },
+    customArgs: [`-DaccessToken=${accessToken}`]
   })
 
-  if (ipcMain.listenerCount('launch:exit') > 0) {
-    ipcMain.removeHandler('launch:exit')
-  } else {
-    ipcMain.handle('launch:exit', () => {
-      client.emit('close', 1)
-      process?.kill('SIGTERM')
-    })
-  }
+  ipcMain.removeHandler('launch:exit')
+  ipcMain.handle('launch:exit', () => {
+    client.emit('close', 1)
+    process?.kill('SIGTERM')
+  })
 
   win.webContents.send('launch:change-state', JSON.stringify('minecraft-start'))
 
@@ -111,9 +110,6 @@ export async function launchMinecraft(
   client.on('progress', (data) => console.log('PROGRESS', data))
   client.on('close', () => {
     win.webContents.send('launch:change-state', JSON.stringify('minecraft-closed'))
-    if (ipcMain.listenerCount('launch:exit') > 0) {
-      ipcMain.removeHandler('launch:exit')
-    }
     win.show()
   })
 }

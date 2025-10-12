@@ -61,6 +61,7 @@ const handleLaunchGame = async (e: Event): Promise<void> => {
 
   const res = await window.electron?.ipcRenderer?.invoke('launch-game', {
     token: accountType === 'microsoft' ? mcToken : JSON.stringify(userStore.user),
+    accessToken: localStorage.getItem('token'),
     mcVersion: '1.21.1',
     javaVersion: '21',
     settings: {

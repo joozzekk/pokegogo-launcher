@@ -8,7 +8,7 @@ async function removeSha256Files(folderPath) {
     if (entry.isDirectory()) {
       await removeSha256Files(fullPath)
     } else if (entry.isFile()) {
-      if (entry.name.endsWith('.Identifier')) {
+      if (entry.name.endsWith('.sha256')) {
         await fs.promises.unlink(fullPath)
         console.log(`Usunięto plik ${entry.name}`)
       }
