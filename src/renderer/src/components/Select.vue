@@ -61,7 +61,11 @@ function selectOption(option: IOption): void {
 }
 
 function onClickOutside(event: any): void {
-  if (dropdown.value && !(dropdown.value as string)?.includes(event.target)) {
+  if (
+    dropdown.value &&
+    typeof dropdown.value === 'string' &&
+    dropdown.value?.includes(event.target)
+  ) {
     open.value = false
   }
 }
