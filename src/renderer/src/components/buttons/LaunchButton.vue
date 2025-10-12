@@ -19,6 +19,10 @@ const states = {
 const accountType = localStorage.getItem('LOGIN_TYPE')
 const userStore = useUserStore()
 
+const isBanned = computed(() => {
+  return userStore.user?.isBanned
+})
+
 const handleToggleGame = async (e: Event): Promise<void> => {
   try {
     switch (generalStore.currentState) {
@@ -120,12 +124,24 @@ window.electron?.ipcRenderer?.on('launch:show-log', (_event, data: string, ended
     class="launch-button-container"
     :class="{ 'margin-64': generalStore.currentState === 'files-verify' }"
   >
-    <button id="launchBtn" class="launch-button" @click="(e) => handleToggleGame(e)">
+    <button
+      id="launchBtn"
+      class="launch-button"
+      :class="{ banned: isBanned }"
+      :disabled="isBanned"
+      @click="(e) => handleToggleGame(e)"
+    >
       <div class="launch-button-bg"></div>
       <template v-if="!generalStore.isOpeningGame">
         <div class="title">
-          <i class="fas fa-play"></i>
-          <span>URUCHOM GRĘ</span>
+          <template v-if="isBanned">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span>Twoje konto jest zablokowane</span>
+          </template>
+          <template v-else>
+            <i class="fas fa-play"></i>
+            <span>URUCHOM GRĘ</span>
+          </template>
         </div>
       </template>
       <div v-else class="launch-running">
@@ -202,6 +218,15 @@ window.electron?.ipcRenderer?.on('launch:show-log', (_event, data: string, ended
   gap: 12px;
   margin-bottom: 20px;
   z-index: 2;
+}
+
+.banned {
+  background: var(--gradient-banned);
+}
+
+.banned:hover,
+.banned:focus {
+  box-shadow: none !important;
 }
 
 .launch-button .title {

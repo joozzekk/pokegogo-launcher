@@ -19,6 +19,7 @@ export interface IUser {
   nickname: string
   createdAt: string
   isBanned: boolean
+  banReason?: string
   isOnline: boolean
   machineId?: string
   lastLoginAt: string

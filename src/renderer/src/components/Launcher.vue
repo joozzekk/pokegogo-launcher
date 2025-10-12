@@ -8,6 +8,7 @@ import useUserStore from '@renderer/stores/user-store'
 import { fetchProfile, updateMachineData, updateProfileData } from '@renderer/api/endpoints'
 import useGeneralStore from '@renderer/stores/general-store'
 import { refreshMicrosoftToken } from '@renderer/utils'
+import BannedModal from '@renderer/components/modals/BannedModal.vue'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const refreshInterval = ref<any>(null)
@@ -79,5 +80,6 @@ onUnmounted(() => {
     </div>
 
     <div id="toastContainer" class="toast-container"></div>
+    <BannedModal />
   </div>
 </template>

@@ -12,6 +12,7 @@
   --text-muted: #64748b;
   --border: rgba(152, 168, 255, 0.15);
   --gradient-primary: linear-gradient(135deg, #22b2c5 0%, #107bb9 100%);
+  --gradient-banned: linear-gradient(135deg, #c5223d 0%, #b91035 100%);
   --shadow-glow: 0 0 40px rgba(34, 145, 197, 0.3);
 }
 
@@ -1246,6 +1247,17 @@ body {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.modals-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .toast {
