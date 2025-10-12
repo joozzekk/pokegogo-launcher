@@ -45,6 +45,7 @@
     "msmc": "^5.0.5",
     "node-machine-id": "^1.1.12",
     "pinia": "^3.0.3",
+    "socket.io-client": "^4.8.1",
     "vue-router": "4"
   },
   "devDependencies": {
@@ -53,6 +54,7 @@
     "@electron-toolkit/tsconfig": "^1.0.1",
     "@types/electron-devtools-installer": "^4.0.0",
     "@types/node": "^22.16.5",
+    "@types/socket.io-client": "^3.0.0",
     "@vitejs/plugin-vue": "^6.0.0",
     "electron": "^37.2.3",
     "electron-builder": "^25.1.8",

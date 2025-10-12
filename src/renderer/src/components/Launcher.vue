@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { initAnimations } from '@renderer/assets/scripts/animations'
 
 import Header from '@renderer/components/Header.vue'
@@ -7,8 +7,10 @@ import Sidebar from '@renderer/components/Sidebar.vue'
 import useUserStore from '@renderer/stores/user-store'
 import { fetchProfile, updateMachineData, updateProfileData } from '@renderer/api/endpoints'
 import useGeneralStore from '@renderer/stores/general-store'
-import { refreshMicrosoftToken } from '@renderer/utils'
+import { refreshMicrosoftToken, showToast } from '@renderer/utils'
 import BannedModal from '@renderer/components/modals/BannedModal.vue'
+import { useSocket } from '@renderer/services/socket-service'
+import api from '@renderer/utils/client'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const refreshInterval = ref<any>(null)
@@ -16,17 +18,51 @@ const generalStore = useGeneralStore()
 const accountType = localStorage.getItem('LOGIN_TYPE')
 const userStore = useUserStore()
 
-const fetchProfileData = async (): Promise<void> => {
-  if (!userStore.user?.uuid) {
-    const profile = await fetchProfile()
+const socket = useSocket()
 
-    userStore.setUser(profile)
-  }
+const fetchProfileData = async (): Promise<void> => {
+  const profile = await fetchProfile()
+
+  userStore.setUser(profile)
 }
 
 const loadProfile = async (): Promise<void> => {
   await fetchProfileData()
 }
+
+const refreshToken = async (): Promise<void> => {
+  const refreshToken = localStorage.getItem('refresh_token')
+
+  api
+    .post('/auth/refresh', { refreshToken })
+    .then(({ data }) => {
+      localStorage.setItem('token', data.access_token)
+      localStorage.setItem('refresh_token', data.refresh_token)
+    })
+    .catch((err) => {
+      console.log(err)
+    })
+}
+
+socket.on('player:banned', async (data) => {
+  const isCurrentPlayer = userStore.user?.uuid === data.uuid
+
+  if (isCurrentPlayer) {
+    await refreshToken()
+    await fetchProfileData()
+    location.reload()
+  }
+})
+
+socket.on('player:unbanned', async (data) => {
+  const isCurrentPlayer = userStore.user?.uuid === data.uuid
+
+  if (isCurrentPlayer) {
+    await refreshToken()
+    await fetchProfileData()
+    location.reload()
+  }
+})
 
 onMounted(async () => {
   initAnimations()
