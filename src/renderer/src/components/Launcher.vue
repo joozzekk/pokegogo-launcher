@@ -4,15 +4,10 @@ import { initAnimations } from '@renderer/assets/scripts/animations'
 
 import Header from '@renderer/components/Header.vue'
 import Sidebar from '@renderer/components/Sidebar.vue'
-import { refreshMicrosoftToken } from '@renderer/services/refresh-service'
 import useUserStore from '@renderer/stores/user-store'
-import {
-  fetchProfile,
-  updateBackendUserFromMicrosoft,
-  updateMachineData,
-  updateProfileData
-} from '@renderer/api/endpoints'
+import { fetchProfile, updateMachineData, updateProfileData } from '@renderer/api/endpoints'
 import useGeneralStore from '@renderer/stores/general-store'
+import { refreshMicrosoftToken } from '@renderer/utils'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const refreshInterval = ref<any>(null)
@@ -25,66 +20,35 @@ const fetchProfileData = async (): Promise<void> => {
     const profile = await fetchProfile()
 
     userStore.setUser(profile)
-    console.log(userStore.user)
-    console.log(new Date(profile.exp * 1000))
   }
 }
 
 const loadProfile = async (): Promise<void> => {
-  const json = localStorage.getItem('mcToken')
-
-  switch (accountType) {
-    case 'backend':
-      await fetchProfileData()
-      break
-    case 'microsoft':
-      if (json) {
-        const data = JSON.parse(json)
-        const profile = data?.profile
-        userStore.setUser({
-          ...profile,
-          uuid: profile.id,
-          nickname: profile.name
-        })
-      }
-      break
-  }
+  await fetchProfileData()
 }
 
 onMounted(async () => {
   initAnimations()
 
-  if (accountType?.includes('microsoft') && localStorage.getItem('token')) {
+  if (accountType === 'microsoft') {
     refreshInterval.value = setInterval(
       async () => {
-        await refreshMicrosoftToken(localStorage.getItem('token'))
+        await refreshMicrosoftToken(localStorage.getItem('msToken'))
       },
       1000 * 60 * 5
     )
   }
   await loadProfile()
 
-  if (localStorage.getItem('mcToken')) {
-    const userData = await updateBackendUserFromMicrosoft({
-      nickname: userStore.user?.nickname,
-      mcid: userStore.user?.uuid
-    })
-
-    userStore.setUser({
-      ...userStore.user,
-      ...userData
-    })
-  }
-
   const machineData = await window.electron?.ipcRenderer?.invoke('data:machine')
   generalStore.setMachineData(machineData.machineId, machineData.macAddress, machineData.ipAddress)
 
   if (userStore.user) {
-    await updateProfileData(userStore.user.nickname, {
+    await updateProfileData({
       accountType: accountType ?? ''
     })
 
-    await updateMachineData(userStore.user.nickname, {
+    await updateMachineData({
       machineId: generalStore.settings.machineId,
       macAddress: generalStore.settings.macAddress,
       ipAddress: generalStore.settings.ipAddress

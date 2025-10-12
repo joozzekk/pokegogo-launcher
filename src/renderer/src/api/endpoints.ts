@@ -4,11 +4,13 @@ import api from '@renderer/utils/client'
 
 export const fetchLogin = async (
   nickname: string,
-  password: string
+  password: string,
+  microsoft?: boolean
 ): Promise<{ access_token: string; refresh_token: string }> => {
   const res = await api.post('/auth/login', {
     nickname,
-    password
+    password,
+    microsoft
   })
 
   return res.data
@@ -65,30 +67,20 @@ export const fetchAllPlayers = async (nickname: string): Promise<any> => {
   return res.data
 }
 
-export const updateMachineData = async (
-  nickname: string,
-  data: {
-    machineId: string
-    macAddress: string
-    ipAddress: string
-  }
-): Promise<any> => {
+export const updateMachineData = async (data: {
+  machineId: string
+  macAddress: string
+  ipAddress: string
+}): Promise<any> => {
   const res = await api.post('/users/machine-data', {
-    nickname,
     ...data
   })
 
   return res.data
 }
 
-export const updateProfileData = async (
-  nickname: string,
-  data: {
-    accountType: string
-  }
-): Promise<any> => {
+export const updateProfileData = async (data: { accountType: string }): Promise<any> => {
   const res = await api.post('/users/profile-data', {
-    nickname,
     ...data
   })
 
@@ -101,9 +93,8 @@ export const updateBackendUserFromMicrosoft = async (data: Partial<IUser>): Prom
   return res.data
 }
 
-export const banPlayer = async (nickname: string, uuid: string, pin: string): Promise<any> => {
+export const banPlayer = async (uuid: string, pin: string): Promise<any> => {
   const res = await api.post('/users/launcher-ban', {
-    nickname,
     uuid,
     pin
   })
@@ -111,9 +102,8 @@ export const banPlayer = async (nickname: string, uuid: string, pin: string): Pr
   return res.data
 }
 
-export const unbanPlayer = async (nickname: string, uuid: string, pin: string): Promise<any> => {
+export const unbanPlayer = async (uuid: string, pin: string): Promise<any> => {
   const res = await api.post('/users/launcher-unban', {
-    nickname,
     uuid,
     pin
   })

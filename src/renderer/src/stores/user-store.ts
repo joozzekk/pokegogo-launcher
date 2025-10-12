@@ -20,17 +20,10 @@ const useUserStore = defineStore('user', () => {
     resetUser()
     localStorage.removeItem('LOGIN_TYPE')
     localStorage.removeItem('token')
-    switch (accountType) {
-      case 'backend':
-        localStorage.removeItem('refresh_token')
-        break
-      case 'microsoft':
-        localStorage.removeItem('mcToken')
-        break
-    }
+    localStorage.removeItem('msToken')
+    localStorage.removeItem('refresh_token')
+    localStorage.removeItem('mcToken')
     router.push('/')
-
-    await window.electron?.ipcRenderer?.invoke('launch:exit')
   }
 
   return {

@@ -85,10 +85,18 @@ const handleLauncherUnban = async (uuid: string): Promise<void> => {
 }
 
 const getPlayerID = (player: IUser): string => {
-  console.log(player)
   if (player?.mcid) return player.mcid
   if (player?.uuid) return player.uuid
   return '(Brak)'
+}
+
+const getUserRole = (player: IUser): string => {
+  switch (player?.role) {
+    case 'admin':
+      return 'Admin'
+    default:
+      return 'Gracz'
+  }
 }
 
 onMounted(async () => {
@@ -123,6 +131,7 @@ onMounted(async () => {
           <thead>
             <tr>
               <th>Nick</th>
+              <th>Rola</th>
               <th>ID</th>
               <th>Status konta</th>
               <th>Online?</th>
@@ -134,6 +143,9 @@ onMounted(async () => {
               <tr>
                 <td>
                   <strong>{{ player.nickname }}</strong>
+                </td>
+                <td>
+                  {{ player?.role ? getUserRole(player) : 'Gracz' }}
                 </td>
                 <td>
                   {{ getPlayerID(player) }}
@@ -201,7 +213,7 @@ onMounted(async () => {
               </tr>
               <!-- Expanded details row right after player row -->
               <tr v-if="!!expandedPlayer && getPlayerID(expandedPlayer) === getPlayerID(player)">
-                <td colspan="5" style="padding: 0">
+                <td colspan="6" style="padding: 0">
                   <div class="player-details">
                     <div class="player-details-grid">
                       <div class="detail-item">

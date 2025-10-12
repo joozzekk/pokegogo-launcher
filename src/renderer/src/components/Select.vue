@@ -55,12 +55,12 @@ function toggleOpen(): void {
   open.value = !open.value
 }
 
-function selectOption(option): void {
+function selectOption(option: IOption): void {
   emit('update:modelValue', option.value)
   open.value = false
 }
 
-function onClickOutside(event): void {
+function onClickOutside(event: any): void {
   if (dropdown.value && !(dropdown.value as string)?.includes(event.target)) {
     open.value = false
   }

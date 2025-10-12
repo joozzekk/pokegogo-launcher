@@ -78,3 +78,18 @@ export const calculateValueFromPercentage = (
   const max = maxNumber
   return Math.fround(((value - min) / (max - min)) * sliderWidth)
 }
+
+export const refreshMicrosoftToken = async (token: string | null): Promise<void> => {
+  try {
+    if (!window?.electron?.ipcRenderer || !token) return
+    const { msToken, mcToken } = await window.electron.ipcRenderer.invoke(
+      'auth:refresh-token',
+      token
+    )
+
+    localStorage.setItem('msToken', msToken)
+    localStorage.setItem('mcToken', mcToken)
+  } catch (err) {
+    console.log(err)
+  }
+}

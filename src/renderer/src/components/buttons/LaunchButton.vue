@@ -1,8 +1,7 @@
 <script lang="ts" setup>
-import { refreshMicrosoftToken } from '@renderer/services/refresh-service'
 import useGeneralStore from '@renderer/stores/general-store'
 import useUserStore from '@renderer/stores/user-store'
-import { createParticles, showToast } from '@renderer/utils'
+import { createParticles, refreshMicrosoftToken, showToast } from '@renderer/utils'
 import { computed } from 'vue'
 
 const generalStore = useGeneralStore()

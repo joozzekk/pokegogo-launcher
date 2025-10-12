@@ -8,7 +8,7 @@ app.use(router)
 app.use(createPinia())
 
 router.beforeEach(async (to, _from, next) => {
-  const token = localStorage.getItem('token')
+  const token = localStorage.getItem('msToken') ?? localStorage.getItem('token')
 
   if (token?.length) {
     if (to.path.startsWith('/app')) {

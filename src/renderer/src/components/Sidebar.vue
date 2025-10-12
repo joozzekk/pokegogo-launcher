@@ -1,12 +1,30 @@
 <script setup lang="ts">
+import useGeneralStore from '@renderer/stores/general-store'
 import useUserStore from '@renderer/stores/user-store'
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 const userStore = useUserStore()
+const generalStore = useGeneralStore()
 const router = useRouter()
 const playerName = computed(() => userStore.user?.nickname ?? 'Guest')
 const hasAdmin = computed(() => userStore.user?.role === 'admin')
+
+const handleLogout = async (): Promise<void> => {
+  await userStore.logout()
+  if (generalStore.currentState === 'minecraft-started') {
+    await window.electron?.ipcRenderer?.invoke('launch:exit')
+  }
+}
+
+const userRole = computed(() => {
+  switch (userStore.user?.role) {
+    case 'admin':
+      return 'Admin'
+    default:
+      return 'Gracz'
+  }
+})
 
 const handleChangeRoute = (newRoute: string): void => {
   router.push(newRoute)
@@ -28,13 +46,13 @@ const handleChangeRoute = (newRoute: string): void => {
             <div class="status-dot"></div>
           </div>
           <div class="player-info">
-            <span class="player-label">Gracz</span>
+            <span class="player-label">{{ userRole }}</span>
             <span id="playerName" class="player-name">
               {{ playerName }}
             </span>
           </div>
         </div>
-        <button class="player-logout" @click="userStore.logout">
+        <button class="player-logout" @click="handleLogout">
           <i class="fa-solid fa-door-open"></i>
         </button>
       </div>

@@ -23,7 +23,7 @@ export const useLoginService = (): void => {
     const mc = await xbox.getMinecraft()
 
     return {
-      refreshToken: xbox.save(),
+      msToken: xbox.save(),
       mcToken: JSON.stringify(mc.getToken(true))
     }
   })

@@ -1,6 +1,6 @@
 /* eslint-disable */
 // @ts-nocheck
-import { fetchLogin, fetchRegister } from '@renderer/api/endpoints'
+import { fetchLogin, fetchRegister, updateBackendUserFromMicrosoft } from '@renderer/api/endpoints'
 import { router } from '@renderer/router'
 import { AxiosError } from 'axios'
 
@@ -376,16 +376,29 @@ export class PokeGoGoLogin {
   async handleMicrosoftLogin(): Promise<void> {
     try {
       this.showLoading('Logowanie przez Microsoft...')
-      const { refreshToken, mcToken }: { mcToken: string; refreshToken: string } =
+      const { msToken, mcToken }: { mcToken: string; msToken: string } =
         await window.electron?.ipcRenderer?.invoke('auth:login')
 
-      localStorage.setItem('token', refreshToken)
+      const data = JSON.parse(mcToken)
+      const profile = data?.profile
+
+      const user = await updateBackendUserFromMicrosoft({
+        nickname: profile?.name,
+        mcid: profile?.id
+      })
+
+      const { access_token, refresh_token } = await fetchLogin(user.nickname, user.uuid, true)
+
+      localStorage.setItem('msToken', msToken)
       localStorage.setItem('mcToken', mcToken)
+      localStorage.setItem('token', access_token)
+      localStorage.setItem('refresh_token', refresh_token)
       localStorage.setItem('LOGIN_TYPE', 'microsoft')
       router.push({
         path: '/app/home'
       })
     } catch (_error) {
+      console.log(_error)
       this.showToast('Błąd podczas przekierowania', 'error')
     } finally {
       this.hideLoading()
