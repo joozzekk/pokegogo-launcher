@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { initAnimations } from '@renderer/assets/scripts/animations'
 
 import Header from '@renderer/components/Header.vue'
@@ -7,7 +7,7 @@ import Sidebar from '@renderer/components/Sidebar.vue'
 import useUserStore from '@renderer/stores/user-store'
 import { fetchProfile, updateMachineData, updateProfileData } from '@renderer/api/endpoints'
 import useGeneralStore from '@renderer/stores/general-store'
-import { refreshMicrosoftToken, showToast } from '@renderer/utils'
+import { refreshMicrosoftToken } from '@renderer/utils'
 import BannedModal from '@renderer/components/modals/BannedModal.vue'
 import { useSocket } from '@renderer/services/socket-service'
 import api from '@renderer/utils/client'
