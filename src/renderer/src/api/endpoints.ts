@@ -93,19 +93,17 @@ export const updateBackendUserFromMicrosoft = async (data: Partial<IUser>): Prom
   return res.data
 }
 
-export const banPlayer = async (uuid: string, pin: string): Promise<any> => {
+export const banPlayer = async (player: Partial<IUser & { reason: string }>): Promise<any> => {
   const res = await api.post('/users/launcher-ban', {
-    uuid,
-    pin
+    ...player
   })
 
   return res.data
 }
 
-export const unbanPlayer = async (uuid: string, pin: string): Promise<any> => {
+export const unbanPlayer = async (player: Partial<IUser>): Promise<any> => {
   const res = await api.post('/users/launcher-unban', {
-    uuid,
-    pin
+    ...player
   })
 
   return res.data

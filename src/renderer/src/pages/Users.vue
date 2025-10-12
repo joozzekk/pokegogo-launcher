@@ -1,8 +1,8 @@
 <script lang="ts" setup>
 import { fetchAllPlayers } from '@renderer/api/endpoints'
+import BanPlayerModal from '@renderer/components/modals/BanPlayerModal.vue'
 import { IUser } from '@renderer/env'
 import useUserStore from '@renderer/stores/user-store'
-import { showToast } from '@renderer/utils'
 import { format } from 'date-fns'
 import { ref, onMounted, watch, onUnmounted } from 'vue'
 
@@ -14,6 +14,7 @@ const filteredPlayers = ref<IUser[]>([])
 const searchQuery = ref('')
 const expandedPlayer = ref<IUser | null>(null)
 const noResultsVisible = ref(false)
+const banPlayerModalRef = ref()
 
 async function loadPlayerData(): Promise<void> {
   isLoadingPlayers.value = true
@@ -55,33 +56,12 @@ const copyUUID = (uuid: string): void => {
   navigator.clipboard.writeText(uuid)
 }
 
-const handleLauncherBan = async (uuid: string): Promise<void> => {
-  if (!userStore.user) return
-
-  // const res = await banPlayer(userStore.user?.nickname, uuid)
-
-  const player = allPlayers.value?.find((p) => getPlayerID(p) === uuid)
-  if (!player) return
-
-  player.isBanned = true
-  // if (res) {
-  // await loadPlayerData()
-  showToast('Pomyślnie zbanowano użytkownika ', 'error')
-  // }
+const handleLauncherBan = async (player: IUser): Promise<void> => {
+  banPlayerModalRef.value?.openModal(player)
 }
-const handleLauncherUnban = async (uuid: string): Promise<void> => {
-  if (!userStore.user) return
 
-  // const res = await unbanPlayer(userStore.user?.nickname, uuid)
-  const player = allPlayers.value?.find((p) => getPlayerID(p) === uuid)
-  if (!player) return
-
-  player.isBanned = false
-
-  // if (res) {
-  // await loadPlayerData()
-  showToast('Pomyślnie odbanowano użytkownika ', 'success')
-  // }
+const handleLauncherUnban = async (player: IUser): Promise<void> => {
+  banPlayerModalRef.value?.openModal(player, 'unban')
 }
 
 const getPlayerID = (player: IUser): string => {
@@ -103,9 +83,6 @@ const refreshPlayerList = ref()
 
 onMounted(async () => {
   await loadPlayerData()
-  refreshPlayerList.value = setInterval(async () => {
-    await loadPlayerData()
-  }, 1000 * 5)
 })
 
 onUnmounted(() => {
@@ -132,6 +109,9 @@ onUnmounted(() => {
       <div v-if="isLoadingPlayers" class="loading-users">
         <i :class="'fas fa-spinner fa-spin'"></i>
         Ładowanie użytkowników..
+        <button class="btn-primary" style="max-width: 300px" @click="loadPlayerData">
+          Odśwież
+        </button>
       </div>
       <template v-else>
         <div v-if="noResultsVisible" id="noResults" class="no-results">
@@ -206,15 +186,11 @@ onUnmounted(() => {
                     <button
                       v-if="!player?.isBanned"
                       class="ban-btn"
-                      @click="handleLauncherBan(getPlayerID(player))"
+                      @click="handleLauncherBan(player)"
                     >
                       <i :class="'fas fa-ban'"></i>
                     </button>
-                    <button
-                      v-else
-                      class="unban-btn"
-                      @click="handleLauncherUnban(getPlayerID(player))"
-                    >
+                    <button v-else class="unban-btn" @click="handleLauncherUnban(player)">
                       <i :class="'fas fa-rotate-left'"></i>
                     </button>
                   </template>
@@ -300,6 +276,7 @@ onUnmounted(() => {
         </table>
       </template>
     </div>
+    <BanPlayerModal ref="banPlayerModalRef" @refresh-data="loadPlayerData" />
   </div>
 </template>
 
