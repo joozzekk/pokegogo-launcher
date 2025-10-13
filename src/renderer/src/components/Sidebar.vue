@@ -29,6 +29,10 @@ const userRole = computed(() => {
 const handleChangeRoute = (newRoute: string): void => {
   router.push(newRoute)
 }
+
+const handleSupDev = (): void => {
+  window.open('https://tipply.pl/@joozzekk', '_blank')
+}
 </script>
 
 <template>
@@ -128,10 +132,10 @@ const handleChangeRoute = (newRoute: string): void => {
     </nav>
 
     <div class="sidebar-footer">
-      <div class="server-mini-status">
-        <div class="pulse-dot"></div>
+      <button class="btn-primary" @click="handleSupDev">
+        <i class="fa fa-coffee" />
         <span>Wesprzyj developera 🥰</span>
-      </div>
+      </button>
     </div>
   </aside>
 </template>
