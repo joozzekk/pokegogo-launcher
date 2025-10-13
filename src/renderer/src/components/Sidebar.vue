@@ -115,6 +115,21 @@ const handleSupDev = (): void => {
         <div class="nav-indicator"></div>
       </a>
 
+      <a
+        v-if="hasAdmin"
+        class="nav-item"
+        :class="{
+          active: $route.path === '/app/ftp'
+        }"
+        @click="handleChangeRoute('/app/ftp')"
+      >
+        <div class="nav-icon">
+          <i class="fas fa-folder"></i>
+        </div>
+        <span>Pliki MC</span>
+        <div class="nav-indicator"></div>
+      </a>
+
       <!-- <a
         href="#"
         class="nav-item"

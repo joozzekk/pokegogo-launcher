@@ -124,8 +124,9 @@ onUnmounted(() => {
             <tr>
               <th>Nick</th>
               <th>Rola</th>
-              <th>ID</th>
               <th>Status konta</th>
+              <th>ID</th>
+              <th>Premium?</th>
               <th>Online?</th>
               <th>
                 <div style="position: relative; display: flex; flex-direction: row-reverse">
@@ -145,17 +146,6 @@ onUnmounted(() => {
                 <td>
                   {{ player?.role ? getUserRole(player) : 'Gracz' }}
                 </td>
-                <td>
-                  {{ getPlayerID(player) }}
-                  <span
-                    class="copy-btn"
-                    @click="
-                      copyUUID(player?.mcid ? player.mcid : player?.uuid ? player.uuid : '(brak)')
-                    "
-                  >
-                    <i class="fa fa-copy" />
-                  </span>
-                </td>
                 <td style="font-family: monospace; font-size: 0.9rem">
                   <span
                     :style="`
@@ -170,6 +160,26 @@ onUnmounted(() => {
                   >
                     {{ player.isBanned ? 'BANNED' : 'ACTIVE' }}
                   </span>
+                </td>
+                <td>
+                  {{ getPlayerID(player) }}
+                  <span
+                    class="copy-btn"
+                    @click="
+                      copyUUID(player?.mcid ? player.mcid : player?.uuid ? player.uuid : '(brak)')
+                    "
+                  >
+                    <i class="fa fa-copy" />
+                  </span>
+                </td>
+                <td>
+                  <div style="display: flex; gap: 0.5rem; align-items: center">
+                    <div
+                      class="online-dot"
+                      :style="{ background: !player?.mcid ? '#ff4757' : '#00ff88' }"
+                    ></div>
+                    {{ player?.mcid ? 'Tak' : 'Nie' }}
+                  </div>
                 </td>
                 <td>
                   <div style="display: flex; gap: 0.5rem; align-items: center">
@@ -207,7 +217,7 @@ onUnmounted(() => {
               </tr>
               <!-- Expanded details row right after player row -->
               <tr v-if="!!expandedPlayer && getPlayerID(expandedPlayer) === getPlayerID(player)">
-                <td colspan="6" style="padding: 0">
+                <td colspan="7" style="padding: 0">
                   <div class="player-details">
                     <div class="player-details-grid">
                       <div class="detail-item">
