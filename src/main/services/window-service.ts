@@ -8,6 +8,7 @@ import { useLaunchService } from './launch-service'
 import { getMaxRAMInGB } from '../utils'
 import { machineId } from 'node-machine-id'
 import { address } from 'address/promises'
+import { useFTP } from './ftp-service'
 
 const createMainWindow = (): BrowserWindow => {
   const mainWindow = new BrowserWindow({
@@ -25,6 +26,16 @@ const createMainWindow = (): BrowserWindow => {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
     }
+  })
+
+  ipcMain.handle('ftp:list-files', async (_, folder) => {
+    const { client, connect } = useFTP()
+
+    await connect()
+    const pwd = await client.pwd()
+    const remoteURL = pwd + `/${folder}`
+
+    return await client.list(remoteURL)
   })
 
   mainWindow.on('ready-to-show', () => {
@@ -62,7 +73,15 @@ const createMainWindow = (): BrowserWindow => {
 
   ipcMain.on('window:close', (_, isHideToTray: boolean = true) => {
     const win = BrowserWindow.getFocusedWindow()
-    if (win) isHideToTray ? win.hide() : win.close()
+    if (win) {
+      if (isHideToTray) {
+        win.close()
+        if (ipcMain.listenerCount('launch:exit')) ipcMain.emit('launch:exit')
+        return
+      }
+
+      win.hide()
+    }
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {

@@ -88,19 +88,6 @@ const handleSupDev = (): void => {
         <div class="nav-indicator"></div>
       </a>
       <a
-        class="nav-item"
-        :class="{
-          active: $route.path === '/app/settings'
-        }"
-        @click="handleChangeRoute('/app/settings')"
-      >
-        <div class="nav-icon">
-          <i class="fas fa-list"></i>
-        </div>
-        <span>Ustawienia</span>
-        <div class="nav-indicator"></div>
-      </a>
-      <a
         v-if="hasAdmin"
         class="nav-item"
         :class="{
@@ -127,6 +114,19 @@ const handleSupDev = (): void => {
           <i class="fas fa-folder"></i>
         </div>
         <span>Pliki MC</span>
+        <div class="nav-indicator"></div>
+      </a>
+      <a
+        class="nav-item"
+        :class="{
+          active: $route.path === '/app/settings'
+        }"
+        @click="handleChangeRoute('/app/settings')"
+      >
+        <div class="nav-icon">
+          <i class="fas fa-list"></i>
+        </div>
+        <span>Ustawienia</span>
         <div class="nav-indicator"></div>
       </a>
 
