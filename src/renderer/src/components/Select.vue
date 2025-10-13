@@ -88,7 +88,7 @@ onBeforeUnmount(() => {
   border-radius: 1rem;
   cursor: pointer;
   user-select: none;
-  font-size: 1rem;
+  font-size: 0.8rem;
   padding-right: 2rem;
   color: var(--text-primary);
 }

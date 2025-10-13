@@ -87,7 +87,7 @@ onMounted(() => {
               <div id="login-password-error" class="error-message"></div>
             </div>
 
-            <button class="btn-login-primary">
+            <button class="btn-primary">
               <span>Zaloguj się</span>
             </button>
 
@@ -190,7 +190,7 @@ onMounted(() => {
               </label>
             </div>
 
-            <button class="btn-login-primary">
+            <button class="btn-primary">
               <span>Utwórz konto</span>
             </button>
 
