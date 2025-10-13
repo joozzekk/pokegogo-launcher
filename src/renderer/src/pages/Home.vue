@@ -23,9 +23,9 @@ onMounted(() => {
 <template>
   <div id="homePage" class="page active">
     <div class="home-grid">
-      <div class="launch-panel">
-        <div class="launch-header">
-          <div class="launch-title">
+      <div class="card-panel">
+        <div class="card-header">
+          <div class="card-title">
             <div class="nav-icon">
               <i class="fas fa-play"></i>
             </div>
@@ -84,9 +84,9 @@ onMounted(() => {
         </div>
       </div>
 
-      <div class="news-panel">
-        <div class="news-header">
-          <div class="news-title">
+      <div class="card-panel">
+        <div class="card-header">
+          <div class="card-title">
             <div class="nav-icon">
               <i class="fas fa-bell"></i>
             </div>

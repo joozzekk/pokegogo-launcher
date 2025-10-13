@@ -201,12 +201,12 @@ window.electron?.ipcRenderer?.on('launch:show-log', (_event, data: string, ended
 .launch-button {
   position: relative;
   width: 100%;
-  padding: 20px;
+  padding: 1rem;
   background: var(--gradient-primary);
   color: white;
   border: none;
-  border-radius: 1rem;
-  font-size: 1.5rem;
+  border-radius: 0.8rem;
+  font-size: 1rem;
   font-weight: 700;
   letter-spacing: 1px;
   cursor: pointer;
@@ -233,7 +233,7 @@ window.electron?.ipcRenderer?.on('launch:show-log', (_event, data: string, ended
 .launch-button .title {
   display: flex;
   align-items: center;
-  gap: 0.9rem;
+  gap: 0.8rem;
 }
 
 .margin-title {
@@ -241,7 +241,7 @@ window.electron?.ipcRenderer?.on('launch:show-log', (_event, data: string, ended
 }
 
 .launch-button .info {
-  font-size: 0.7rem;
+  font-size: 0.6rem;
   color: rgba(255, 255, 255, 0.7);
 }
 

@@ -181,28 +181,30 @@ onUnmounted(() => {
                   </div>
                 </td>
 
-                <td class="reverse">
-                  <template v-if="player?.role !== 'admin'">
-                    <button
-                      v-if="!player?.isBanned"
-                      class="ban-btn"
-                      @click="handleLauncherBan(player)"
-                    >
-                      <i :class="'fas fa-ban'"></i>
+                <td>
+                  <div class="reverse">
+                    <template v-if="player?.role !== 'admin'">
+                      <button
+                        v-if="!player?.isBanned"
+                        class="ban-btn"
+                        @click="handleLauncherBan(player)"
+                      >
+                        <i :class="'fas fa-ban'"></i>
+                      </button>
+                      <button v-else class="unban-btn" @click="handleLauncherUnban(player)">
+                        <i :class="'fas fa-rotate-left'"></i>
+                      </button>
+                    </template>
+                    <button class="show-more-btn" @click="togglePlayerDetails(getPlayerID(player))">
+                      <i
+                        :class="
+                          !!expandedPlayer && getPlayerID(expandedPlayer) === getPlayerID(player)
+                            ? 'fas fa-chevron-up'
+                            : 'fas fa-chevron-down'
+                        "
+                      ></i>
                     </button>
-                    <button v-else class="unban-btn" @click="handleLauncherUnban(player)">
-                      <i :class="'fas fa-rotate-left'"></i>
-                    </button>
-                  </template>
-                  <button class="show-more-btn" @click="togglePlayerDetails(getPlayerID(player))">
-                    <i
-                      :class="
-                        !!expandedPlayer && getPlayerID(expandedPlayer) === getPlayerID(player)
-                          ? 'fas fa-chevron-up'
-                          : 'fas fa-chevron-down'
-                      "
-                    ></i>
-                  </button>
+                  </div>
                 </td>
               </tr>
               <!-- Expanded details row right after player row -->
@@ -318,8 +320,8 @@ onUnmounted(() => {
   background: var(--bg-input);
   border: 2px solid var(--border-primary);
   border-radius: var(--border-radius-small);
-  padding: 1rem 1.25rem 1rem 3.5rem;
-  font-size: 1rem;
+  padding: 0.8rem 1rem 0.8rem 2.5rem;
+  font-size: 0.8rem;
   color: var(--text-primary);
   font-family: inherit;
   transition: var(--transition);
@@ -376,12 +378,12 @@ onUnmounted(() => {
 }
 .logs-table {
   width: 100%;
-  margin-bottom: 6.8rem;
+  margin-bottom: 6rem;
   border-collapse: collapse;
 }
 .logs-table th {
   background: rgba(26, 26, 31, 1);
-  padding: 0.8rem 1.1rem;
+  padding: 0.5rem 1rem;
   text-align: left;
   font-weight: 600;
   color: var(--primary1);
@@ -391,7 +393,7 @@ onUnmounted(() => {
   z-index: 10;
 }
 .logs-table td {
-  padding: 0.8rem 1.1rem;
+  padding: 0.5rem 1rem;
   border-bottom: 1px solid var(--border-primary);
   color: var(--text-border);
 }

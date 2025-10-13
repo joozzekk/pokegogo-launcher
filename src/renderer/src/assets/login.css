@@ -119,7 +119,7 @@ body {
 }
 
 .tagline {
-  font-size: 1.1rem;
+  font-size: 1rem;
   color: var(--text-secondary);
   opacity: 0.8;
 }
@@ -179,7 +179,7 @@ body {
   padding: 1rem 1.5rem;
   color: var(--text-secondary);
   font-family: inherit;
-  font-size: 1rem;
+  font-size: 0.8rem;
   cursor: pointer;
   transition: var(--transition);
   display: flex;
@@ -219,7 +219,7 @@ body {
 }
 
 .form-container {
-  padding: 1rem 2rem;
+  padding: 0.8rem 1.5rem;
   position: absolute;
   overflow-y: auto;
   top: 0;
@@ -245,7 +245,7 @@ body {
   margin-bottom: 1.5rem;
 }
 .form-header h2 {
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   font-weight: 600;
   margin-bottom: 8px;
   background: linear-gradient(45deg, var(--text-primary), var(--text-secondary));
@@ -254,7 +254,7 @@ body {
 }
 .form-header p {
   color: var(--text-secondary);
-  font-size: 0.95rem;
+  font-size: 0.8rem;
 }
 
 .form-group {
@@ -271,8 +271,8 @@ body {
   background: var(--bg-input);
   border: 2px solid var(--border-primary);
   border-radius: var(--border-radius-small);
-  padding: 0.5rem 1.5rem 0.5rem 3.25rem;
-  font-size: 1rem;
+  padding: 0.5rem 1.5rem 0.5rem 2.5rem;
+  font-size: 0.8rem;
   color: var(--text-primary);
   font-family: inherit;
   transition: var(--transition);
@@ -343,8 +343,8 @@ body {
   display: flex;
   align-items: center;
   cursor: pointer;
-  gap: 12px;
-  font-size: 0.9rem;
+  gap: 0.5rem;
+  font-size: 0.8rem;
   line-height: 1.5;
 }
 .checkbox-wrapper input[type='checkbox'] {
@@ -383,7 +383,7 @@ body {
   border: none;
   border-radius: var(--border-radius-small);
   padding: 0.8rem 1rem;
-  font-size: 1rem;
+  font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
   position: relative;
@@ -396,42 +396,14 @@ body {
   gap: 10px;
 }
 
-.btn-login-primary {
-  padding: 0.8rem 1rem;
-  border: none;
-  border-radius: 10px;
-  width: 100%;
-  font-size: 1.25rem;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  transition: all 0.3s ease;
-}
-
-.btn-login-primary {
-  background: var(--gradient-primary);
-  color: white;
-}
-
-.btn-login-primary:hover,
-.btn-login-primary:focus {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 20px rgba(34, 173, 197, 0.3);
-}
-
 .btn-microsoft {
   background: linear-gradient(45deg, #0078d4, #106ebe);
   color: white;
 }
-.btn-login-primary:hover,
-.btn-login-primary:focus,
 .btn-microsoft:hover,
 .btn-microsoft:focus {
   transform: translateY(-2px);
-  box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
+  box-shadow: 0 0 15px rgba(0, 136, 255, 0.2);
 }
 
 .btn-glow {
