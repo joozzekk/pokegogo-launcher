@@ -19,7 +19,7 @@ const minimizeWindow = (): void => {
 
 const closeWindow = (): void => {
   window.electron?.ipcRenderer?.send('window:close', generalStore.settings.hideToTray)
-  if (generalStore.currentState === 'minecraft-started' && generalStore.settings.hideToTray) {
+  if (generalStore.currentState === 'minecraft-started' && !generalStore.settings.hideToTray) {
     window.electron?.ipcRenderer?.invoke('launch:exit')
   }
 }
