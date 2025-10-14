@@ -9,6 +9,8 @@ import { getMaxRAMInGB } from '../utils'
 import { machineId } from 'node-machine-id'
 import { address } from 'address/promises'
 import { useFTP } from './ftp-service'
+import { readFile, unlink, writeFile } from 'fs/promises'
+import { createHash } from 'crypto'
 
 const createMainWindow = (): BrowserWindow => {
   const mainWindow = new BrowserWindow({
@@ -35,7 +37,122 @@ const createMainWindow = (): BrowserWindow => {
     const pwd = await client.pwd()
     const remoteURL = pwd + `/${folder}`
 
-    return await client.list(remoteURL)
+    const list = await client.list(remoteURL)
+
+    client.close()
+
+    return list
+  })
+
+  async function computeHash(buffer: ArrayBuffer): Promise<string> {
+    const hash = createHash('sha256')
+    hash.update(Buffer.from(buffer))
+    return hash.digest('hex')
+  }
+
+  ipcMain.handle(
+    'ftp:upload-file',
+    async (_, folder: string, buffer: ArrayBuffer, fileName: string) => {
+      const { client, connect } = useFTP()
+
+      const tempFilePath = join(process.cwd(), 'tmp', fileName)
+      await writeFile(tempFilePath, Buffer.from(buffer))
+      await connect()
+
+      // Upload głównego pliku
+      await client.uploadFrom(tempFilePath, `${folder}/${fileName}`)
+
+      // Pobierz lub utwórz hashes.txt
+      const hashes: { [key: string]: string } = {}
+      try {
+        await client.downloadTo(join(process.cwd(), 'tmp', 'hashes.txt'), `${folder}/hashes.txt`)
+        const data = await readFile(join(process.cwd(), 'tmp', 'hashes.txt'), 'utf-8')
+        data.split('\n').forEach((line) => {
+          const [name, hash] = line.trim().split(' ')
+          if (name && hash) hashes[name] = hash
+        })
+      } catch {
+        // Plik może nie istnieć, to nie jest błąd
+      }
+
+      // Oblicz hash nowego pliku i dodaj do obiektu
+      const fileHash = await computeHash(buffer)
+      hashes[fileName] = fileHash
+
+      // Stwórz nowy plik hashes.txt
+      const hashesContent = Object.entries(hashes)
+        .map(([name, hash]) => `${name} ${hash}`)
+        .join('\n')
+      await writeFile(join(process.cwd(), 'tmp', 'hashes.txt'), hashesContent)
+
+      // Upload zaktualizowanego hashes.txt
+      await client.uploadFrom(join(process.cwd(), 'tmp', 'hashes.txt'), `${folder}/hashes.txt`)
+
+      // Czyszczenie
+      await unlink(tempFilePath)
+      await unlink(join(process.cwd(), 'tmp', 'hashes.txt'))
+      client.close()
+
+      return true
+    }
+  )
+
+  ipcMain.handle('ftp:remove-file', async (_, folder: string, fileName: string) => {
+    const { client, connect } = useFTP()
+
+    await connect()
+
+    // Usuwamy plik
+    const res = await client.remove(`${folder}/${fileName}`)
+
+    // Aktualizacja hashes.txt
+    const hashes: { [key: string]: string } = {}
+    try {
+      await client.downloadTo(join(process.cwd(), 'tmp', 'hashes.txt'), `${folder}/hashes.txt`)
+      const data = await readFile(join(process.cwd(), 'tmp', 'hashes.txt'), 'utf-8')
+      data.split('\n').forEach((line) => {
+        const [name, hash] = line.trim().split(' ')
+        if (name && hash) hashes[name] = hash
+      })
+
+      // Usuwamy wpis
+      delete hashes[fileName]
+
+      const hashesContent = Object.entries(hashes)
+        .map(([name, hash]) => `${name} ${hash}`)
+        .join('\n')
+      await writeFile(join(process.cwd(), 'tmp', 'hashes.txt'), hashesContent)
+
+      // Jeśli hashes.txt jest pusty, usuwamy plik na serwerze
+      if (hashesContent.length === 0) {
+        await client.remove(`${folder}/hashes.txt`)
+      } else {
+        await client.uploadFrom(join(process.cwd(), 'tmp', 'hashes.txt'), `${folder}/hashes.txt`)
+      }
+
+      await unlink(join(process.cwd(), 'tmp', 'hashes.txt'))
+    } catch {
+      // Jeśli plik hashes.txt nie istnieje, nic nie robimy
+    }
+
+    client.close()
+
+    return res
+  })
+
+  ipcMain.handle('ftp:read-file', async (_, folder: string, name: string) => {
+    const tempFilePath = join(process.cwd(), 'tmp', name)
+    const { client, connect } = useFTP()
+
+    await connect()
+
+    await client.downloadTo(tempFilePath, `${folder}/${name}`)
+    const fileContent = (await readFile(tempFilePath)).toString('utf8')
+    await unlink(tempFilePath)
+
+    client.close()
+
+    return fileContent
   })
 
   mainWindow.on('ready-to-show', () => {

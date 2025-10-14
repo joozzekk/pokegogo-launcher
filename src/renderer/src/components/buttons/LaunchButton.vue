@@ -206,7 +206,7 @@ window.electron?.ipcRenderer?.on('launch:show-log', (_event, data: string, ended
   color: white;
   border: none;
   border-radius: 0.8rem;
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 700;
   letter-spacing: 1px;
   cursor: pointer;

@@ -130,7 +130,7 @@ onUnmounted(() => {
               <th>Online?</th>
               <th>
                 <div style="position: relative; display: flex; flex-direction: row-reverse">
-                  <button class="show-more-btn" @click="loadPlayerData">
+                  <button class="info-btn" @click="loadPlayerData">
                     <i :class="'fas fa-refresh'"></i>
                   </button>
                 </div>
@@ -205,7 +205,7 @@ onUnmounted(() => {
                         <i :class="'fas fa-rotate-left'"></i>
                       </button>
                     </template>
-                    <button class="show-more-btn" @click="togglePlayerDetails(getPlayerID(player))">
+                    <button class="info-btn" @click="togglePlayerDetails(getPlayerID(player))">
                       <i
                         :class="
                           !!expandedPlayer && getPlayerID(expandedPlayer) === getPlayerID(player)
@@ -320,43 +320,6 @@ onUnmounted(() => {
   align-items: center;
   flex-wrap: wrap;
 }
-.search-input-wrapper {
-  position: relative;
-  flex: 1;
-  min-width: 300px;
-}
-.search-input {
-  width: 100%;
-  background: var(--bg-input);
-  border: 2px solid var(--border-primary);
-  border-radius: var(--border-radius-small);
-  padding: 0.8rem 1rem 0.8rem 2.5rem;
-  font-size: 0.8rem;
-  color: var(--text-primary);
-  font-family: inherit;
-  transition: var(--transition);
-  outline: none;
-}
-.search-input:focus {
-  border-color: var(--primary1);
-  box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.1);
-  background: rgba(26, 26, 31, 1);
-}
-.search-input::placeholder {
-  color: var(--text-muted);
-  font-weight: 300;
-}
-.search-icon {
-  position: absolute;
-  left: 18px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-muted);
-  transition: var(--transition);
-}
-.search-input:focus ~ .search-icon {
-  color: var(--primary1);
-}
 .search-btn {
   background: linear-gradient(45deg, var(--primary1), var(--primary2));
   color: var(--bg-primary);
@@ -427,21 +390,6 @@ onUnmounted(() => {
   color: rgba(255, 255, 255, 0.2);
 }
 
-.show-more-btn {
-  background: linear-gradient(45deg, var(--primary1), var(--primary2));
-  color: var(--bg-primary);
-  border: none;
-  border-radius: var(--border-radius-small);
-  padding: 0.5rem;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: var(--transition);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
 .online-dot {
   bottom: 4px;
   right: -2px;
@@ -467,32 +415,9 @@ onUnmounted(() => {
   color: lightgreen;
 }
 
-.ban-btn {
-  background: rgba(255, 0, 0, 0.3);
-  color: var(--bg-primary);
-  border: none;
-  border-radius: var(--border-radius-small);
-  padding: 0.5rem;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: var(--transition);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: red;
-}
 .unban-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
-}
-.ban-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 0 15px rgba(255, 0, 0, 0.3);
-}
-.show-more-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 0 15px rgba(0, 136, 255, 0.3);
 }
 .player-details {
   display: block;
