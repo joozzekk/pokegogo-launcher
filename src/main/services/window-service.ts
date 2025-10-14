@@ -68,7 +68,14 @@ const createMainWindow = (): BrowserWindow => {
         await client.downloadTo(join(process.cwd(), 'tmp', 'hashes.txt'), `${folder}/hashes.txt`)
         const data = await readFile(join(process.cwd(), 'tmp', 'hashes.txt'), 'utf-8')
         data.split('\n').forEach((line) => {
-          const [name, hash] = line.trim().split(' ')
+          line = line.trim()
+          if (!line) return
+
+          const lastSpaceIndex = line.lastIndexOf(' ')
+          if (lastSpaceIndex === -1) return // niepoprawny format
+
+          const name = line.substring(0, lastSpaceIndex)
+          const hash = line.substring(lastSpaceIndex + 1)
           if (name && hash) hashes[name] = hash
         })
       } catch {
@@ -111,7 +118,14 @@ const createMainWindow = (): BrowserWindow => {
       await client.downloadTo(join(process.cwd(), 'tmp', 'hashes.txt'), `${folder}/hashes.txt`)
       const data = await readFile(join(process.cwd(), 'tmp', 'hashes.txt'), 'utf-8')
       data.split('\n').forEach((line) => {
-        const [name, hash] = line.trim().split(' ')
+        line = line.trim()
+        if (!line) return
+
+        const lastSpaceIndex = line.lastIndexOf(' ')
+        if (lastSpaceIndex === -1) return // niepoprawny format
+
+        const name = line.substring(0, lastSpaceIndex)
+        const hash = line.substring(lastSpaceIndex + 1)
         if (name && hash) hashes[name] = hash
       })
 

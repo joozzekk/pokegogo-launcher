@@ -109,6 +109,7 @@ export const useFTP = (inputFile?: Ref<HTMLInputElement | null>): FTPService => 
       if (res) {
         showToast('Pomyślnie usunięto plik')
         currentFileContent.value = res
+        await getFolderContent(currentFolder.value)
       }
     } catch (err) {
       console.log(err)

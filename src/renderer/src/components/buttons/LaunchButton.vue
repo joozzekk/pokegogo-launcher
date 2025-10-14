@@ -186,7 +186,7 @@ window.electron?.ipcRenderer?.on('launch:show-log', (_event, data: string, ended
   width: 100%;
   background: var(--bg-dark);
   padding: 0.5rem;
-  font-size: 0.7rem;
+  font-size: 0.6rem;
   color: rgba(255, 255, 255, 0.7);
   text-align: center;
   border-radius: 0 0 15px 15px;
@@ -233,7 +233,7 @@ window.electron?.ipcRenderer?.on('launch:show-log', (_event, data: string, ended
 .launch-button .title {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
+  gap: 0.6rem;
 }
 
 .margin-title {

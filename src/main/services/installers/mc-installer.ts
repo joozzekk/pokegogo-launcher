@@ -1,9 +1,9 @@
-import { app, BrowserWindow } from 'electron'
 import fs from 'fs'
 import path from 'path'
 import crypto from 'crypto'
 import { Client } from 'basic-ftp'
 import { safeCd, useFTP } from '../ftp-service'
+import { app, BrowserWindow } from 'electron'
 
 async function fileExists(filePath: string): Promise<boolean> {
   try {
@@ -23,6 +23,7 @@ async function getFileHash(filePath: string): Promise<string> {
     stream.on('error', reject)
   })
 }
+
 async function readHashesFile(localDir: string): Promise<Record<string, string>> {
   const hashesFilePath = path.join(localDir, 'hashes.txt')
   try {
@@ -31,16 +32,19 @@ async function readHashesFile(localDir: string): Promise<Record<string, string>>
       .split('\n')
       .map((line) => line.trim())
       .filter(Boolean)
+
     const map: Record<string, string> = {}
     for (const line of lines) {
-      const [fileName, fileHash] = line.split(' ')
+      const lastSpaceIndex = line.lastIndexOf(' ')
+      if (lastSpaceIndex === -1) continue
+      const fileName = line.substring(0, lastSpaceIndex)
+      const fileHash = line.substring(lastSpaceIndex + 1)
       if (fileName && fileHash) {
         map[fileName] = fileHash
       }
     }
     return map
   } catch {
-    // Plik nie istnieje lub błąd odczytu - traktujemy jak pusty
     return {}
   }
 }
@@ -62,7 +66,24 @@ async function downloadAll(
   const changed = await safeCd(client, remoteDir)
   if (!changed) return
 
-  const localHashes = await readHashesFile(localDir)
+  const localHashesFile = path.join(localDir, 'hashes.txt')
+  let hasHashesFile = false
+  try {
+    await client.downloadTo(localHashesFile, path.posix.join(remoteDir, 'hashes.txt'))
+    hasHashesFile = true
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (err) {
+    console.log('Brak hashes.txt na FTP, przyjmujemy pusty zestaw hashy')
+    hasHashesFile = false
+  }
+
+  let localHashes: Record<string, string> = {}
+  if (hasHashesFile) {
+    localHashes = await readHashesFile(localDir)
+  } else {
+    localHashes = {}
+  }
+
   const list = await client.list()
 
   let downloadedFiles = 0
@@ -70,7 +91,7 @@ async function downloadAll(
 
   for (const file of list) {
     if (signal.aborted) {
-      return // stop downloading if aborted
+      return
     }
 
     const remotePath = path.posix.join(remoteDir, file.name)
@@ -117,6 +138,36 @@ async function downloadAll(
         log(`Pobrano ${downloadedFiles}/${totalFiles} plików w ${remoteDir}`)
       }
     }
+  }
+
+  const dirents = await fs.promises.readdir(localDir, { withFileTypes: true })
+
+  for (const dirent of dirents) {
+    if (!dirent.isFile()) {
+      continue // pomijamy katalogi i inne nie-pliki
+    }
+
+    const localFile = dirent.name
+
+    if (localFile === 'hashes.txt' || localFile.endsWith('.sha256')) {
+      continue // pomijamy kontrolne pliki
+    }
+
+    if (!localHashes[localFile]) {
+      try {
+        await fs.promises.unlink(path.join(localDir, localFile))
+        log(`Usunięto lokalny plik ${localFile}.`)
+      } catch (err) {
+        console.log(`Błąd podczas usuwania pliku ${localFile}: ${err}`)
+      }
+    }
+  }
+
+  try {
+    await fs.promises.unlink(path.join(localDir, 'hashes.txt'))
+    console.log('Usunięto lokalny plik hashes.txt po synchronizacji.')
+  } catch {
+    // Ignorujemy błąd usuwania hashes.txt jeśli plik już nie istnieje
   }
 }
 
