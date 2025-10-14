@@ -206,12 +206,12 @@ const createMainWindow = (): BrowserWindow => {
     const win = BrowserWindow.getFocusedWindow()
     if (win) {
       if (isHideToTray) {
-        win.close()
-        if (ipcMain.listenerCount('launch:exit')) ipcMain.emit('launch:exit')
+        win.hide()
         return
       }
 
-      win.hide()
+      win.close()
+      if (ipcMain.listenerCount('launch:exit')) ipcMain.emit('launch:exit')
     }
   })
 
