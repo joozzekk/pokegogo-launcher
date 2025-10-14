@@ -6,7 +6,7 @@ import { launchMinecraft } from './mc-launcher'
 export const useLaunchService = (win: BrowserWindow): void => {
   let currentAbortController: AbortController | null = null
 
-  ipcMain.handle('launch-game', async (_, data) => {
+  ipcMain.handle('launch:game', async (_, data) => {
     if (currentAbortController) {
       currentAbortController.abort()
     }

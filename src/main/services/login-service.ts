@@ -6,13 +6,13 @@ export const useLoginService = (): void => {
 
   ipcMain.handle(
     'auth:refresh-token',
-    async (_, refreshToken: string): Promise<{ refreshToken: string; mcToken: string }> => {
+    async (_, refreshToken: string): Promise<{ msToken: string; mcToken: string }> => {
       console.log('Refreshing token...')
       const xbox = await auth.refresh(refreshToken)
       const mc = await xbox.getMinecraft()
 
       return {
-        refreshToken: xbox.save(),
+        msToken: xbox.save(),
         mcToken: JSON.stringify(mc.getToken(true))
       }
     }

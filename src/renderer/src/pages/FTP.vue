@@ -59,9 +59,25 @@ const handleShowSearch = (): void => {
 }
 
 const isKnownFile = (name: string): boolean => {
-  return ['.txt', '.properties', '.css', '.js', '.ts', '.html'].includes(
-    name.slice(name.lastIndexOf('.'))
-  )
+  return [
+    '.properties',
+    '.txt',
+    '.css',
+    '.js',
+    '.ts',
+    '.html',
+    '.json',
+    '.scss',
+    '.vue',
+    '.yml',
+    '.yaml',
+    '.conf',
+    '.toml',
+    '.csv',
+    '.md',
+    '.lst',
+    '.log'
+  ].includes(name.slice(name.lastIndexOf('.')))
 }
 
 onMounted(async () => {
@@ -140,9 +156,6 @@ onMounted(async () => {
             @click="handleUploadFile"
           >
             <i class="fa fa-upload" />
-          </button>
-          <button class="nav-icon hover:cursor-pointer hover:text-[#03a2ad]">
-            <i class="fa fa-folder-plus" />
           </button>
         </div>
         <transition name="slide-fade">
