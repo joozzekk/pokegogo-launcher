@@ -4,6 +4,7 @@ import { electronApp, optimizer } from '@electron-toolkit/utils'
 import useWindowService from './services/window-service'
 import { useAppUpdater } from './services/app-updater'
 import { createTray } from './services/tray-service'
+import { ensureDir } from './utils'
 
 const gotTheLock = app.requestSingleInstanceLock()
 
@@ -14,6 +15,8 @@ if (!gotTheLock) {
 
   app.whenReady().then(async () => {
     electronApp.setAppUserModelId('pl.pokemongogo.launcher')
+
+    ensureDir(process.cwd() + '/tmp')
 
     const { createMainWindow, createLoadingWindow } = useWindowService()
     mainWindow = createMainWindow()

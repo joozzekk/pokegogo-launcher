@@ -13,16 +13,18 @@ const JAR_URLS = {
   }
 }
 
-function checkJavaInstalled(): Promise<boolean | string> {
+function checkJavaInstalled(version: string): Promise<boolean | string> {
   return new Promise((resolve) => {
-    exec('java -version', (error) => {
-      resolve(!error)
+    exec('java -version', (_, stdout, stderr) => {
+      const isJavaInstalled = stdout.includes(version) || stderr.includes(version)
+
+      resolve(isJavaInstalled)
     })
   })
 }
 
 export async function installJava(version: string): Promise<string> {
-  const javaInstalled = await checkJavaInstalled()
+  const javaInstalled = await checkJavaInstalled(version)
   if (javaInstalled) {
     return Promise.resolve('Java jest już zainstalowana')
   }

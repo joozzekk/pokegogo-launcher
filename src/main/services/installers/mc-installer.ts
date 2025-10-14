@@ -1,24 +1,15 @@
-import ftp from 'basic-ftp'
 import { app, BrowserWindow } from 'electron'
 import fs from 'fs'
 import path from 'path'
 import crypto from 'crypto'
+import { Client } from 'basic-ftp'
+import { safeCd, useFTP } from '../ftp-service'
 
 async function fileExists(filePath: string): Promise<boolean> {
   try {
     await fs.promises.access(filePath)
     return true
   } catch {
-    return false
-  }
-}
-
-async function safeCd(client: ftp.Client, dir: string): Promise<boolean> {
-  try {
-    await client.cd(dir)
-    return true
-  } catch (e) {
-    console.error(`Nie można wejść do katalogu: ${dir}`, e)
     return false
   }
 }
@@ -55,7 +46,7 @@ async function readHashesFile(localDir: string): Promise<Record<string, string>>
 }
 
 async function downloadAll(
-  client: ftp.Client,
+  client: Client,
   remoteDir: string,
   localDir: string,
   log: (data: string, isEnded?: boolean) => void,
@@ -133,7 +124,7 @@ export async function copyMCFiles(
   mainWindow: BrowserWindow,
   signal: AbortSignal
 ): Promise<string | undefined> {
-  const client = new ftp.Client(1000 * 120)
+  const { client, connect } = useFTP()
   const localRoot = path.join(app.getPath('userData'), 'mcfiles')
   const markerFile = path.join(localRoot, '.mcfiles_installed')
   const importantFolders = ['mods', 'versions', 'resourcepacks', 'datapacks', 'config']
@@ -141,16 +132,7 @@ export async function copyMCFiles(
   try {
     const isFirstInstall = !(await fileExists(markerFile))
 
-    await client.access({
-      host: '57.128.211.105',
-      user: 'ftpuser',
-      password: 'Ewenement2023$',
-      secure: false
-    })
-
-    client.ftp.encoding = 'utf-8'
-    client.ftp.verbose = true
-    await client.send('OPTS UTF8 ON')
+    await connect()
 
     const pwd = await client.pwd()
     const remoteURL = pwd + '/mc'

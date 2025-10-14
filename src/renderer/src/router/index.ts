@@ -8,6 +8,7 @@ import SettingsPage from '@renderer/pages/Settings.vue'
 import ShopPage from '@renderer/pages/Shop.vue'
 import LoadingPage from '@renderer/pages/Loading.vue'
 import UsersPage from '@renderer/pages/Users.vue'
+import FTPPage from '@renderer/pages/FTP.vue'
 
 const routes = [
   { path: '/', component: LoginPage },
@@ -25,6 +26,11 @@ const routes = [
         path: 'users',
         name: 'users',
         component: UsersPage
+      },
+      {
+        path: 'ftp',
+        name: 'ftp',
+        component: FTPPage
       }
     ]
   }

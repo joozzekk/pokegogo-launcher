@@ -72,7 +72,7 @@ onMounted(async () => {
       async () => {
         await refreshMicrosoftToken(localStorage.getItem('msToken'))
       },
-      1000 * 60 * 5
+      1000 * 60 * 60
     )
   }
   await loadProfile()
@@ -99,23 +99,21 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div>
-    <div class="animated-bg">
-      <div class="gradient-overlay"></div>
-      <div class="particles"></div>
-    </div>
-
-    <Header />
-
-    <div class="container">
-      <Sidebar />
-
-      <main class="main-content">
-        <RouterView />
-      </main>
-    </div>
-
-    <div id="toastContainer" class="toast-container"></div>
-    <BannedModal />
+  <div class="animated-bg">
+    <div class="gradient-overlay"></div>
+    <div class="particles"></div>
   </div>
+
+  <Header />
+
+  <div class="container">
+    <Sidebar />
+
+    <main class="main-content">
+      <RouterView />
+    </main>
+  </div>
+
+  <div id="toastContainer" class="toast-container"></div>
+  <BannedModal />
 </template>

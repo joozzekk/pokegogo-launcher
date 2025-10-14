@@ -124,12 +124,13 @@ onUnmounted(() => {
             <tr>
               <th>Nick</th>
               <th>Rola</th>
-              <th>ID</th>
               <th>Status konta</th>
+              <th>ID</th>
+              <th>Premium?</th>
               <th>Online?</th>
               <th>
                 <div style="position: relative; display: flex; flex-direction: row-reverse">
-                  <button class="show-more-btn" @click="loadPlayerData">
+                  <button class="info-btn" @click="loadPlayerData">
                     <i :class="'fas fa-refresh'"></i>
                   </button>
                 </div>
@@ -144,17 +145,6 @@ onUnmounted(() => {
                 </td>
                 <td>
                   {{ player?.role ? getUserRole(player) : 'Gracz' }}
-                </td>
-                <td>
-                  {{ getPlayerID(player) }}
-                  <span
-                    class="copy-btn"
-                    @click="
-                      copyUUID(player?.mcid ? player.mcid : player?.uuid ? player.uuid : '(brak)')
-                    "
-                  >
-                    <i class="fa fa-copy" />
-                  </span>
                 </td>
                 <td style="font-family: monospace; font-size: 0.9rem">
                   <span
@@ -172,6 +162,26 @@ onUnmounted(() => {
                   </span>
                 </td>
                 <td>
+                  {{ getPlayerID(player) }}
+                  <span
+                    class="copy-btn"
+                    @click="
+                      copyUUID(player?.mcid ? player.mcid : player?.uuid ? player.uuid : '(brak)')
+                    "
+                  >
+                    <i class="fa fa-copy" />
+                  </span>
+                </td>
+                <td>
+                  <div style="display: flex; gap: 0.5rem; align-items: center">
+                    <div
+                      class="online-dot"
+                      :style="{ background: !player?.mcid ? '#ff4757' : '#00ff88' }"
+                    ></div>
+                    {{ player?.mcid ? 'Tak' : 'Nie' }}
+                  </div>
+                </td>
+                <td>
                   <div style="display: flex; gap: 0.5rem; align-items: center">
                     <div
                       class="online-dot"
@@ -181,33 +191,35 @@ onUnmounted(() => {
                   </div>
                 </td>
 
-                <td class="reverse">
-                  <template v-if="player?.role !== 'admin'">
-                    <button
-                      v-if="!player?.isBanned"
-                      class="ban-btn"
-                      @click="handleLauncherBan(player)"
-                    >
-                      <i :class="'fas fa-ban'"></i>
+                <td>
+                  <div class="reverse">
+                    <template v-if="player?.role !== 'admin'">
+                      <button
+                        v-if="!player?.isBanned"
+                        class="ban-btn"
+                        @click="handleLauncherBan(player)"
+                      >
+                        <i :class="'fas fa-ban'"></i>
+                      </button>
+                      <button v-else class="unban-btn" @click="handleLauncherUnban(player)">
+                        <i :class="'fas fa-rotate-left'"></i>
+                      </button>
+                    </template>
+                    <button class="info-btn" @click="togglePlayerDetails(getPlayerID(player))">
+                      <i
+                        :class="
+                          !!expandedPlayer && getPlayerID(expandedPlayer) === getPlayerID(player)
+                            ? 'fas fa-chevron-up'
+                            : 'fas fa-chevron-down'
+                        "
+                      ></i>
                     </button>
-                    <button v-else class="unban-btn" @click="handleLauncherUnban(player)">
-                      <i :class="'fas fa-rotate-left'"></i>
-                    </button>
-                  </template>
-                  <button class="show-more-btn" @click="togglePlayerDetails(getPlayerID(player))">
-                    <i
-                      :class="
-                        !!expandedPlayer && getPlayerID(expandedPlayer) === getPlayerID(player)
-                          ? 'fas fa-chevron-up'
-                          : 'fas fa-chevron-down'
-                      "
-                    ></i>
-                  </button>
+                  </div>
                 </td>
               </tr>
               <!-- Expanded details row right after player row -->
               <tr v-if="!!expandedPlayer && getPlayerID(expandedPlayer) === getPlayerID(player)">
-                <td colspan="6" style="padding: 0">
+                <td colspan="7" style="padding: 0">
                   <div class="player-details">
                     <div class="player-details-grid">
                       <div class="detail-item">
@@ -308,43 +320,6 @@ onUnmounted(() => {
   align-items: center;
   flex-wrap: wrap;
 }
-.search-input-wrapper {
-  position: relative;
-  flex: 1;
-  min-width: 300px;
-}
-.search-input {
-  width: 100%;
-  background: var(--bg-input);
-  border: 2px solid var(--border-primary);
-  border-radius: var(--border-radius-small);
-  padding: 1rem 1.25rem 1rem 3.5rem;
-  font-size: 1rem;
-  color: var(--text-primary);
-  font-family: inherit;
-  transition: var(--transition);
-  outline: none;
-}
-.search-input:focus {
-  border-color: var(--primary1);
-  box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.1);
-  background: rgba(26, 26, 31, 1);
-}
-.search-input::placeholder {
-  color: var(--text-muted);
-  font-weight: 300;
-}
-.search-icon {
-  position: absolute;
-  left: 18px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-muted);
-  transition: var(--transition);
-}
-.search-input:focus ~ .search-icon {
-  color: var(--primary1);
-}
 .search-btn {
   background: linear-gradient(45deg, var(--primary1), var(--primary2));
   color: var(--bg-primary);
@@ -376,12 +351,12 @@ onUnmounted(() => {
 }
 .logs-table {
   width: 100%;
-  margin-bottom: 6.8rem;
+  margin-bottom: 6rem;
   border-collapse: collapse;
 }
 .logs-table th {
   background: rgba(26, 26, 31, 1);
-  padding: 0.8rem 1.1rem;
+  padding: 0.5rem 1rem;
   text-align: left;
   font-weight: 600;
   color: var(--primary1);
@@ -391,7 +366,7 @@ onUnmounted(() => {
   z-index: 10;
 }
 .logs-table td {
-  padding: 0.8rem 1.1rem;
+  padding: 0.5rem 1rem;
   border-bottom: 1px solid var(--border-primary);
   color: var(--text-border);
 }
@@ -413,21 +388,6 @@ onUnmounted(() => {
   box-shadow: 0 0 3px rgba(0, 0, 0, 0.3);
   cursor: pointer;
   color: rgba(255, 255, 255, 0.2);
-}
-
-.show-more-btn {
-  background: linear-gradient(45deg, var(--primary1), var(--primary2));
-  color: var(--bg-primary);
-  border: none;
-  border-radius: var(--border-radius-small);
-  padding: 0.5rem;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: var(--transition);
-  display: flex;
-  align-items: center;
-  gap: 6px;
 }
 
 .online-dot {
@@ -455,32 +415,9 @@ onUnmounted(() => {
   color: lightgreen;
 }
 
-.ban-btn {
-  background: rgba(255, 0, 0, 0.3);
-  color: var(--bg-primary);
-  border: none;
-  border-radius: var(--border-radius-small);
-  padding: 0.5rem;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: var(--transition);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: red;
-}
 .unban-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
-}
-.ban-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 0 15px rgba(255, 0, 0, 0.3);
-}
-.show-more-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 0 15px rgba(0, 136, 255, 0.3);
 }
 .player-details {
   display: block;
