@@ -304,9 +304,9 @@ onUnmounted(() => {
 .logs-card {
   width: 100%;
   height: calc(100vh - 2.5rem - 65px);
-  background: var(--bg-card);
+  background: rgb(6, 6, 6);
   backdrop-filter: blur(20px);
-  border: 1px solid var(--border-primary);
+  border: 1px dashed #ffae0067;
   border-radius: var(--border-radius);
   box-shadow: var(--shadow-card);
   overflow: hidden;
@@ -355,7 +355,7 @@ onUnmounted(() => {
   border-collapse: collapse;
 }
 .logs-table th {
-  background: rgba(26, 26, 31, 1);
+  background: rgb(0, 0, 0);
   padding: 0.5rem 1rem;
   text-align: left;
   font-weight: 600;

@@ -91,12 +91,12 @@ onMounted(async () => {
       <div class="relative flex w-full h-full">
         <div class="flex flex-col gap-2 absolute right-4 top-2">
           <button
-            class="ban-btn hover:cursor-pointer hover:text-[#03a2ad]"
+            class="ban-btn hover:cursor-pointer hover:text-[#ffae00]"
             @click="currentFileContent = ''"
           >
             <i class="fa fa-close" />
           </button>
-          <button class="nav-icon hover:cursor-pointer hover:text-[#03a2ad]" @click="saveFile">
+          <button class="nav-icon hover:cursor-pointer hover:text-[#ffae00]" @click="saveFile">
             <i class="fa fa-save" />
           </button>
         </div>
@@ -110,7 +110,7 @@ onMounted(async () => {
     <template v-else>
       <input ref="inputFile" type="file" multiple hidden @change="uploadFile" />
       <div
-        class="top-0 sticky bg-[#0a0c10] px-4 py-2 text-lg flex items-center justify-between z-[10]"
+        class="top-0 sticky bg-[#000000ac] px-4 py-2 text-lg flex items-center justify-between z-[10]"
         :class="{ 'mb-[50px]': showSearchInput }"
       >
         <div class="flex items-center">
@@ -119,7 +119,7 @@ onMounted(async () => {
               <span class="nav-icon">
                 <i
                   class="fa fa-home"
-                  :class="{ 'hover:cursor-pointer hover:text-[#03a2ad]': breadcrumbs.length !== 1 }"
+                  :class="{ 'hover:cursor-pointer hover:text-[#ffae00]': breadcrumbs.length !== 1 }"
                   @click="restoreFolder(breadcrumb)"
                 />
               </span>
@@ -131,7 +131,7 @@ onMounted(async () => {
               <span
                 class="cursor-default text-[0.9rem]"
                 :class="{
-                  'hover:cursor-pointer hover:text-[#03a2ad] hover:underline':
+                  'hover:cursor-pointer hover:text-[#ffae00] hover:underline':
                     !currentFolder.endsWith(breadcrumb)
                 }"
                 @click="currentFolder.endsWith(breadcrumb) ? null : restoreFolder(breadcrumb)"
@@ -146,13 +146,13 @@ onMounted(async () => {
         </div>
         <div class="flex gap-2 items-center justify-evenly">
           <button
-            class="nav-icon hover:cursor-pointer hover:text-[#03a2ad]"
+            class="nav-icon hover:cursor-pointer hover:text-[#ffae00]"
             @click="handleShowSearch"
           >
             <i class="fa fa-search" />
           </button>
           <button
-            class="nav-icon hover:cursor-pointer hover:text-[#03a2ad]"
+            class="nav-icon hover:cursor-pointer hover:text-[#ffae00]"
             @click="handleUploadFile"
           >
             <i class="fa fa-upload" />
@@ -163,7 +163,7 @@ onMounted(async () => {
             v-if="showSearchInput"
             class="absolute z-[8] left-0 transition-all duration-150 w-full h-full top-[100%] bg-[#0a0c10] px-4 py-2 text-lg flex items-center justify-between"
           >
-            <div class="relative search-input !p-2 hover:!border-[#03a2ad]">
+            <div class="relative search-input !p-2 hover:!border-[#ffae00]">
               <i class="absolute fa fa-search translate-1/2 !text-inherit"></i>
               <input
                 v-model="showSearchValue"
@@ -187,9 +187,9 @@ onMounted(async () => {
         v-for="file in filteredFiles"
         v-else
         :key="file.name"
-        class="bg-[#0a0c1080] w-full px-4 py-2 flex items-center gap-4"
+        class="bg-[#000000ac] w-full px-4 py-2 flex items-center gap-4"
         :class="{
-          'hover:bg-[#0a0c10cc] hover:cursor-pointer': isFolder(file.name) || isKnownFile(file.name)
+          'hover:bg-[#C59A2211] hover:cursor-pointer': isFolder(file.name) || isKnownFile(file.name)
         }"
         @click="
           isFolder(file.name)
@@ -200,7 +200,7 @@ onMounted(async () => {
         "
       >
         <div class="nav-icon">
-          <i v-if="isFolder(file.name)" class="fa fa-folder text-[#03a2ad]"></i>
+          <i v-if="isFolder(file.name)" class="fa fa-folder text-[#ffae00]"></i>
           <i v-else-if="file.name.includes('.zip')" class="fa fa-archive"></i>
           <i v-else class="fa fa-file"></i>
         </div>

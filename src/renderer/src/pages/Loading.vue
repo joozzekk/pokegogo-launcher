@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 import logo from '@renderer/assets/logo.png'
 import { ref, onMounted } from 'vue'
+import dynia from '@renderer/assets/img/dynia.png'
+import ghost from '@renderer/assets/img/ghost.png'
 
 const status = ref<string>('Inicjalizowanie..')
 const progress = ref(0)
@@ -42,9 +44,12 @@ onMounted(() => {
     <div class="background">
       <div class="bg-gradient"></div>
       <div class="floating-blocks">
-        <div class="block block-1"></div>
-        <div class="block block-2"></div>
-        <div class="block block-3"></div>
+          <img :src="dynia" class="block-1" />
+          <img :src="dynia" class="block-2" />
+          <img :src="dynia" class="block-3" />
+          <img :src="ghost" class="ghost-1"/>
+          <img :src="ghost" class="ghost-2"/>
+          <img :src="ghost" class="ghost-3"/>
       </div>
     </div>
     <div class="loading-container">
@@ -63,8 +68,8 @@ onMounted(() => {
 
 <style scoped>
 :root {
-  --primary1: #0aefff5b;
-  --primary2: #03a2ad;
+  --primary1: #ffae00;
+  --primary2: #ad8503d;
   --bg-primary: #000000;
 }
 
@@ -101,7 +106,7 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   margin-bottom: 32px;
-  box-shadow: 0 8px 24px #0aefff33;
+  box-shadow: 0 8px 24px #ad85033a;
   animation: pulse 2s ease-in-out infinite;
   overflow: hidden;
 }
@@ -139,9 +144,9 @@ onMounted(() => {
   width: 0%;
   transition: width 0.8s ease-out;
   height: 100%;
-  background-color: #0aefff5b;
+  background-color: #ad8503;
   border-radius: 4px;
-  box-shadow: 0 0 8px #0aefff33;
+  box-shadow: 0 0 8px #ad85033a;
 }
 
 @keyframes pulse {
@@ -152,7 +157,7 @@ onMounted(() => {
 
   50% {
     transform: scale(1.05);
-    box-shadow: 0 12px 32px #0aefff33;
+    box-shadow: 0 0 32px #ad8503ca;
   }
 }
 
@@ -192,7 +197,7 @@ onMounted(() => {
   height: 100%;
   background: radial-gradient(
     ellipse at center,
-    rgba(10, 239, 255, 0.2) 0%,
+    #ad85032c 0%,
     var(--bg-primary) 100%
   );
   animation: gradientShift 10s ease-in-out infinite alternate;
@@ -205,37 +210,67 @@ onMounted(() => {
   overflow: hidden;
 }
 
-.block {
-  position: absolute;
-  background: linear-gradient(45deg, var(--primary1), var(--primary2));
-  opacity: 0.03;
-  border-radius: 4px;
-  animation: float 20s linear infinite;
-}
-
 .block-1 {
-  width: 40px;
-  height: 40px;
+  position: absolute;
   top: 20%;
   left: 10%;
-  animation-delay: -2s;
+  animation: float 20s linear infinite;
+  opacity: 0.3;
 }
 
 .block-2 {
+  position: absolute;
   width: 60px;
   height: 60px;
   top: 60%;
   left: 80%;
+  animation: float 20s linear infinite;
   animation-delay: -8s;
+  opacity: 0.3;
 }
 
 .block-3 {
+  animation: float 20s linear infinite;
+  position: absolute;
   width: 30px;
   height: 30px;
   top: 80%;
   left: 20%;
   animation-delay: -15s;
+  opacity: 0.3;
 }
+.ghost-1{
+  animation: sway 3s ease-in-out infinite;
+  width: 100px;
+  position: absolute;
+  top: 15%;
+  left: 60%;
+  opacity: 0.1;
+}
+
+.ghost-2{
+  animation: sway 3s ease-in-out infinite;
+  width: 80px;
+  position: absolute;
+  top: 70%;
+  left: 50%;
+    opacity: 0.1;
+}
+.ghost-3{
+  animation: sway 3s ease-in-out infinite;
+  width: 40px;
+  position: absolute;
+  top: 50%;
+  left: 10%;
+    opacity: 0.1;
+}
+  @keyframes sway {
+    0%   { transform: translateX(0); }
+    25%  { transform: translateX(-8px); }
+    50%  { transform: translateX(0); }
+    75%  { transform: translateX(8px); }
+    100% { transform: translateX(0); }
+  }
 
 @keyframes float {
   0% {

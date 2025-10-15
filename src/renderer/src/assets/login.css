@@ -1,6 +1,6 @@
 :root {
-  --primary1: #0aefff;
-  --primary2: #03a2ad;
+  --primary1: #ffae00;
+  --primary2: #ad8503;
   --bg-primary: #000000;
   --bg-card: rgba(17, 17, 20, 0.6);
   --bg-input: rgba(26, 26, 31, 0.8);
@@ -37,7 +37,7 @@ body {
   height: 100%;
   background: radial-gradient(
     ellipse at center,
-    rgba(10, 239, 255, 0.15) 0%,
+    rgba(255, 190, 10, 0.15) 0%,
     var(--bg-primary) 100%
   );
   animation: gradientLoginShift 10s ease-in-out infinite alternate;
