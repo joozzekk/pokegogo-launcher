@@ -91,12 +91,12 @@ onMounted(async () => {
       <div class="relative flex w-full h-full">
         <div class="flex flex-col gap-2 absolute right-4 top-2">
           <button
-            class="ban-btn hover:cursor-pointer hover:text-[#03a2ad]"
+            class="ban-btn hover:cursor-pointer hover:text-[#0aefff]"
             @click="currentFileContent = ''"
           >
             <i class="fa fa-close" />
           </button>
-          <button class="nav-icon hover:cursor-pointer hover:text-[#03a2ad]" @click="saveFile">
+          <button class="nav-icon hover:cursor-pointer hover:text-[#0aefff]" @click="saveFile">
             <i class="fa fa-save" />
           </button>
         </div>
@@ -110,7 +110,7 @@ onMounted(async () => {
     <template v-else>
       <input ref="inputFile" type="file" multiple hidden @change="uploadFile" />
       <div
-        class="top-0 sticky bg-[#0a0c10] px-4 py-2 text-lg flex items-center justify-between z-[10]"
+        class="top-0 sticky bg-[#0a0c10] px-4 py-2 flex items-center justify-between z-[10]"
         :class="{ 'mb-[44px]': showSearchInput }"
       >
         <div class="flex items-center">
@@ -119,7 +119,7 @@ onMounted(async () => {
               <span class="nav-icon">
                 <i
                   class="fa fa-home"
-                  :class="{ 'hover:cursor-pointer hover:text-[#03a2ad]': breadcrumbs.length !== 1 }"
+                  :class="{ 'hover:cursor-pointer hover:text-[#0aefff]': breadcrumbs.length !== 1 }"
                   @click="restoreFolder(breadcrumb)"
                 />
               </span>
@@ -129,16 +129,16 @@ onMounted(async () => {
             </template>
             <template v-else-if="breadcrumbs.length">
               <span
-                class="cursor-default text-[0.9rem]"
+                class="cursor-default text-[0.9rem] text-lg"
                 :class="{
-                  'hover:cursor-pointer hover:text-[#03a2ad] hover:underline':
+                  'hover:cursor-pointer hover:text-[#0aefff] hover:underline':
                     !currentFolder.endsWith(breadcrumb)
                 }"
                 @click="currentFolder.endsWith(breadcrumb) ? null : restoreFolder(breadcrumb)"
               >
                 {{ breadcrumb }}
               </span>
-              <span class="mx-1">
+              <span class="mx-1 text-lg">
                 {{ i + 1 !== breadcrumbs.length ? '>' : '' }}
               </span>
             </template>
@@ -146,13 +146,13 @@ onMounted(async () => {
         </div>
         <div class="flex gap-2 items-center justify-evenly">
           <button
-            class="nav-icon hover:cursor-pointer hover:text-[#03a2ad]"
+            class="nav-icon hover:cursor-pointer hover:text-[#0aefff]"
             @click="handleShowSearch"
           >
             <i class="fa fa-search" />
           </button>
           <button
-            class="nav-icon hover:cursor-pointer hover:text-[#03a2ad]"
+            class="nav-icon hover:cursor-pointer hover:text-[#0aefff]"
             @click="handleUploadFile"
           >
             <i class="fa fa-upload" />
@@ -180,7 +180,7 @@ onMounted(async () => {
         <div class="w-full h-full flex items-center justify-center flex-col">
           <i class="fa fa-exclamation-triangle text-5xl mb-2"></i>
           <h2 class="text-lg font-black">Brak plików</h2>
-          <p class="">Folder jest pusty.</p>
+          <p class="">W tym folderze nie ma żadnego pliku.</p>
         </div>
       </template>
       <div
@@ -200,7 +200,7 @@ onMounted(async () => {
         "
       >
         <div class="nav-icon">
-          <i v-if="isFolder(file.name)" class="fa fa-folder text-[#03a2ad]"></i>
+          <i v-if="isFolder(file.name)" class="fa fa-folder text-[#0aefff]"></i>
           <i v-else-if="file.name.includes('.zip')" class="fa fa-archive"></i>
           <i v-else class="fa fa-file"></i>
         </div>

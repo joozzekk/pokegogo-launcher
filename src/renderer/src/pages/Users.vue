@@ -111,9 +111,13 @@ onUnmounted(() => {
         </button>
       </div>
       <template v-else>
-        <div v-if="noResultsVisible" id="noResults" class="no-results">
+        <div
+          v-if="noResultsVisible"
+          id="noResults"
+          class="no-results flex items-center justify-center h-full flex-col gap-2"
+        >
           <i class="fas fa-search"></i>
-          <h3>Brak wyników</h3>
+          <h3 class="text-lg">Brak wyników</h3>
           <p>Nie znaleziono graczy odpowiadających kryteriom wyszukiwania</p>
         </div>
         <table v-else class="logs-table select-none">
@@ -160,18 +164,14 @@ onUnmounted(() => {
                 <td>
                   {{ player?.role ? getUserRole(player) : 'Gracz' }}
                 </td>
-                <td style="font-family: monospace; font-size: 0.9rem">
+                <td>
                   <span
                     :style="`
-                      background: ${player.isBanned ? '#ff4757' : '#00ff88'} ;
-                      color: ${player.isBanned ? 'white' : 'black'};
-                      font-size: 0.6rem;
-                      padding: 2px 6px;
-                      border-radius: 4px;
+                      color: ${player.isBanned ? '#ff4757' : '#00ff88'} ;
                       font-weight: 800;
                     `"
                   >
-                    {{ player.isBanned ? 'Zbanowane' : 'Aktywne' }}
+                    {{ player.isBanned ? 'Zablokowane' : 'Aktywne' }}
                   </span>
                 </td>
                 <td>
@@ -201,10 +201,7 @@ onUnmounted(() => {
                         <i :class="'fas fa-rotate-left'"></i>
                       </button>
                     </template>
-                    <button
-                      class="nav-icon hover:cursor-pointer hover:text-[#0088ff]"
-                      @click="togglePlayerDetails(getPlayerID(player))"
-                    >
+                    <button class="nav-icon" @click="togglePlayerDetails(getPlayerID(player))">
                       <i
                         :class="
                           !!expandedPlayer && getPlayerID(expandedPlayer) === getPlayerID(player)
@@ -245,34 +242,44 @@ onUnmounted(() => {
                         <div class="detail-label">
                           MAC address
                           <span
+                            v-if="player?.macAddress"
                             class="copy-btn"
-                            @click="copyToClipboard(player?.macAddress ?? '(brak)')"
+                            @click="copyToClipboard(player.macAddress)"
                           >
                             <i class="fa fa-copy" />
                           </span>
                         </div>
                         <div class="detail-value">
-                          {{ expandedPlayer.macAddress ?? '(Nieznany)' }}
+                          {{
+                            expandedPlayer.macAddress?.length
+                              ? expandedPlayer.macAddress
+                              : '(Nieznany)'
+                          }}
                         </div>
                       </div>
                       <div class="detail-item">
                         <div class="detail-label">
                           Machine ID
                           <span
+                            v-if="expandedPlayer?.machineId"
                             class="copy-btn"
-                            @click="copyToClipboard(player?.machineId ?? '(brak)')"
+                            @click="copyToClipboard(expandedPlayer.machineId)"
                           >
                             <i class="fa fa-copy" />
                           </span>
                         </div>
                         <div class="detail-value text-wrap overflow-hidden">
-                          {{ expandedPlayer.machineId ?? '(Nieznany)' }}
+                          {{
+                            expandedPlayer.machineId
+                              ? expandedPlayer.machineId.substring(0, 16) + '...'
+                              : '(Nieznany)'
+                          }}
                         </div>
                       </div>
                       <div class="detail-item">
                         <div class="detail-label">IP adres</div>
                         <div class="detail-value">
-                          {{ expandedPlayer.ipAddress ?? '(Nieznany)' }}
+                          {{ expandedPlayer.ipAddress ? expandedPlayer.ipAddress : '(Nieznany)' }}
                         </div>
                       </div>
                     </div>
@@ -330,14 +337,14 @@ onUnmounted(() => {
 }
 .logs-table {
   width: 100%;
-  height: 100%;
   border-collapse: collapse;
 }
 .logs-table th {
   background: rgba(26, 26, 31, 1);
-  padding: 0.5rem 1rem;
+  padding: 0.25rem 1rem;
   text-align: left;
   font-weight: 600;
+  font-size: 0.8rem;
   border-bottom: 2px solid var(--border-primary);
   position: sticky;
   top: 0;

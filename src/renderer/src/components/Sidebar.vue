@@ -50,15 +50,12 @@ const handleSupDev = (): void => {
             <div class="status-dot"></div>
           </div>
           <div class="player-info">
-            <span class="player-label">{{ userRole }}</span>
-            <span id="playerName" class="player-name">
+            <span class="player-name">
               {{ playerName }}
             </span>
+            <span class="player-label">{{ userRole }}</span>
           </div>
         </div>
-        <button class="player-logout" @click="handleLogout">
-          <i class="fa-solid fa-door-open"></i>
-        </button>
       </div>
 
       <a
@@ -145,12 +142,19 @@ const handleSupDev = (): void => {
         <div class="nav-indicator"></div>
       </a> -->
     </nav>
-
-    <div class="sidebar-footer">
-      <button class="btn-primary" @click="handleSupDev">
-        <i class="fa fa-coffee" />
-        <span>Wesprzyj developera 🥰</span>
-      </button>
+    <div class="flex flex-col px-[0.8rem] pb-1 font-light">
+      <div class="nav-item hover:cursor-pointer select-none" @click="handleSupDev">
+        <button id="support" class="nav-icon">
+          <i class="fa fa-coffee" />
+        </button>
+        <label for="support" class="hover:cursor-pointer">Wesprzyj developera 🥰</label>
+      </div>
+      <div class="nav-item hover:cursor-pointer select-none" @click="handleLogout">
+        <button id="logout" class="nav-icon">
+          <i class="fa-solid fa-door-open"></i>
+        </button>
+        <label for="logout" class="hover:cursor-pointer">Wyloguj się</label>
+      </div>
     </div>
   </aside>
 </template>

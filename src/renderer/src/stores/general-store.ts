@@ -95,7 +95,7 @@ const useGeneralStore = defineStore('general', () => {
     settings.ram = MIN_RAM
     settings.javaVersion = 21
     settings.version = 'PokemonGoGo.pl'
-    settings.resolution = '1280x720'
+    settings.resolution = '1366x768'
     settings.displayMode = 'Okno'
     settings.theme = 'Dark'
     settings.autoUpdate = false

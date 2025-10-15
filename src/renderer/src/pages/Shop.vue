@@ -140,7 +140,8 @@ onMounted(() => {
 
 <style>
 .shop-container {
-  height: min-content;
+  max-height: 100%;
+  overflow-y: auto;
 }
 
 .shop-grid {
@@ -182,22 +183,25 @@ onMounted(() => {
   backdrop-filter: blur(2px);
   -webkit-backdrop-filter: blur(2px);
 }
+
 .shopitem::before {
   content: '';
   position: absolute;
   inset: -30% -10% auto -10%;
   height: 60%;
   background:
-    radial-gradient(600px 200px at 20% 40%, rgba(139, 92, 246, 0.14), transparent 70%),
-    radial-gradient(500px 180px at 80% 60%, rgba(88, 101, 242, 0.12), transparent 70%);
+    radial-gradient(600px 200px at 20% 40%, rgba(92, 120, 246, 0.14), transparent 70%),
+    radial-gradient(500px 180px at 80% 60%, rgba(88, 137, 242, 0.12), transparent 70%);
   pointer-events: none;
 }
+
 .shopitem:hover {
   transform: translateY(-5px);
   box-shadow: 0 16px 34px rgba(0, 0, 0, 0.5);
-  border-color: rgba(139, 92, 246, 0.35);
+  border-color: rgba(92, 141, 246, 0.35);
   cursor: pointer;
 }
+
 .shopitem img {
   width: min(68%, 360px);
   height: auto;
@@ -205,9 +209,11 @@ onMounted(() => {
   filter: drop-shadow(0 14px 24px rgba(0, 0, 0, 0.45));
   transition: transform 0.18s ease;
 }
+
 .shopitem:hover img {
   transform: scale(1.04);
 }
+
 .shopitem .meta {
   position: absolute;
   left: 16px;
@@ -218,12 +224,14 @@ onMounted(() => {
   justify-content: space-between;
   gap: 10px;
 }
+
 .shopitem .meta h3 {
   margin: 0;
   font-size: 16px;
   font-weight: 800;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
+
 .shopitem .price {
   font-weight: 800;
   font-size: 13px;
