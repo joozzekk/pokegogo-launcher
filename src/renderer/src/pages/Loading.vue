@@ -130,7 +130,6 @@ onMounted(() => {
 }
 
 .progress-container {
-  width: 60vw;
   max-width: 320px;
   height: 8px;
   background-color: black;
@@ -177,7 +176,7 @@ onMounted(() => {
   }
 
   .progress-container {
-    width: 80vw;
+    width: 70vw;
     max-width: 280px;
   }
 }
