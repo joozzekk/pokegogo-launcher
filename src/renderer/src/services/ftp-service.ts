@@ -1,5 +1,6 @@
 import { showToast } from '@renderer/utils'
 import { Ref, ref } from 'vue'
+import { LOGGER } from './logger-service'
 
 interface FTPService {
   currentFileName: Ref<string>
@@ -91,7 +92,7 @@ export const useFTP = (inputFile?: Ref<HTMLInputElement | null>): FTPService => 
         await getFolderContent(currentFolder.value)
       }
     } catch (err) {
-      console.log(err)
+      LOGGER.err(err as string)
       showToast('Wystąpił błąd podczas przesyłania plików.', 'error')
     } finally {
       inputFile.value.value = ''
@@ -112,7 +113,7 @@ export const useFTP = (inputFile?: Ref<HTMLInputElement | null>): FTPService => 
         await getFolderContent(currentFolder.value)
       }
     } catch (err) {
-      console.log(err)
+      LOGGER.err(err as string)
       showToast('Wystąpił błąd podczas usuwania pliku ' + name, 'error')
     }
   }
@@ -130,7 +131,7 @@ export const useFTP = (inputFile?: Ref<HTMLInputElement | null>): FTPService => 
         currentFileContent.value = res
       }
     } catch (err) {
-      console.log(err)
+      LOGGER.err(err as string)
       showToast('Wystąpił błąd podczas otwierania pliku ' + name, 'error')
     }
   }
@@ -154,7 +155,7 @@ export const useFTP = (inputFile?: Ref<HTMLInputElement | null>): FTPService => 
         showToast('Pomyślnie zapisano plik ' + currentFileName.value)
       }
     } catch (err) {
-      console.log(err)
+      LOGGER.err(err as string)
       showToast('Wystąpił błąd podczas zapisywania pliku ' + currentFileName.value, 'error')
     }
   }

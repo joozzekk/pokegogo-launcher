@@ -85,7 +85,7 @@ onBeforeUnmount(() => {
   min-width: 200px;
   background: var(--bg-light);
   border: 2px solid var(--border);
-  border-radius: 1rem;
+  border-radius: 0.5rem;
   cursor: pointer;
   user-select: none;
   font-size: 0.8rem;
@@ -99,7 +99,7 @@ onBeforeUnmount(() => {
 }
 
 .selected {
-  padding: 0.75rem 1rem;
+  padding: 0.5rem 1rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -124,13 +124,13 @@ onBeforeUnmount(() => {
   list-style: none;
   background: var(--bg-light);
   border: 2px solid var(--border);
-  border-radius: 1rem;
+  border-radius: 0.5rem;
   overflow-y: auto;
   z-index: 1000;
 }
 
 .options-list li {
-  padding: 0.75rem 1rem;
+  padding: 0.5rem 1rem;
   cursor: pointer;
   transition: background-color 0.2s;
 }

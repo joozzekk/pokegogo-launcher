@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import logo from '@renderer/assets/logo.png'
+import { LOGGER } from '@renderer/services/logger-service'
 import useGeneralStore from '@renderer/stores/general-store'
 import { showToast } from '@renderer/utils'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
@@ -34,7 +35,7 @@ const handleInstallUpdate = async (): Promise<void> => {
     await window.electron?.ipcRenderer?.invoke('update:start')
   } catch (err) {
     showToast('Wystąpił błąd podczas aktualizacji. Spróbuj ponownie później.', 'error')
-    console.log(err)
+    LOGGER.log(err as string)
   } finally {
     isInstallingUpdate.value = false
   }
@@ -45,11 +46,13 @@ const parsedAppVersion = computed(() => {
 })
 
 const checkUpdate = async (): Promise<void> => {
-  console.log('Checking for update..')
+  LOGGER.log('Checking for update..')
   const res = await window.electron?.ipcRenderer?.invoke(
     'update:check',
     generalStore.settings.showNotifications
   )
+
+  LOGGER.success(res ? 'Update available.' : 'App is up-to-date.')
 
   if (res) {
     generalStore.setUpdateAvailable(res)
@@ -59,7 +62,7 @@ const checkUpdate = async (): Promise<void> => {
 onMounted(async () => {
   await checkUpdate()
 
-  updateInterval.value = setInterval(checkUpdate, 1000 * 30)
+  updateInterval.value = setInterval(checkUpdate, 1000 * 60)
 })
 
 onUnmounted(() => {

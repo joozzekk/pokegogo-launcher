@@ -2,6 +2,7 @@
 // @ts-nocheck
 import { fetchLogin, fetchRegister, updateBackendUserFromMicrosoft } from '@renderer/api/endpoints'
 import { router } from '@renderer/router'
+import { LOGGER } from '@renderer/services/logger-service'
 import { AxiosError } from 'axios'
 
 const CONFIG = {
@@ -335,7 +336,7 @@ export class PokeGoGoLogin {
         })
       }
     } catch (error: Error) {
-      console.log(error)
+      LOGGER.err(error)
 
       if (error.message.includes('zajęty')) {
         this.showError(document.getElementById('register-nick-error'), error.message)
@@ -398,7 +399,7 @@ export class PokeGoGoLogin {
         path: '/app/home'
       })
     } catch (_error) {
-      console.log(_error)
+      LOGGER.log(_error)
       this.showToast('Błąd podczas przekierowania', 'error')
     } finally {
       this.hideLoading()

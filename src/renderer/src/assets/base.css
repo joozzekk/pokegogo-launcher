@@ -34,7 +34,7 @@ select:hover {
 }
 
 *::-webkit-scrollbar {
-  width: 0;
+  width: 2px;
 }
 
 body {
@@ -378,8 +378,8 @@ body {
 }
 
 .nav-icon {
-  width: 35px;
-  height: 35px;
+  width: 30px;
+  height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -390,7 +390,7 @@ body {
 
 .nav-item span {
   font-weight: 500;
-  font-size: 15px;
+  font-size: 1rem;
 }
 
 .nav-indicator {
@@ -1261,7 +1261,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  color: rgba(255, 0, 0, 0.7);
+  color: #b83232;
 }
 
 .ban-btn:hover,
@@ -1271,8 +1271,8 @@ body {
 }
 
 .info-btn {
-  background: linear-gradient(45deg, var(--primary1), var(--primary2));
-  color: var(--bg-primary);
+  background: var(--gradient-primary);
+  color: white;
   border: none;
   border-radius: var(--border-radius-small);
   width: 30px;
@@ -1295,13 +1295,12 @@ body {
 
 .search-input-wrapper {
   position: relative;
-  flex: 1;
-  min-width: 300px;
+  width: 100%;
 }
 
 .search-input {
   width: 100%;
-  background: var(--bg-input);
+  background: rgba(26, 26, 31, 0.5);
   border: 2px solid var(--border-primary);
   border-radius: var(--border-radius-small);
   padding: 0.8rem 1rem 0.8rem 2.5rem;
@@ -1314,8 +1313,7 @@ body {
 
 .search-input:focus,
 .search-input:hover {
-  border-color: var(--primary1);
-  background: rgba(26, 26, 31, 1);
+  background: var(--bg-input);
 }
 
 .search-input::placeholder {
@@ -1325,7 +1323,6 @@ body {
 
 .search-icon {
   position: absolute;
-  left: 18px;
   top: 50%;
   transform: translateY(-50%);
   color: var(--text-muted);

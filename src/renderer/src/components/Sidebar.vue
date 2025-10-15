@@ -98,7 +98,7 @@ const handleSupDev = (): void => {
         <div class="nav-icon">
           <i class="fas fa-users"></i>
         </div>
-        <span>Użytkownicy</span>
+        <span>Gracze</span>
         <div class="nav-indicator"></div>
       </a>
 

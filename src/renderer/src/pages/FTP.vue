@@ -111,7 +111,7 @@ onMounted(async () => {
       <input ref="inputFile" type="file" multiple hidden @change="uploadFile" />
       <div
         class="top-0 sticky bg-[#0a0c10] px-4 py-2 text-lg flex items-center justify-between z-[10]"
-        :class="{ 'mb-[50px]': showSearchInput }"
+        :class="{ 'mb-[44px]': showSearchInput }"
       >
         <div class="flex items-center">
           <a v-for="(breadcrumb, i) in breadcrumbs" :key="i" class="flex items-center">
@@ -163,13 +163,13 @@ onMounted(async () => {
             v-if="showSearchInput"
             class="absolute z-[8] left-0 transition-all duration-150 w-full h-full top-[100%] bg-[#0a0c10] px-4 py-2 text-lg flex items-center justify-between"
           >
-            <div class="relative search-input !p-2 hover:!border-[#03a2ad]">
-              <i class="absolute fa fa-search translate-1/2 !text-inherit"></i>
+            <div class="search-input-wrapper !py-0">
+              <i class="fas fa-search search-icon !text-[0.9rem] ml-3"></i>
               <input
                 v-model="showSearchValue"
-                type="search"
-                class="w-full h-full outline-none ml-7"
-                placeholder="Wyszukaj plik.."
+                type="text"
+                class="search-input !p-2 !py-1 !pl-8 !text-[0.8rem]"
+                placeholder="Wyszukaj gracza po nicku lub ID..."
               />
             </div>
           </div>

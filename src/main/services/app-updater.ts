@@ -40,7 +40,7 @@ export const useAppUpdater = (win: BrowserWindow): AppUpdater => {
       }
     }
 
-    return res?.isUpdateAvailable
+    return res?.isUpdateAvailable ?? false
   })
 
   ipcMain.handle('update:start', async () => {

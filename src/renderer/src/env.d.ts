@@ -2,6 +2,7 @@
 
 interface ImportMetaEnv {
   readonly RENDERER_VITE_API_URL: string
+  readonly RENDERER_VITE_SERVER_IP: string
 }
 
 interface ImportMeta {
