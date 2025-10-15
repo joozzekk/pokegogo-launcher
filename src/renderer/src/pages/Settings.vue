@@ -171,26 +171,6 @@ const handleChangeEmail = async (): Promise<void> => {
         </div>
 
         <div class="setting-group">
-          <label>Tryb wyświetlania gry</label>
-          <div class="toggle-group">
-            <button
-              class="toggle-option"
-              :class="{ active: generalStore.settings.displayMode === 'Okno' }"
-              @click="generalStore.settings.displayMode = 'Okno'"
-            >
-              Okno
-            </button>
-            <button
-              class="toggle-option"
-              :class="{ active: generalStore.settings.displayMode === 'Pełny ekran' }"
-              @click="generalStore.settings.displayMode = 'Pełny ekran'"
-            >
-              Pełny ekran
-            </button>
-          </div>
-        </div>
-
-        <div class="setting-group">
           <label>Pamięć RAM</label>
           <div class="ram-slider-container">
             <input
@@ -212,6 +192,26 @@ const handleChangeEmail = async (): Promise<void> => {
               >
               <span>{{ generalStore.settings.maxRAM }}GB</span>
             </div>
+          </div>
+        </div>
+
+        <div class="setting-group">
+          <label>Tryb wyświetlania gry</label>
+          <div class="toggle-group">
+            <button
+              class="toggle-option"
+              :class="{ active: generalStore.settings.displayMode === 'Okno' }"
+              @click="generalStore.settings.displayMode = 'Okno'"
+            >
+              Okno
+            </button>
+            <button
+              class="toggle-option"
+              :class="{ active: generalStore.settings.displayMode === 'Pełny ekran' }"
+              @click="generalStore.settings.displayMode = 'Pełny ekran'"
+            >
+              Pełny ekran
+            </button>
           </div>
         </div>
 

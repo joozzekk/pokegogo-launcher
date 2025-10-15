@@ -44,12 +44,12 @@ onMounted(() => {
     <div class="background">
       <div class="bg-gradient"></div>
       <div class="floating-blocks">
-          <img :src="dynia" class="block-1" />
-          <img :src="dynia" class="block-2" />
-          <img :src="dynia" class="block-3" />
-          <img :src="ghost" class="ghost-1"/>
-          <img :src="ghost" class="ghost-2"/>
-          <img :src="ghost" class="ghost-3"/>
+        <img :src="dynia" class="block-1" />
+        <img :src="dynia" class="block-2" />
+        <img :src="dynia" class="block-3" />
+        <img :src="ghost" class="ghost-1" />
+        <img :src="ghost" class="ghost-2" />
+        <img :src="ghost" class="ghost-3" />
       </div>
     </div>
     <div class="loading-container">
@@ -194,11 +194,7 @@ onMounted(() => {
   position: absolute;
   width: 100%;
   height: 100%;
-  background: radial-gradient(
-    ellipse at center,
-    #ad85032c 0%,
-    var(--bg-primary) 100%
-  );
+  background: radial-gradient(ellipse at center, #ad85032c 0%, var(--bg-primary) 100%);
   animation: gradientShift 10s ease-in-out infinite alternate;
 }
 
@@ -211,6 +207,8 @@ onMounted(() => {
 
 .block-1 {
   position: absolute;
+  width: 90px;
+  height: 90px;
   top: 20%;
   left: 10%;
   animation: float 20s linear infinite;
@@ -238,7 +236,7 @@ onMounted(() => {
   animation-delay: -15s;
   opacity: 0.3;
 }
-.ghost-1{
+.ghost-1 {
   animation: sway 3s ease-in-out infinite;
   width: 100px;
   position: absolute;
@@ -247,29 +245,39 @@ onMounted(() => {
   opacity: 0.1;
 }
 
-.ghost-2{
+.ghost-2 {
   animation: sway 3s ease-in-out infinite;
   width: 80px;
   position: absolute;
   top: 70%;
   left: 50%;
-    opacity: 0.1;
+  opacity: 0.1;
 }
-.ghost-3{
+.ghost-3 {
   animation: sway 3s ease-in-out infinite;
   width: 40px;
   position: absolute;
   top: 50%;
   left: 10%;
-    opacity: 0.1;
+  opacity: 0.1;
 }
-  @keyframes sway {
-    0%   { transform: translateX(0); }
-    25%  { transform: translateX(-8px); }
-    50%  { transform: translateX(0); }
-    75%  { transform: translateX(8px); }
-    100% { transform: translateX(0); }
+@keyframes sway {
+  0% {
+    transform: translateX(0);
   }
+  25% {
+    transform: translateX(-8px);
+  }
+  50% {
+    transform: translateX(0);
+  }
+  75% {
+    transform: translateX(8px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
 
 @keyframes float {
   0% {

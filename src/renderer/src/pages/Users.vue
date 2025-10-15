@@ -92,11 +92,7 @@ onUnmounted(() => {
 
 <template>
   <div class="users-container">
-<<<<<<< HEAD
-    <div class="search-input-wrapper !py-0">
-=======
     <div class="search-input-wrapper mb-2">
->>>>>>> halloween
       <i class="fas fa-search search-icon !text-[0.9rem] ml-3"></i>
       <input
         v-model="searchQuery"
@@ -153,11 +149,7 @@ onUnmounted(() => {
                     <span
                       v-if="player.mcid"
                       :style="`
-<<<<<<< HEAD
-                      background: #0088ff;
-=======
                       background: #ffae0067;
->>>>>>> halloween
                       font-size: 0.6rem;
                       color: white;
                       padding: 2px 6px;
@@ -175,13 +167,6 @@ onUnmounted(() => {
                 <td>
                   <span
                     :style="`
-<<<<<<< HEAD
-                      color: ${player.isBanned ? '#ff4757' : '#00ff88'} ;
-                      font-weight: 800;
-                    `"
-                  >
-                    {{ player.isBanned ? 'Zablokowane' : 'Aktywne' }}
-=======
                       background: ${player.isBanned ? '#ff4757' : '#00ff88'} ;
                       color: ${player.isBanned ? 'white' : 'black'};
                       font-size: 0.6rem;
@@ -191,7 +176,6 @@ onUnmounted(() => {
                     `"
                   >
                     {{ player.isBanned ? 'Zbanowane' : 'Aktywne' }}
->>>>>>> halloween
                   </span>
                 </td>
                 <td>

@@ -118,11 +118,10 @@ onMounted(async () => {
         <div class="flex items-center">
           <a v-for="(breadcrumb, i) in breadcrumbs" :key="i" class="flex items-center">
             <template v-if="i === 0">
-              <span class="nav-icon">
+              <span class="nav-icon" @click="restoreFolder(breadcrumb)">
                 <i
                   class="fa fa-home"
                   :class="{ 'hover:cursor-pointer hover:text-[#ffae00]': breadcrumbs.length !== 1 }"
-                  @click="restoreFolder(breadcrumb)"
                 />
               </span>
               <span class="mx-1">
