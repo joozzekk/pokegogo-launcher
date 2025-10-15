@@ -1,5 +1,5 @@
 import { installExtension, VUEJS_DEVTOOLS } from 'electron-devtools-installer'
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, ipcMain } from 'electron'
 import { electronApp, optimizer } from '@electron-toolkit/utils'
 import useWindowService from './services/window-service'
 import { useAppUpdater } from './services/app-updater'
@@ -48,6 +48,7 @@ if (!gotTheLock) {
 
   app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
+      if (ipcMain.listenerCount('launch:exit')) ipcMain.emit('launch:exit')
       app.quit()
     }
   })

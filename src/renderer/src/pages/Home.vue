@@ -1,22 +1,37 @@
 <script lang="ts" setup>
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { initNavigation } from '@renderer/assets/scripts/navigation'
-import { updateServerStatus } from '@renderer/assets/scripts/server-status'
 import LaunchButton from '@renderer/components/buttons/LaunchButton.vue'
 import useGeneralStore from '@renderer/stores/general-store'
 import poke from '@renderer/assets/img/poke.png'
 import superEvent from '@renderer/assets/img/superEvent.png'
 import logo from '@renderer/assets/logo.png'
 import Select from '@renderer/components/Select.vue'
+import { getServerStatus } from '@renderer/api/endpoints'
+import { LOGGER } from '@renderer/services/logger-service'
 
 const generalStore = useGeneralStore()
+const time = ref<number>(0)
+const serverStatus = ref<{ players: { online: number } } | null>(null)
 
 const versions = [{ label: 'PokemonGoGo.pl', value: 'PokemonGoGo.pl' }]
+const serverStatusInterval = ref<unknown>()
 
-onMounted(() => {
+const setServerStatus = async (): Promise<void> => {
+  serverStatus.value = await getServerStatus(time)
+}
+
+onMounted(async () => {
   initNavigation()
-  updateServerStatus()
-  setInterval(updateServerStatus, 30000)
+
+  await setServerStatus()
+  serverStatusInterval.value = setInterval(
+    async () => {
+      await setServerStatus()
+      LOGGER.log('Refreshed server status')
+    },
+    1000 * 60 * 5
+  )
 })
 </script>
 
@@ -47,14 +62,14 @@ onMounted(() => {
             <div class="stat-item">
               <i class="fas fa-users"></i>
               <div>
-                <span id="playerCount">0</span>
+                <span id="playerCount">{{ serverStatus?.players?.online }}</span>
                 <label>Graczy Online</label>
               </div>
             </div>
             <div class="stat-item">
               <i class="fas fa-signal"></i>
               <div>
-                <span id="serverPing">0ms</span>
+                <span id="serverPing">{{ time.toFixed(0) }}ms</span>
                 <label>Ping</label>
               </div>
             </div>

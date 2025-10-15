@@ -110,8 +110,8 @@ onMounted(async () => {
     <template v-else>
       <input ref="inputFile" type="file" multiple hidden @change="uploadFile" />
       <div
-        class="top-0 sticky bg-[#000000ac] px-4 py-2 text-lg flex items-center justify-between z-[10]"
-        :class="{ 'mb-[50px]': showSearchInput }"
+        class="top-0 sticky bg-[#0a0c10] px-4 py-2 text-lg flex items-center justify-between z-[10]"
+        :class="{ 'mb-[44px]': showSearchInput }"
       >
         <div class="flex items-center">
           <a v-for="(breadcrumb, i) in breadcrumbs" :key="i" class="flex items-center">
@@ -167,9 +167,9 @@ onMounted(async () => {
               <i class="absolute fa fa-search translate-1/2 !text-inherit"></i>
               <input
                 v-model="showSearchValue"
-                type="search"
-                class="w-full h-full outline-none ml-7"
-                placeholder="Wyszukaj plik.."
+                type="text"
+                class="search-input !p-2 !py-1 !pl-8 !text-[0.8rem]"
+                placeholder="Wyszukaj gracza po nicku lub ID..."
               />
             </div>
           </div>

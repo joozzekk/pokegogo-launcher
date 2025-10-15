@@ -52,8 +52,8 @@ function togglePlayerDetails(uuid: string): void {
   expandedPlayer.value = allPlayers.value?.find((p) => getPlayerID(p) === uuid) ?? null
 }
 
-const copyUUID = (uuid: string): void => {
-  navigator.clipboard.writeText(uuid)
+const copyToClipboard = (text: string): void => {
+  navigator.clipboard.writeText(text)
 }
 
 const handleLauncherBan = async (player: IUser): Promise<void> => {
@@ -91,18 +91,15 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="logs-card">
-    <div class="search-bar">
-      <div class="search-input-wrapper">
-        <i class="fas fa-search search-icon"></i>
-        <input
-          id="searchInput"
-          v-model="searchQuery"
-          type="text"
-          class="search-input"
-          placeholder="Wyszukaj gracza po nicku lub ID..."
-        />
-      </div>
+  <div class="users-container">
+    <div class="search-input-wrapper !py-0">
+      <i class="fas fa-search search-icon !text-[0.9rem] ml-3"></i>
+      <input
+        v-model="searchQuery"
+        type="text"
+        class="search-input !p-2 !py-1 !pl-8 !text-[0.8rem]"
+        placeholder="Wyszukaj gracza po nicku lub ID..."
+      />
     </div>
 
     <div class="logs-table-wrapper">
@@ -119,15 +116,13 @@ onUnmounted(() => {
           <h3>Brak wyników</h3>
           <p>Nie znaleziono graczy odpowiadających kryteriom wyszukiwania</p>
         </div>
-        <table v-else class="logs-table">
+        <table v-else class="logs-table select-none">
           <thead>
-            <tr>
-              <th>Nick</th>
+            <tr class="font-black text-[0.9rem]">
+              <th>Gracz</th>
               <th>Rola</th>
-              <th>Status konta</th>
-              <th>ID</th>
-              <th>Premium?</th>
-              <th>Online?</th>
+              <th>Status</th>
+              <th>UUID/MCID</th>
               <th>
                 <div style="position: relative; display: flex; flex-direction: row-reverse">
                   <button class="info-btn" @click="loadPlayerData">
@@ -141,7 +136,26 @@ onUnmounted(() => {
             <template v-for="player in filteredPlayers" :key="getPlayerID(player)">
               <tr>
                 <td>
-                  <strong>{{ player.nickname }}</strong>
+                  <div class="flex items-center gap-2">
+                    <div
+                      class="online-dot"
+                      :style="{ background: !player?.isOnline ? '#ff4757' : '#00ff88' }"
+                    ></div>
+                    <strong>{{ player.nickname }}</strong>
+                    <span
+                      v-if="player.mcid"
+                      :style="`
+                      background: #0088ff;
+                      font-size: 0.6rem;
+                      color: white;
+                      padding: 2px 6px;
+                      border-radius: 4px;
+                      font-weight: 800;
+                    `"
+                    >
+                      Premium
+                    </span>
+                  </div>
                 </td>
                 <td>
                   {{ player?.role ? getUserRole(player) : 'Gracz' }}
@@ -149,16 +163,15 @@ onUnmounted(() => {
                 <td style="font-family: monospace; font-size: 0.9rem">
                   <span
                     :style="`
-                      background: ${player.isBanned ? '#ff4757' : '#47ff57'} ;
+                      background: ${player.isBanned ? '#ff4757' : '#00ff88'} ;
                       color: ${player.isBanned ? 'white' : 'black'};
-                      padding: 2px 8px;
+                      font-size: 0.6rem;
+                      padding: 2px 6px;
                       border-radius: 4px;
-                      font-size: 0.75rem;
                       font-weight: 800;
-                      margin-left: 8px;
                     `"
                   >
-                    {{ player.isBanned ? 'BANNED' : 'ACTIVE' }}
+                    {{ player.isBanned ? 'Zbanowane' : 'Aktywne' }}
                   </span>
                 </td>
                 <td>
@@ -166,31 +179,14 @@ onUnmounted(() => {
                   <span
                     class="copy-btn"
                     @click="
-                      copyUUID(player?.mcid ? player.mcid : player?.uuid ? player.uuid : '(brak)')
+                      copyToClipboard(
+                        player?.mcid ? player.mcid : player?.uuid ? player.uuid : '(brak)'
+                      )
                     "
                   >
                     <i class="fa fa-copy" />
                   </span>
                 </td>
-                <td>
-                  <div style="display: flex; gap: 0.5rem; align-items: center">
-                    <div
-                      class="online-dot"
-                      :style="{ background: !player?.mcid ? '#ff4757' : '#00ff88' }"
-                    ></div>
-                    {{ player?.mcid ? 'Tak' : 'Nie' }}
-                  </div>
-                </td>
-                <td>
-                  <div style="display: flex; gap: 0.5rem; align-items: center">
-                    <div
-                      class="online-dot"
-                      :style="{ background: !player?.isOnline ? '#ff4757' : '#00ff88' }"
-                    ></div>
-                    {{ player.isOnline ? 'Online' : 'Offline' }}
-                  </div>
-                </td>
-
                 <td>
                   <div class="reverse">
                     <template v-if="player?.role !== 'admin'">
@@ -205,7 +201,10 @@ onUnmounted(() => {
                         <i :class="'fas fa-rotate-left'"></i>
                       </button>
                     </template>
-                    <button class="info-btn" @click="togglePlayerDetails(getPlayerID(player))">
+                    <button
+                      class="nav-icon hover:cursor-pointer hover:text-[#0088ff]"
+                      @click="togglePlayerDetails(getPlayerID(player))"
+                    >
                       <i
                         :class="
                           !!expandedPlayer && getPlayerID(expandedPlayer) === getPlayerID(player)
@@ -219,7 +218,7 @@ onUnmounted(() => {
               </tr>
               <!-- Expanded details row right after player row -->
               <tr v-if="!!expandedPlayer && getPlayerID(expandedPlayer) === getPlayerID(player)">
-                <td colspan="7" style="padding: 0">
+                <td colspan="5" style="padding: 0">
                   <div class="player-details">
                     <div class="player-details-grid">
                       <div class="detail-item">
@@ -243,40 +242,37 @@ onUnmounted(() => {
                         </div>
                       </div>
                       <div class="detail-item">
-                        <div class="detail-label">Całkowity czas gry</div>
+                        <div class="detail-label">
+                          MAC address
+                          <span
+                            class="copy-btn"
+                            @click="copyToClipboard(player?.macAddress ?? '(brak)')"
+                          >
+                            <i class="fa fa-copy" />
+                          </span>
+                        </div>
                         <div class="detail-value">
-                          {{ expandedPlayer.totalPlayTime ?? '(Nieznany)' }}
+                          {{ expandedPlayer.macAddress ?? '(Nieznany)' }}
+                        </div>
+                      </div>
+                      <div class="detail-item">
+                        <div class="detail-label">
+                          Machine ID
+                          <span
+                            class="copy-btn"
+                            @click="copyToClipboard(player?.machineId ?? '(brak)')"
+                          >
+                            <i class="fa fa-copy" />
+                          </span>
+                        </div>
+                        <div class="detail-value text-wrap overflow-hidden">
+                          {{ expandedPlayer.machineId ?? '(Nieznany)' }}
                         </div>
                       </div>
                       <div class="detail-item">
                         <div class="detail-label">IP adres</div>
                         <div class="detail-value">
                           {{ expandedPlayer.ipAddress ?? '(Nieznany)' }}
-                        </div>
-                      </div>
-                      <div class="detail-item">
-                        <div class="detail-label">MAC address</div>
-                        <div class="detail-value">
-                          {{ expandedPlayer.macAddress ?? '(Nieznany)' }}
-                        </div>
-                      </div>
-                      <div class="detail-item">
-                        <div class="detail-label">Rola</div>
-                        <div class="detail-value">{{ expandedPlayer.role ?? '(Nieznana)' }}</div>
-                      </div>
-                      <div class="detail-item">
-                        <div class="detail-label">Konto</div>
-                        <div class="detail-value">
-                          {{ expandedPlayer.accountType ?? '(Nieznany)' }}
-                        </div>
-                      </div>
-                      <div class="detail-item">
-                        <div class="detail-label">Status konta</div>
-                        <div
-                          class="detail-value"
-                          :style="{ color: expandedPlayer.isBanned ? '#ff4757' : '#00ff88' }"
-                        >
-                          {{ expandedPlayer.isBanned ? 'Zbanowany' : 'Aktywny' }}
                         </div>
                       </div>
                     </div>
@@ -299,9 +295,9 @@ onUnmounted(() => {
   gap: 1rem;
   align-items: center;
   justify-content: center;
-  height: 80%;
+  height: 100%;
 }
-.logs-card {
+.users-container {
   width: 100%;
   height: calc(100vh - 2.5rem - 65px);
   background: rgb(6, 6, 6);
@@ -311,47 +307,33 @@ onUnmounted(() => {
   box-shadow: var(--shadow-card);
   overflow: hidden;
   animation: fadeInUp 0.8s ease-out 0.2s both;
-  position: relative;
 }
 .search-bar {
-  padding: 1.5rem;
+  padding: 1rem;
   border-bottom: 1px solid var(--border-primary);
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-}
-.search-btn {
-  background: linear-gradient(45deg, var(--primary1), var(--primary2));
-  color: var(--bg-primary);
-  border: none;
-  border-radius: var(--border-radius-small);
-  padding: 16px 24px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: var(--transition);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  white-space: nowrap;
 }
 .reverse {
   display: flex;
   flex-direction: row-reverse;
   gap: 0.5rem;
 }
-.search-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
-}
 .logs-table-wrapper {
   width: 100%;
   height: 100%;
   overflow-y: auto;
+  background: var(--bg-card);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  position: relative;
+  overflow-y: auto;
 }
 .logs-table {
   width: 100%;
-  margin-bottom: 6rem;
+  height: 100%;
   border-collapse: collapse;
 }
 .logs-table th {
@@ -359,7 +341,6 @@ onUnmounted(() => {
   padding: 0.5rem 1rem;
   text-align: left;
   font-weight: 600;
-  color: var(--primary1);
   border-bottom: 2px solid var(--border-primary);
   position: sticky;
   top: 0;
@@ -368,7 +349,6 @@ onUnmounted(() => {
 .logs-table td {
   padding: 0.5rem 1rem;
   border-bottom: 1px solid var(--border-primary);
-  color: var(--text-border);
 }
 
 .logs-table tr:hover {
@@ -377,8 +357,9 @@ onUnmounted(() => {
 
 .copy-btn {
   margin-left: 0.4rem;
-  padding: 0.2rem;
-  border-radius: 0.1rem;
+  font-size: 0.7rem;
+  padding: 0.2rem 0.3rem;
+  border-radius: 0.3rem;
   background: rgba(0, 0, 0, 0.3);
   color: rgba(255, 255, 255, 0.4);
 }
@@ -442,12 +423,12 @@ onUnmounted(() => {
   color: var(--text-muted);
   font-size: 0.9rem;
   margin-bottom: 5px;
-  color: rgba(255, 255, 255, 1);
+  color: rgba(255, 255, 255, 0.3);
 }
 .detail-value {
   color: var(--text-primary);
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 1);
 }
 .no-results {
   text-align: center;

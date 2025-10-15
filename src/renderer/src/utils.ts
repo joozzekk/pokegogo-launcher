@@ -1,3 +1,5 @@
+import { LOGGER } from './services/logger-service'
+
 export const MIN_RAM = 5
 
 export const createParticles = (element: HTMLElement): void => {
@@ -90,6 +92,6 @@ export const refreshMicrosoftToken = async (token: string | null): Promise<void>
     localStorage.setItem('msToken', msToken)
     localStorage.setItem('mcToken', mcToken)
   } catch (err) {
-    console.log(err)
+    LOGGER.err(err as string)
   }
 }

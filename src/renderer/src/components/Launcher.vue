@@ -11,6 +11,7 @@ import { refreshMicrosoftToken } from '@renderer/utils'
 import BannedModal from '@renderer/components/modals/BannedModal.vue'
 import { useSocket } from '@renderer/services/socket-service'
 import api from '@renderer/utils/client'
+import { LOGGER } from '@renderer/services/logger-service'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const refreshInterval = ref<any>(null)
@@ -40,7 +41,7 @@ const refreshToken = async (): Promise<void> => {
       localStorage.setItem('refresh_token', data.refresh_token)
     })
     .catch((err) => {
-      console.log(err)
+      LOGGER.log(err)
     })
 }
 

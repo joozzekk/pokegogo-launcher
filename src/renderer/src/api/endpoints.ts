@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { type IUser } from '@renderer/env'
 import api from '@renderer/utils/client'
+import { Ref } from 'vue'
 
 export const fetchLogin = async (
   nickname: string,
@@ -119,4 +120,15 @@ export const disconnectPlayer = async (): Promise<any> => {
   const res = await api.post('/users/disconnect')
 
   return res.data
+}
+
+export const getServerStatus = async (time: Ref<number>): Promise<any> => {
+  const now = performance.now()
+  const serverIP = import.meta.env.RENDERER_VITE_SERVER_IP
+  const res = await fetch(`https://api.mcsrvstat.us/2/${serverIP}`)
+  const after = performance.now()
+
+  time.value = after - now
+
+  return res.json()
 }
