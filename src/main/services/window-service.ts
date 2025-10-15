@@ -236,8 +236,8 @@ const createLoadingWindow = (): {
   startApp: (appUpdater: AppUpdater, maiNWindow: BrowserWindow) => Promise<void>
 } => {
   const loadingWindow = new BrowserWindow({
-    width: 400,
-    height: 500,
+    width: 300,
+    height: 400,
     show: false,
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
