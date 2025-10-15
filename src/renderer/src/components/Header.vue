@@ -147,7 +147,7 @@ onUnmounted(() => {
 
 .buttons button:hover,
 .buttons button:focus {
-  background: rgba(34, 192, 197, 0.2);
+  background: rgba(197, 145, 34, 0.1);
 }
 
 .buttons button.red:hover,

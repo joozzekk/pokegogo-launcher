@@ -190,24 +190,15 @@ onMounted(() => {
   inset: -30% -10% auto -10%;
   height: 60%;
   background:
-<<<<<<< HEAD
     radial-gradient(600px 200px at 20% 40%, #ffae002f, transparent 70%),
     radial-gradient(500px 180px at 80% 60%, #ad85032f, transparent 70%);
-=======
-    radial-gradient(600px 200px at 20% 40%, rgba(92, 120, 246, 0.14), transparent 70%),
-    radial-gradient(500px 180px at 80% 60%, rgba(88, 137, 242, 0.12), transparent 70%);
->>>>>>> 9dd80c2 (Changed settings)
   pointer-events: none;
 }
 
 .shopitem:hover {
   transform: translateY(-5px);
   box-shadow: 0 16px 34px rgba(0, 0, 0, 0.5);
-<<<<<<< HEAD
   border-color: #ffae00b5;
-=======
-  border-color: rgba(92, 141, 246, 0.35);
->>>>>>> 9dd80c2 (Changed settings)
   cursor: pointer;
 }
 
@@ -249,7 +240,8 @@ onMounted(() => {
   color: #ffae00;
   background: black;
   border: 1px dashed #ffae007e;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06),
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.06),
     0 6px 14px rgba(0, 0, 0, 0.25);
 }
 </style>

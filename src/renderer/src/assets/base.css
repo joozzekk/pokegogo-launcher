@@ -6,16 +6,16 @@
   --primary-light: #ffe8bc;
   --bg-dark: #000000;
   --bg-medium: #000000;
-  --bg-light: #1a1d25;
-  --bg-card: rgba(17, 17, 20, 0.6);
-  --bg-toast: rgba(26, 29, 37, 0.6);
+  --bg-light: #25241a;
+  --bg-card: rgba(20, 19, 17, 0.6);
+  --bg-toast: rgba(66, 62, 40, 0.6);
   --text-primary: #ffffff;
   --text-secondary: #b8ad94;
   --text-muted: #8b7d64;
   --border: rgba(255, 222, 154, 0.15);
   --gradient-primary: linear-gradient(135deg, #ad8503 0%, #ffae00 100%);
   --gradient-banned: linear-gradient(135deg, #c5223d 0%, #b91035 100%);
-  --shadow-glow: 0 0 40px rgba(197, 167, 34, 0.3);
+  --shadow-glow: 0 0 15px rgba(197, 167, 34, 0.3);
 }
 
 *,
@@ -222,9 +222,9 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: var(--bg-card);
+  background: black;
   border-radius: 50px;
-  border: 1px solid var(--border);
+  border: 1px dashed #ffae0047;
   transition: all 0.3s ease;
   animation: slideLeft 0.5s ease;
   user-select: none;
@@ -286,7 +286,7 @@ body {
 @keyframes statusPulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(34, 151, 197, 0.5);
+    box-shadow: 0 0 0 0 rgba(221, 173, 16, 0.5);
   }
   50% {
     box-shadow: 0 0 0 8px rgba(34, 137, 197, 0);
@@ -413,7 +413,7 @@ body {
 .nav-icon:hover,
 .nav-icon:focus {
   cursor: pointer;
-  background: rgba(34, 137, 197, 0.2);
+  background: rgba(197, 145, 34, 0.2);
   color: var(--primary);
 }
 
@@ -765,7 +765,7 @@ body {
   display: flex;
   gap: 15px;
   padding: 15px;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(197, 145, 34, 0.03);
   border-radius: 12px;
   transition: all 0.3s ease;
   cursor: pointer;
@@ -874,6 +874,8 @@ body {
 
 .ram-display {
   position: absolute;
+  top: -0.2rem;
+  user-select: none;
   transform: translateX(-50%);
   background: var(--gradient-primary);
   color: white;
@@ -992,7 +994,7 @@ body {
 
 .btn-secondary:hover,
 .btn-secondary:focus {
-  background: rgba(34, 137, 197, 0.4);
+  background: var(--gradient-primary);
 }
 
 /* -------------------------------------- ChangeLog ---------------------------- */
@@ -1211,7 +1213,7 @@ body {
 .info-btn:hover,
 .info-btn:focus {
   transform: translateY(-1px);
-  box-shadow: 0 0 15px rgba(0, 136, 255, 0.3);
+  box-shadow: 0 0 15px var(--text-muted);
 }
 
 .search-input-wrapper {
@@ -1221,7 +1223,7 @@ body {
 
 .search-input {
   width: 100%;
-  background: rgba(26, 26, 31, 0.5);
+  background: rgba(51, 48, 35, 0.3);
   border: 2px solid var(--border-primary);
   border-radius: var(--border-radius-small);
   padding: 0.8rem 1rem 0.8rem 2.5rem;
@@ -1234,7 +1236,7 @@ body {
 
 .search-input:focus,
 .search-input:hover {
-  background: var(--bg-input);
+  background: rgba(51, 48, 35, 0.568);
 }
 
 .search-input::placeholder {

@@ -50,36 +50,101 @@ body {
   overflow: hidden;
 }
 
-.block {
-  position: absolute;
-  background: linear-gradient(45deg, var(--primary1), var(--primary2));
-  opacity: 0.03;
-  border-radius: 4px;
-  animation: login-float 20s linear infinite;
-}
-
 .block-1 {
-  width: 40px;
-  height: 40px;
+  position: absolute;
   top: 20%;
   left: 10%;
-  animation-delay: -2s;
+  animation: login-float 20s linear infinite;
+  opacity: 0.3;
+  width: 150px;
+  height: auto;
 }
 
 .block-2 {
-  width: 60px;
-  height: 60px;
+  position: absolute;
+  width: 90px;
+  height: 90px;
   top: 60%;
   left: 80%;
+  animation: login-float 20s linear infinite;
   animation-delay: -8s;
+  opacity: 0.3;
 }
 
 .block-3 {
-  width: 30px;
-  height: 30px;
+  animation: login-float 20s linear infinite;
+  position: absolute;
+  width: 80px;
+  height: 80px;
   top: 80%;
   left: 20%;
   animation-delay: -15s;
+  opacity: 0.3;
+}
+.ghost-1 {
+  animation: sway 3s ease-in-out infinite;
+  width: 120px;
+  position: absolute;
+  top: 15%;
+  left: 80%;
+  opacity: 0.1;
+}
+
+.ghost-2 {
+  animation: sway 3s ease-in-out infinite;
+  width: 80px;
+  position: absolute;
+  top: 85%;
+  left: 80%;
+  opacity: 0.1;
+}
+.ghost-3 {
+  animation: sway 3s ease-in-out infinite;
+  width: 150px;
+  position: absolute;
+  top: 50%;
+  left: 10%;
+  opacity: 0.1;
+}
+
+@keyframes sway {
+  0% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-8px);
+  }
+  50% {
+    transform: translateX(0);
+  }
+  75% {
+    transform: translateX(8px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes login-float {
+  0% {
+    transform: translateY(0px) rotate(0deg);
+  }
+
+  25% {
+    transform: translateY(-20px) rotate(90deg);
+  }
+
+  50% {
+    transform: translateY(-10px) rotate(180deg);
+  }
+
+  75% {
+    transform: translateY(-30px) rotate(270deg);
+  }
+
+  100% {
+    transform: translateY(0px) rotate(360deg);
+  }
 }
 
 @keyframes gradientLoginShift {
@@ -88,24 +153,6 @@ body {
   }
   100% {
     transform: scale(1.1) rotate(1deg);
-  }
-}
-
-@keyframes login-float {
-  0% {
-    transform: translateY(0px) rotate(0deg);
-  }
-  25% {
-    transform: translateY(-20px) rotate(90deg);
-  }
-  50% {
-    transform: translateY(-10px) rotate(180deg);
-  }
-  75% {
-    transform: translateY(-30px) rotate(270deg);
-  }
-  100% {
-    transform: translateY(0px) rotate(360deg);
   }
 }
 
@@ -174,7 +221,7 @@ body {
 
 .tab-btn {
   flex: 1;
-  background: none;
+  background: rgba(51, 48, 35, 0.568);
   border: none;
   padding: 1rem 1.5rem;
   color: var(--text-secondary);
@@ -196,7 +243,7 @@ body {
 .tab-btn:hover,
 .tab-btn:focus {
   color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(51, 48, 35, 0.768);
 }
 
 .tab-indicator {
@@ -268,7 +315,7 @@ body {
 }
 .form-input {
   width: 100%;
-  background: var(--bg-input);
+  background: var(--bg-light);
   border: 2px solid var(--border-primary);
   border-radius: var(--border-radius-small);
   padding: 0.5rem 1.5rem 0.5rem 2.5rem;
@@ -288,7 +335,7 @@ body {
 .form-input:focus {
   border-color: var(--primary1);
   box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.1);
-  background: rgba(26, 26, 31, 1);
+  background: rgba(197, 145, 34, 0.1);
 }
 .form-input::placeholder {
   color: var(--text-muted);
@@ -397,13 +444,13 @@ body {
 }
 
 .btn-microsoft {
-  background: linear-gradient(45deg, #0078d4, #106ebe);
+  background: linear-gradient(90deg, #ffa60265, #ad8503);
   color: white;
 }
 .btn-microsoft:hover,
 .btn-microsoft:focus {
   transform: translateY(-2px);
-  box-shadow: 0 0 15px rgba(0, 136, 255, 0.2);
+  box-shadow: 0 0 15px rgba(197, 167, 34, 0.3);
 }
 
 .btn-glow {
