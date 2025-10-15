@@ -241,7 +241,7 @@ window.electron?.ipcRenderer?.on('launch:show-log', (_event, data: string, ended
 }
 
 .launch-button .info {
-  font-size: 0.6rem;
+  font-size: 0.5rem;
   color: rgba(255, 255, 255, 0.7);
 }
 
