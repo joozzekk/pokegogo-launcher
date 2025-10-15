@@ -2,6 +2,8 @@
 import Header from '@renderer/components/Header.vue'
 import { onMounted } from 'vue'
 import { PokeGoGoLogin } from '@renderer/assets/scripts/login'
+import dynia from '@renderer/assets/img/dynia.png'
+import ghost from '@renderer/assets/img/ghost.png'
 
 const handleDiscordLink = (): void => {
   window.open('https://discord.gg/nKgfmbCD', '_blank')
@@ -24,9 +26,12 @@ onMounted(() => {
   <div class="background">
     <div class="bg-gradient"></div>
     <div class="floating-blocks">
-      <div class="block block-1"></div>
-      <div class="block block-2"></div>
-      <div class="block block-3"></div>
+      <img :src="dynia" class="block-1" />
+      <img :src="dynia" class="block-2" />
+      <img :src="dynia" class="block-3" />
+      <img :src="ghost" class="ghost-1" />
+      <img :src="ghost" class="ghost-2" />
+      <img :src="ghost" class="ghost-3" />
     </div>
   </div>
 

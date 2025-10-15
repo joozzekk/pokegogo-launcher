@@ -262,7 +262,7 @@ window.electron?.ipcRenderer?.on('launch:show-log', (_event, data: string, ended
 .launch-button:hover,
 .launch-button:focus {
   transform: translateY(-3px);
-  box-shadow: 0 0.25rem 1rem rgba(34, 151, 197, 0.4);
+  box-shadow: 0 0.25rem 1rem rgba(197, 167, 34, 0.3);
 }
 
 .launch-button:active {

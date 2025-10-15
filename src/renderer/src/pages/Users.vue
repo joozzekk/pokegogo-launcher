@@ -92,7 +92,11 @@ onUnmounted(() => {
 
 <template>
   <div class="users-container">
+<<<<<<< HEAD
     <div class="search-input-wrapper !py-0">
+=======
+    <div class="search-input-wrapper mb-2">
+>>>>>>> halloween
       <i class="fas fa-search search-icon !text-[0.9rem] ml-3"></i>
       <input
         v-model="searchQuery"
@@ -149,7 +153,11 @@ onUnmounted(() => {
                     <span
                       v-if="player.mcid"
                       :style="`
+<<<<<<< HEAD
                       background: #0088ff;
+=======
+                      background: #ffae0067;
+>>>>>>> halloween
                       font-size: 0.6rem;
                       color: white;
                       padding: 2px 6px;
@@ -167,11 +175,23 @@ onUnmounted(() => {
                 <td>
                   <span
                     :style="`
+<<<<<<< HEAD
                       color: ${player.isBanned ? '#ff4757' : '#00ff88'} ;
                       font-weight: 800;
                     `"
                   >
                     {{ player.isBanned ? 'Zablokowane' : 'Aktywne' }}
+=======
+                      background: ${player.isBanned ? '#ff4757' : '#00ff88'} ;
+                      color: ${player.isBanned ? 'white' : 'black'};
+                      font-size: 0.6rem;
+                      padding: 2px 6px;
+                      border-radius: 4px;
+                      font-weight: 800;
+                    `"
+                  >
+                    {{ player.isBanned ? 'Zbanowane' : 'Aktywne' }}
+>>>>>>> halloween
                   </span>
                 </td>
                 <td>
@@ -242,9 +262,9 @@ onUnmounted(() => {
                         <div class="detail-label">
                           MAC address
                           <span
-                            v-if="player?.macAddress"
+                            v-if="expandedPlayer.macAddress"
                             class="copy-btn"
-                            @click="copyToClipboard(player.macAddress)"
+                            @click="copyToClipboard(expandedPlayer?.macAddress)"
                           >
                             <i class="fa fa-copy" />
                           </span>
@@ -252,7 +272,7 @@ onUnmounted(() => {
                         <div class="detail-value">
                           {{
                             expandedPlayer.macAddress?.length
-                              ? expandedPlayer.macAddress
+                              ? expandedPlayer.macAddress.substring(0, 16) + '...'
                               : '(Nieznany)'
                           }}
                         </div>
@@ -261,16 +281,16 @@ onUnmounted(() => {
                         <div class="detail-label">
                           Machine ID
                           <span
-                            v-if="expandedPlayer?.machineId"
+                            v-if="expandedPlayer.machineId"
                             class="copy-btn"
-                            @click="copyToClipboard(expandedPlayer.machineId)"
+                            @click="copyToClipboard(expandedPlayer?.machineId)"
                           >
                             <i class="fa fa-copy" />
                           </span>
                         </div>
                         <div class="detail-value text-wrap overflow-hidden">
                           {{
-                            expandedPlayer.machineId
+                            expandedPlayer.machineId?.length
                               ? expandedPlayer.machineId.substring(0, 16) + '...'
                               : '(Nieznany)'
                           }}
@@ -279,7 +299,11 @@ onUnmounted(() => {
                       <div class="detail-item">
                         <div class="detail-label">IP adres</div>
                         <div class="detail-value">
-                          {{ expandedPlayer.ipAddress ? expandedPlayer.ipAddress : '(Nieznany)' }}
+                          {{
+                            expandedPlayer.ipAddress?.length
+                              ? expandedPlayer.ipAddress.substring(0, 16) + '...'
+                              : '(Nieznany)'
+                          }}
                         </div>
                       </div>
                     </div>
@@ -306,16 +330,10 @@ onUnmounted(() => {
 }
 .users-container {
   width: 100%;
-  height: calc(100vh - 80px);
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  height: calc(100vh - 125px);
+  backdrop-filter: blur(20px);
+  border-radius: var(--border-radius);
   animation: fadeInUp 0.8s ease-out 0.2s both;
-}
-.search-bar {
-  padding: 1rem;
-  border-bottom: 1px solid var(--border-primary);
-  display: flex;
 }
 .reverse {
   display: flex;
@@ -328,35 +346,39 @@ onUnmounted(() => {
   overflow-y: auto;
   background: var(--bg-card);
   backdrop-filter: blur(20px);
-  border: 1px solid var(--border-primary);
   border-radius: var(--border-radius);
   box-shadow: var(--shadow-card);
   overflow: hidden;
   position: relative;
   overflow-y: auto;
+  border: 1px dashed #ffae0067;
 }
 .logs-table {
   width: 100%;
+  height: 100%;
   border-collapse: collapse;
 }
 .logs-table th {
-  background: rgba(26, 26, 31, 1);
-  padding: 0.25rem 1rem;
+  background: rgb(0, 0, 0);
+  padding: 0.5rem 1rem;
   text-align: left;
   font-weight: 600;
-  font-size: 0.8rem;
-  border-bottom: 2px solid var(--border-primary);
+  border-bottom: 2px solid #c59a2211;
   position: sticky;
   top: 0;
   z-index: 10;
 }
 .logs-table td {
   padding: 0.5rem 1rem;
-  border-bottom: 1px solid var(--border-primary);
+  border-bottom: 1px solid #c59a2211;
+}
+
+.logs-table tr {
+  background: #000;
 }
 
 .logs-table tr:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: #c59a2207;
 }
 
 .copy-btn {
@@ -406,9 +428,9 @@ onUnmounted(() => {
 }
 .player-details {
   display: block;
-  background: rgba(26, 26, 31, 0.6);
+  background: rgba(17, 17, 14, 0.363);
   padding: 20px;
-  border-top: 1px solid var(--border-primary);
+  border-top: 1px solid var(--border);
   animation: slideDown 0.3s ease-out;
 }
 .player-details-grid {
@@ -418,10 +440,10 @@ onUnmounted(() => {
   gap: 1rem;
 }
 .detail-item {
-  background: var(--bg-input);
+  background: var(--bg-light);
   padding: 15px;
   border-radius: var(--border-radius-small);
-  border: 1px solid var(--border-primary);
+  border: 1px solid var(--border);
 }
 .detail-label {
   color: var(--text-muted);

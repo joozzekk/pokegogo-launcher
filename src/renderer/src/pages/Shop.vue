@@ -190,15 +190,15 @@ onMounted(() => {
   inset: -30% -10% auto -10%;
   height: 60%;
   background:
-    radial-gradient(600px 200px at 20% 40%, rgba(92, 120, 246, 0.14), transparent 70%),
-    radial-gradient(500px 180px at 80% 60%, rgba(88, 137, 242, 0.12), transparent 70%);
+    radial-gradient(600px 200px at 20% 40%, #ffae002f, transparent 70%),
+    radial-gradient(500px 180px at 80% 60%, #ad85032f, transparent 70%);
   pointer-events: none;
 }
 
 .shopitem:hover {
   transform: translateY(-5px);
   box-shadow: 0 16px 34px rgba(0, 0, 0, 0.5);
-  border-color: rgba(92, 141, 246, 0.35);
+  border-color: #ffae00b5;
   cursor: pointer;
 }
 
@@ -237,8 +237,9 @@ onMounted(() => {
   font-size: 13px;
   padding: 6px 10px;
   border-radius: 999px;
-  color: #0a1a10;
-  background: #28e083;
+  color: #ffae00;
+  background: black;
+  border: 1px dashed #ffae007e;
   box-shadow:
     inset 0 0 0 1px rgba(0, 0, 0, 0.06),
     0 6px 14px rgba(0, 0, 0, 0.25);
