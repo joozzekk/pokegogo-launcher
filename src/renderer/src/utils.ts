@@ -57,7 +57,7 @@ export const showToast = (message: string, type = 'success'): void => {
 
   const icon = type === 'success' ? 'check-circle' : 'exclamation-circle'
   toast.innerHTML = `
-        <i class="fas fa-${icon}" style="color: ${type === 'success' ? 'var(--primary)' : '#ef4444'}"></i>
+        <i class="fas fa-${icon} text-xl" style="color: ${type === 'success' ? 'var(--primary)' : '#ef4444'}"></i>
         <span>${message}</span>
     `
 

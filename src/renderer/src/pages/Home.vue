@@ -8,6 +8,7 @@ import logo from '@renderer/assets/logo.png'
 import Select from '@renderer/components/Select.vue'
 import { getServerStatus } from '@renderer/api/endpoints'
 import { LOGGER } from '@renderer/services/logger-service'
+import { showToast } from '@renderer/utils'
 
 const generalStore = useGeneralStore()
 const time = ref<number>(0)
@@ -29,6 +30,8 @@ onMounted(async () => {
     },
     1000 * 60 * 5
   )
+
+  showToast('123')
 })
 </script>
 
