@@ -1,6 +1,5 @@
 <script lang="ts" setup>
 import { onMounted, ref } from 'vue'
-import { initNavigation } from '@renderer/assets/scripts/navigation'
 import LaunchButton from '@renderer/components/buttons/LaunchButton.vue'
 import useGeneralStore from '@renderer/stores/general-store'
 import poke from '@renderer/assets/img/poke.png'
@@ -22,8 +21,6 @@ const setServerStatus = async (): Promise<void> => {
 }
 
 onMounted(async () => {
-  initNavigation()
-
   await setServerStatus()
   serverStatusInterval.value = setInterval(
     async () => {

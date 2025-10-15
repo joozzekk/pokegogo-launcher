@@ -154,21 +154,21 @@ body {
 .applogo {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 0 0.5rem;
+  gap: 0.7rem;
+  padding: 0 0.2rem;
   user-select: none;
   -webkit-app-region: no-drag;
 }
 
 .applogo-icon {
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 2rem;
+  height: 2rem;
   background: var(--gradient-primary);
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   color: white;
   animation: rotateCube 10s linear infinite;
 }
@@ -194,7 +194,7 @@ body {
 .applogo-badge {
   background: rgba(197, 154, 34, 0.2);
   color: var(--primary);
-  padding: 0.25rem 0.5rem;
+  padding: 0.125rem 0.5rem;
   border-radius: 20px;
   font-size: 0.8rem;
   font-weight: 600;
@@ -215,7 +215,7 @@ body {
 .player-fullinfo {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 0.8rem;
 }
 
 .player-profile {
@@ -227,7 +227,8 @@ body {
   border: 1px solid var(--border);
   transition: all 0.3s ease;
   animation: slideLeft 0.5s ease;
-  padding: 0.5rem 1rem;
+  user-select: none;
+  padding: 0.4rem 1rem;
   margin-bottom: 1.5rem;
 }
 
@@ -240,11 +241,6 @@ body {
     transform: translateX(0);
     opacity: 1;
   }
-}
-
-.player-profile:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-glow);
 }
 
 .player-avatar {
@@ -277,12 +273,12 @@ body {
 
 .status-dot {
   position: absolute;
-  bottom: 4px;
-  right: -2px;
+  bottom: 0px;
+  right: -1px;
   width: 10px;
-  height: 12px;
+  height: 10px;
   background: var(--primary);
-  border: 2px solid var(--bg-dark);
+  border: 1px solid var(--bg-dark);
   border-radius: 50%;
   animation: statusPulse 2s infinite;
 }
@@ -303,14 +299,15 @@ body {
 }
 
 .player-label {
-  font-size: 11px;
+  font-size: 0.7rem;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
 }
 
 .player-name {
-  font-size: 0.8rem;
+  letter-spacing: 1px;
+  font-size: 0.9rem;
   font-weight: 600;
   color: var(--primary);
 }
@@ -356,14 +353,14 @@ body {
 
 .sidebar-nav {
   flex: 1;
-  padding: 1.5rem 1rem;
+  padding: 0.8rem;
 }
 
 .nav-item {
   display: flex;
   align-items: center;
   gap: 15px;
-  padding: 0.75rem 1rem;
+  padding: 0.5rem 0.8rem;
   margin-bottom: 8px;
   color: var(--text-secondary);
   text-decoration: none;
@@ -385,8 +382,7 @@ body {
 }
 
 .nav-item span {
-  font-weight: 500;
-  font-size: 1rem;
+  font-size: 0.8rem;
 }
 
 .nav-indicator {
@@ -414,7 +410,15 @@ body {
   color: var(--primary);
 }
 
+.nav-icon:hover,
+.nav-icon:focus {
+  cursor: pointer;
+  background: rgba(34, 137, 197, 0.2);
+  color: var(--primary);
+}
+
 .nav-item.active {
+  font-weight: 700;
   color: var(--primary);
   background: rgba(197, 173, 34, 0.15);
 }
@@ -454,7 +458,7 @@ body {
   display: flex;
   padding: 0.8rem;
   width: 100%;
-  overflow-y: auto;
+  overflow: hidden;
   animation: fadeIn 0.6s ease;
 }
 
@@ -806,77 +810,6 @@ body {
   color: var(--text-secondary);
 }
 
-/* -------------------------------------- Strona ze sklepem ---------------------------- */
-#shopPage {
-  height: 100%;
-}
-
-.shop-header {
-  text-align: center;
-}
-
-.shop-header h2 {
-  font-size: 32px;
-  margin-bottom: 10px;
-}
-
-.shop-header p {
-  color: var(--text-secondary);
-}
-
-.shop-content {
-  position: relative;
-  background: var(--bg-card);
-  border-radius: 20px;
-  padding: 20px;
-  border: 1px solid var(--border);
-  min-height: 600px;
-}
-
-.shop-iframe {
-  width: 100%;
-  height: 100%;
-  border: none;
-  border-radius: 15px;
-}
-
-.shop-iframe::-webkit-scrollbar {
-  width: 0;
-}
-
-.shop-loading {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
-}
-
-.shop-loading i {
-  width: 3rem;
-  height: 3rem;
-  font-size: 2rem;
-  color: var(--primary);
-}
-
-.external-shop-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 20px;
-  padding: 12px 1.5rem;
-  background: var(--gradient-primary);
-  color: white;
-  text-decoration: none;
-  border-radius: 10px;
-  transition: all 0.3s ease;
-}
-
-.external-shop-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 20px rgba(34, 173, 197, 0.3);
-}
-
 /* -------------------------------------- Strona z ustawieniami---------------------------- */
 .settings-container {
   width: 100%;
@@ -887,7 +820,6 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
-  margin-bottom: 1rem;
 }
 
 .setting-group {
@@ -942,7 +874,6 @@ body {
 
 .ram-display {
   position: absolute;
-  top: -2rem;
   transform: translateX(-50%);
   background: var(--gradient-primary);
   color: white;
@@ -1234,13 +1165,6 @@ body {
 
 .toast.error {
   border-color: #ef4444;
-}
-
-.app-version {
-  position: absolute;
-  bottom: 0.25rem;
-  right: 1rem;
-  color: rgba(255, 255, 255, 0.3);
 }
 
 .ban-btn {

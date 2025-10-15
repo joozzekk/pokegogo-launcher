@@ -77,19 +77,22 @@ onUnmounted(() => {
         <img :src="logo" width="100%" />
       </div>
       <h1>PokeGoGo</h1>
-      <span class="applogo-badge">{{ parsedAppVersion }}</span>
     </div>
-    <div v-if="$route.path.includes('/app')" class="breadcrumbs">
-      <i class="fa fa-home" @click="$router.push('/app/home')" /> >
+    <div v-if="$route.path.includes('/app')" class="breadcrumbs flex items-center gap-2">
+      <div class="nav-icon" @click="$router.push('/app/home')"><i class="fa fa-home" /></div>
+      >
       <span class="active">
         {{ $route.name }}
       </span>
     </div>
 
-    <button v-if="isUpdateAvailable" class="nav-icon" @click="handleInstallUpdate">
-      <i v-if="isInstallingUpdate" class="fas fa-spinner fa-spin"></i>
-      <i v-else class="fas fa-download"></i>
-    </button>
+    <div class="flex ml-auto mr-[9rem] items-center">
+      <div class="applogo-badge">{{ parsedAppVersion }}</div>
+      <button v-if="isUpdateAvailable" class="nav-icon" @click="handleInstallUpdate">
+        <i v-if="isInstallingUpdate" class="fas fa-spinner fa-spin"></i>
+        <i v-else class="fas fa-download"></i>
+      </button>
+    </div>
     <div class="buttons">
       <button @click="minimizeWindow">
         <i class="fa-solid fa-window-minimize"></i>
@@ -106,17 +109,9 @@ onUnmounted(() => {
 
 <style scoped>
 .nav-icon {
-  margin-left: auto;
-  margin-right: 11rem;
-  color: #0aefff !important;
-  cursor: pointer !important;
   border: none;
   -webkit-app-region: no-drag;
   transition: background 0.1s ease-in-out;
-}
-
-.nav-icon:hover {
-  box-shadow: 0 0 5px gray;
 }
 
 .buttons {
@@ -162,7 +157,7 @@ onUnmounted(() => {
 
 .breadcrumbs {
   color: #575b69;
-
+  margin-left: 0.5rem;
   user-select: none;
   -webkit-app-region: no-drag;
   text-transform: capitalize;
