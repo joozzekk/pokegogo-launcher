@@ -10,7 +10,6 @@ const {
   currentFileContent,
   currentFolderFiles,
   getFolderContent,
-  isFolder,
   changeFolder,
   currentFolder,
   restoreFolder,
@@ -33,6 +32,7 @@ const sortedFiles = computed(() => {
         // eslint-disable-next-line no-useless-escape
         return !/^[^\\\/:\*\?"<>\|]+(\.[^\\\/:\*\?"<>\|]+)+$/.test(a.name) ? -1 : 1
       })
+      .filter((file) => !file.name.startsWith('.'))
       .filter((file) => !['hashes.txt'].includes(file.name)) ?? []
   )
 })
@@ -118,17 +118,17 @@ onMounted(async () => {
         <div class="flex items-center">
           <a v-for="(breadcrumb, i) in breadcrumbs" :key="i" class="flex items-center">
             <template v-if="i === 0">
-              <span class="nav-icon" @click="restoreFolder(breadcrumb)">
+              <span class="nav-icon" @click="restoreFolder('')">
                 <i
                   class="fa fa-home"
                   :class="{ 'hover:cursor-pointer hover:text-[#ffae00]': breadcrumbs.length !== 1 }"
                 />
               </span>
               <span class="mx-1">
-                {{ breadcrumbs.length > 1 ? '>' : '' }}
+                {{ breadcrumbs.length > 0 ? '>' : '' }}
               </span>
             </template>
-            <template v-else-if="breadcrumbs.length">
+            <template v-if="breadcrumbs.length">
               <span
                 class="cursor-default text-[0.9rem] text-lg"
                 :class="{
@@ -190,10 +190,10 @@ onMounted(async () => {
         :key="file.name"
         class="bg-[#000000ac] w-full px-4 py-2 flex items-center gap-4"
         :class="{
-          'hover:bg-[#C59A2211] hover:cursor-pointer': isFolder(file.name) || isKnownFile(file.name)
+          'hover:bg-[#C59A2211] hover:cursor-pointer': file.isDirectory || isKnownFile(file.name)
         }"
         @click="
-          isFolder(file.name)
+          file.isDirectory
             ? changeFolder(file.name)
             : isKnownFile(file.name)
               ? openFile(file.name)
@@ -201,7 +201,7 @@ onMounted(async () => {
         "
       >
         <div class="nav-icon">
-          <i v-if="isFolder(file.name)" class="fa fa-folder text-[#ffae00]"></i>
+          <i v-if="file.isDirectory" class="fa fa-folder text-[#ffae00]"></i>
           <i v-else-if="file.name.includes('.zip')" class="fa fa-archive"></i>
           <i v-else class="fa fa-file"></i>
         </div>

@@ -98,7 +98,6 @@ const handleSupDev = (): void => {
         <span>Gracze</span>
         <div class="nav-indicator"></div>
       </a>
-
       <a
         v-if="hasAdmin"
         class="nav-item"
@@ -114,6 +113,20 @@ const handleSupDev = (): void => {
         <div class="nav-indicator"></div>
       </a>
       <a
+        v-if="hasAdmin"
+        class="nav-item"
+        :class="{
+          active: $route.path === '/app/items'
+        }"
+        @click="handleChangeRoute('/app/items')"
+      >
+        <div class="nav-icon">
+          <i class="fas fa-list"></i>
+        </div>
+        <span>Itemy</span>
+        <div class="nav-indicator"></div>
+      </a>
+      <a
         class="nav-item"
         :class="{
           active: $route.path === '/app/settings'
@@ -121,7 +134,7 @@ const handleSupDev = (): void => {
         @click="handleChangeRoute('/app/settings')"
       >
         <div class="nav-icon">
-          <i class="fas fa-list"></i>
+          <i class="fas fa-cog"></i>
         </div>
         <span>Ustawienia</span>
         <div class="nav-indicator"></div>

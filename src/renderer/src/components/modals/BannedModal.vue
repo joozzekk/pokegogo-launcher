@@ -36,7 +36,7 @@ const acknowledgeBan = (): void => {
         </div>
       </div>
       <div class="modal-content">
-        <p id="ban-desc" class="ban-description">
+        <p class="ban-description">
           Twoje konto zostało zablokowane. Szczegóły dotyczące powodu blokady poniżej:
         </p>
         <p class="ban-reason">{{ banReason }}</p>
@@ -72,12 +72,12 @@ const acknowledgeBan = (): void => {
   width: 90%;
   max-width: 420px;
   min-height: 220px;
-  background: rgba(10, 12, 16, 0.95);
+  background: rgba(16, 14, 10, 0.95);
+  box-shadow: 0 0 1rem rgba(51, 48, 35, 0.568);
   border-radius: 1rem;
   padding: 1.5rem 2rem 1.25rem;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 0 1rem rgba(34, 145, 197, 0.2);
 }
 
 .modal-header {

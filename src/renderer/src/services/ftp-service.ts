@@ -8,7 +8,6 @@ interface FTPService {
   currentFolderFiles: Ref<FTPFile[]>
   currentFolder: Ref<string>
   getFolderContent: () => Promise<void>
-  isFolder: (name: string) => boolean
   changeFolder: (name: string) => Promise<void>
   restoreFolder: (name: string) => Promise<void>
   uploadFile: () => Promise<void>
@@ -22,6 +21,8 @@ interface FTPFile {
   type: number
   size: number
   rawModifiedAt: string
+  isDirectory: boolean
+  isFile: boolean
 }
 
 export const useFTP = (inputFile?: Ref<HTMLInputElement | null>): FTPService => {
@@ -30,7 +31,7 @@ export const useFTP = (inputFile?: Ref<HTMLInputElement | null>): FTPService => 
   const currentFolder = ref<string>('')
   const currentFolderFiles = ref<FTPFile[]>([])
 
-  const getFolderContent = async (folder: string = 'mc'): Promise<void> => {
+  const getFolderContent = async (folder: string = ''): Promise<void> => {
     const folderPath =
       currentFolder.value.length && !currentFolder.value.endsWith(folder)
         ? currentFolder.value + '/' + folder
@@ -39,11 +40,6 @@ export const useFTP = (inputFile?: Ref<HTMLInputElement | null>): FTPService => 
 
     currentFolder.value = folderPath
     currentFolderFiles.value = res
-  }
-
-  const isFolder = (name: string): boolean => {
-    // eslint-disable-next-line no-useless-escape
-    return !/^[^\\\/:\*\?"<>\|]+(\.[^\\\/:\*\?"<>\|]+)+$/.test(name)
   }
 
   const changeFolder = async (name: string): Promise<void> => {
@@ -165,7 +161,6 @@ export const useFTP = (inputFile?: Ref<HTMLInputElement | null>): FTPService => 
     currentFileContent,
     currentFolderFiles,
     getFolderContent,
-    isFolder,
     currentFolder,
     changeFolder,
     restoreFolder,

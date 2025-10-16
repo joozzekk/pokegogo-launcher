@@ -132,3 +132,27 @@ export const getServerStatus = async (time: Ref<number>): Promise<any> => {
 
   return res.json()
 }
+
+export const getItems = async (): Promise<any[]> => {
+  const res = await api.get('/items')
+
+  return res.data
+}
+
+export const createItem = async (item: any): Promise<any> => {
+  const res = await api.post('/items', item)
+
+  return res.data
+}
+
+export const updateItem = async (item: any): Promise<any> => {
+  const res = await api.put('/items', item)
+
+  return res.data
+}
+
+export const removeItem = async (uuid: number): Promise<any> => {
+  const res = await api.delete(`/items/${uuid}`)
+
+  return res.data
+}

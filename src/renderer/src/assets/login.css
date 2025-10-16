@@ -305,7 +305,7 @@ body {
 }
 
 .form-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   position: relative;
 }
 .input-wrapper {
@@ -338,7 +338,7 @@ body {
   background: rgba(197, 145, 34, 0.1);
 }
 .form-input::placeholder {
-  color: var(--text-muted);
+  color: #5f5a41;
   font-weight: 300;
 }
 
@@ -533,7 +533,7 @@ body {
 .error-message {
   color: #ff4757;
   margin-top: 2px;
-  font-size: 0.8rem;
+  font-size: 0.6rem;
   position: absolute;
   display: none;
   animation: errorSlide 0.3s ease-out;

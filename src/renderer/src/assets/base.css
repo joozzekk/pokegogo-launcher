@@ -906,7 +906,7 @@ body {
   flex: 1;
   padding: 10px;
   background: var(--bg-light);
-  color: var(--text-secondary);
+  color: #5f5a41;
   border: 1px solid transparent;
   border-radius: 8px;
   cursor: pointer;
@@ -994,7 +994,7 @@ body {
 
 .btn-secondary:hover,
 .btn-secondary:focus {
-  background: var(--gradient-primary);
+  background: #ffae003d;
 }
 
 /* -------------------------------------- ChangeLog ---------------------------- */

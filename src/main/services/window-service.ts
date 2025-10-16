@@ -11,6 +11,7 @@ import { address } from 'address/promises'
 import { useFTP } from './ftp-service'
 import { readFile, unlink, writeFile } from 'fs/promises'
 import { createHash } from 'crypto'
+import { FileInfo } from 'basic-ftp'
 
 const createMainWindow = (): BrowserWindow => {
   const mainWindow = new BrowserWindow({
@@ -41,7 +42,13 @@ const createMainWindow = (): BrowserWindow => {
 
     client.close()
 
-    return list
+    return list.map((file: FileInfo) => {
+      return {
+        ...file,
+        isDirectory: file.isDirectory,
+        isFile: file.isFile
+      }
+    })
   })
 
   async function computeHash(buffer: ArrayBuffer): Promise<string> {

@@ -9,6 +9,7 @@ import ShopPage from '@renderer/pages/Shop.vue'
 import LoadingPage from '@renderer/pages/Loading.vue'
 import UsersPage from '@renderer/pages/Users.vue'
 import FTPPage from '@renderer/pages/FTP.vue'
+import ItemsPage from '@renderer/pages/Items.vue'
 
 const routes = [
   { path: '/', component: LoginPage },
@@ -31,6 +32,11 @@ const routes = [
         path: 'ftp',
         name: 'ftp',
         component: FTPPage
+      },
+      {
+        path: 'items',
+        name: 'items',
+        component: ItemsPage
       }
     ]
   }
