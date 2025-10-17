@@ -107,6 +107,7 @@ const openModal = async (item: any, type: 'add' | 'edit' = 'add'): Promise<void>
     state.name = item.name
     state.desc = item.desc
     state.photo = item.src
+    photoFile.value = item.src
     state.price = item.price
     state.type = getTypeByServiceName(item.serviceName)
 
@@ -179,20 +180,29 @@ const addItem = async (): Promise<void> => {
 }
 const editItem = async (): Promise<void> => {
   const isValid = await v$.value.$validate()
-  if (!isValid) return
+  if (!isValid || !photoFile.value) return
 
-  const res = await updateItem({
-    ...state,
-    uuid: uuid.value,
-    src: state.photo,
-    serviceName: getServiceNameByType(),
-    command: getCommandByType()
-  })
+  const uploadResult = await window.electron.ipcRenderer?.invoke(
+    'ftp:upload-file',
+    'items',
+    await photoFile.value.arrayBuffer(),
+    photoFile.value.name
+  )
 
-  if (res) {
-    showToast('Pomyślnie edytowano przedmiot ' + state.name + '.')
-    handleCancel()
-    await emits('refreshData')
+  if (uploadResult) {
+    const res = await updateItem({
+      ...state,
+      uuid: uuid.value,
+      serviceName: getServiceNameByType(),
+      command: getCommandByType(),
+      src: photoFile.value.name
+    })
+
+    if (res) {
+      showToast('Pomyślnie edytowano przedmiot ' + state.name + '.')
+      handleCancel()
+      await emits('refreshData')
+    }
   }
 }
 

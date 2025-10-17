@@ -51,12 +51,15 @@ const handleLaunchGame = async (e: Event): Promise<void> => {
   generalStore.setIsOpeningGame(true)
   createParticles(e.target as HTMLElement)
 
-  const mcToken = localStorage.getItem('mcToken')
+  let mcToken = localStorage.getItem('mcToken')
 
   if (accountType === 'microsoft' && mcToken?.includes('exp')) {
     const exp = JSON.parse(mcToken as string).exp
     const now = Math.floor(Date.now() / 1000)
-    if (now >= exp) await refreshMicrosoftToken(localStorage.getItem('token'))
+    if (now >= exp) {
+      await refreshMicrosoftToken(localStorage.getItem('msToken'))
+      mcToken = localStorage.getItem('mcToken')
+    }
   }
 
   const res = await window.electron?.ipcRenderer?.invoke('launch:game', {
