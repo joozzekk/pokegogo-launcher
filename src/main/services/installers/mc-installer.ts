@@ -55,7 +55,7 @@ async function downloadAll(
   localDir: string,
   log: (data: string, isEnded?: boolean) => void,
   isFirstInstall: boolean,
-  importantFolders: string[],
+  importantFiles: string[],
   signal: AbortSignal
 ): Promise<void> {
   if (signal.aborted) {
@@ -98,15 +98,13 @@ async function downloadAll(
     const localPath = path.join(localDir, file.name)
 
     if (file.isDirectory) {
-      await downloadAll(
-        client,
-        remotePath,
-        localPath,
-        log,
-        isFirstInstall,
-        importantFolders,
-        signal
+      if (
+        !isFirstInstall &&
+        !importantFiles.some((importantFolder) => remotePath.includes(importantFolder))
       )
+        continue
+
+      await downloadAll(client, remotePath, localPath, log, isFirstInstall, importantFiles, signal)
     } else {
       if (file.name.endsWith('.sha256') || file.name === 'hashes.txt') continue
 
@@ -177,8 +175,8 @@ export async function copyMCFiles(
 ): Promise<string | undefined> {
   const { client, connect } = useFTP()
   const localRoot = path.join(app.getPath('userData'), 'mcfiles')
-  const markerFile = path.join(localRoot, '.mcfiles_installed')
-  const importantFolders = ['mods', 'versions', 'resourcepacks', 'datapacks', 'config']
+  const markerFile = path.join(app.getPath('userData'), '.mcfiles_installed')
+  const importantFiles = ['mods', 'versions', 'resourcepacks', 'datapacks', 'config']
 
   try {
     const isFirstInstall = !(await fileExists(markerFile))
@@ -196,7 +194,7 @@ export async function copyMCFiles(
         mainWindow.webContents.send('launch:show-log', data)
       },
       isFirstInstall,
-      importantFolders,
+      importantFiles,
       signal
     )
 
@@ -204,9 +202,7 @@ export async function copyMCFiles(
       return 'stop'
     }
 
-    if (isFirstInstall) {
-      await fs.promises.writeFile(markerFile, 'installed')
-    }
+    if (isFirstInstall) await fs.promises.writeFile(markerFile, 'installed')
 
     mainWindow.webContents.send('launch:show-log', '', true)
   } catch (err) {

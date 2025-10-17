@@ -20,7 +20,7 @@ interface FTPFile {
   name: string
   type: number
   size: number
-  rawModifiedAt: string
+  modifiedAt: string
   isDirectory: boolean
   isFile: boolean
 }

@@ -93,8 +93,10 @@ export async function launchMinecraft(
   ipcMain.handle('launch:exit', () => {
     client.emit('close', 1)
     process?.kill('SIGTERM')
+    console.log('Killed mc')
   })
 
+  console.log('MC Started')
   win.webContents.send('launch:change-state', JSON.stringify('minecraft-start'))
 
   client.on('debug', (data) => console.log('DEBUG', data))

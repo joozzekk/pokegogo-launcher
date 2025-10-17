@@ -17,13 +17,11 @@ export const useFTP = (): { client: Client; connect: () => Promise<void> } => {
     await client.access({
       host: '57.128.211.105',
       user: 'ftpuser',
-      password: 'Ewenement2023$',
-      secure: false
+      password: 'Ewenement2023$'
     })
 
     client.ftp.encoding = 'utf-8'
     client.ftp.verbose = true
-    await client.send('OPTS UTF8 ON')
   }
 
   return {

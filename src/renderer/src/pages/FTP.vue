@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { useFTP } from '@renderer/services/ftp-service'
+import { format } from 'date-fns'
 import { computed, onMounted, ref } from 'vue'
 
 const showSearchInput = ref<boolean>(false)
@@ -209,9 +210,9 @@ onMounted(async () => {
           <p class="w-1/3">
             {{ file.name }}
           </p>
-          <p class="">{{ file.rawModifiedAt }}</p>
           <div class="flex gap-2 items-center">
-            <p>{{ (file.size / 1024).toPrecision(2) }}MB</p>
+            {{ file.modifiedAt ? format(file.modifiedAt, 'MMM dd, yyyy HH:mm:ss') : '' }}
+
             <div class="flex gap-2 items-center justify-evenly ml-2">
               <button class="ban-btn hover:cursor-pointer" @click.stop="removeFile(file.name)">
                 <i class="fa fa-trash" />

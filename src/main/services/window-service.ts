@@ -11,7 +11,6 @@ import { address } from 'address/promises'
 import { useFTP } from './ftp-service'
 import { readFile, unlink, writeFile } from 'fs/promises'
 import { createHash } from 'crypto'
-import { FileInfo } from 'basic-ftp'
 
 const createMainWindow = (): BrowserWindow => {
   const mainWindow = new BrowserWindow({
@@ -40,15 +39,31 @@ const createMainWindow = (): BrowserWindow => {
 
     const list = await client.list(remoteURL)
 
+    const listWithModDates = await Promise.all(
+      list.map(async (file) => {
+        let lastModifiedAt: Date | null = null
+
+        if (file.isFile) {
+          try {
+            lastModifiedAt = await client.lastMod(remoteURL + file.name)
+          } catch {
+            console.log(file)
+            lastModifiedAt = null // jeśli serwer nie wspiera MDTM
+          }
+        }
+
+        return {
+          ...file,
+          isDirectory: file.isDirectory,
+          isFile: file.isFile,
+          lastModifiedAt
+        }
+      })
+    )
+
     client.close()
 
-    return list.map((file: FileInfo) => {
-      return {
-        ...file,
-        isDirectory: file.isDirectory,
-        isFile: file.isFile
-      }
-    })
+    return listWithModDates
   })
 
   async function computeHash(buffer: ArrayBuffer): Promise<string> {
