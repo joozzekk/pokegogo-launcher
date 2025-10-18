@@ -56,6 +56,7 @@ async function downloadAll(
   log: (data: string, isEnded?: boolean) => void,
   isFirstInstall: boolean,
   importantFiles: string[],
+  ignoreFiles: string[],
   signal: AbortSignal
 ): Promise<void> {
   if (signal.aborted) {
@@ -97,6 +98,13 @@ async function downloadAll(
     const remotePath = path.posix.join(remoteDir, file.name)
     const localPath = path.join(localDir, file.name)
 
+    if (
+      file.isFile &&
+      !isFirstInstall &&
+      ignoreFiles.some((importantFile) => file.name.includes(importantFile))
+    )
+      continue
+
     if (file.isDirectory) {
       if (
         !isFirstInstall &&
@@ -104,7 +112,16 @@ async function downloadAll(
       )
         continue
 
-      await downloadAll(client, remotePath, localPath, log, isFirstInstall, importantFiles, signal)
+      await downloadAll(
+        client,
+        remotePath,
+        localPath,
+        log,
+        isFirstInstall,
+        importantFiles,
+        ignoreFiles,
+        signal
+      )
     } else {
       if (file.name.endsWith('.sha256') || file.name === 'hashes.txt') continue
 
@@ -177,6 +194,7 @@ export async function copyMCFiles(
   const localRoot = path.join(app.getPath('userData'), 'mcfiles')
   const markerFile = path.join(app.getPath('userData'), '.mcfiles_installed')
   const importantFiles = ['mods', 'versions', 'resourcepacks', 'datapacks', 'config']
+  const ignoreFiles = ['options']
 
   try {
     const isFirstInstall = !(await fileExists(markerFile))
@@ -195,6 +213,7 @@ export async function copyMCFiles(
       },
       isFirstInstall,
       importantFiles,
+      ignoreFiles,
       signal
     )
 

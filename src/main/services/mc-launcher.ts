@@ -113,7 +113,7 @@ export async function launchMinecraft(
     if (data.includes('Initializing Client')) {
       win.webContents.send('launch:change-state', JSON.stringify('minecraft-started'))
       mcOpened = true
-      // win.hide()
+      win.hide()
     }
   })
   client.on('error', (data) => console.log('ERROR', data))

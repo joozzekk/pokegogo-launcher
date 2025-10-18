@@ -33,8 +33,11 @@ const isUpdateAvailable = computed(() => {
 const handleInstallUpdate = async (): Promise<void> => {
   isInstallingUpdate.value = true
   try {
-    await window.electron?.ipcRenderer?.invoke('launch:exit')
-    await window.electron?.ipcRenderer?.invoke('update:start')
+    try {
+      await window.electron?.ipcRenderer?.invoke('launch:exit')
+    } finally {
+      await window.electron?.ipcRenderer?.invoke('update:start')
+    }
   } catch (err) {
     showToast('Wystąpił błąd podczas aktualizacji. Spróbuj ponownie później.', 'error')
     LOGGER.log(err as string)
