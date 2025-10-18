@@ -13,7 +13,7 @@ const state = reactive({
   name: '',
   type: 'rank',
   photo: '',
-  price: 0.0,
+  price: 1.0,
   desc: '',
   src: '',
   command: '',
@@ -65,7 +65,7 @@ const rules = computed(() => {
           }
         }
       : {}),
-    ...(state.type === 'item'
+    ...(state.type === 'item' || state.type === 'key_item'
       ? {
           item: {
             required: helpers.withMessage('Pole jest wymagane', required)
@@ -220,7 +220,7 @@ const handleCancel = (): void => {
   state.desc = ''
   state.photo = ''
   state.type = 'rank'
-  state.price = 0.0
+  state.price = 1.0
   state.src = ''
   state.command = ''
   state.item = ''
@@ -311,13 +311,15 @@ defineExpose({
 
             <div class="flex flex-col w-full">
               <label class="input-label mb-1">Cena</label>
-              <small class="mb-1 text-[#5f5a41]"> Podaj cene przedmiotu </small>
+              <small class="mb-1 text-[#5f5a41]"> Podaj cene przedmiotu. Minimalnie 1 </small>
               <div class="form-group h-full">
                 <div class="input-wrapper flex">
                   <input
                     id="login-email"
                     v-model="state.price"
-                    type="text"
+                    type="number"
+                    :min="0.01"
+                    :max="10000"
                     class="form-input !pl-[1rem]"
                     placeholder="Podaj nazwę"
                     :class="{ invalid: v$.price.$error }"
@@ -432,7 +434,7 @@ defineExpose({
                   <input
                     id="login-email"
                     v-model="state.days"
-                    type="text"
+                    type="number"
                     class="form-input !pl-[1rem]"
                     placeholder="Podaj ilość dni"
                     :class="{ invalid: v$.days?.$error }"
@@ -494,7 +496,7 @@ defineExpose({
                 <input
                   id="login-email"
                   v-model="state.count"
-                  type="text"
+                  type="number"
                   class="form-input !pl-[1rem]"
                   placeholder="Podaj ilość"
                   :class="{ invalid: v$.count?.$error }"
@@ -510,7 +512,7 @@ defineExpose({
           </div>
         </div>
 
-        <template v-if="state.type === 'custom' || state.type === 'key_item'">
+        <template v-if="state.type === 'custom'">
           <label class="input-label">Komenda</label>
           <small class="mb-1 text-[#5f5a41]">
             Możesz wykorzystywać różne zmienne podane wyżej. {player} - nick gracza. Podane wyżej:
