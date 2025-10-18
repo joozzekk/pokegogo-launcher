@@ -1,20 +1,21 @@
 <script lang="ts" setup>
 import { connectPlayer, disconnectPlayer } from '@renderer/api/endpoints'
+import { LOGGER } from '@renderer/services/logger-service'
 import useGeneralStore from '@renderer/stores/general-store'
 import useUserStore from '@renderer/stores/user-store'
 import { createParticles, refreshMicrosoftToken, showToast } from '@renderer/utils'
-import { computed } from 'vue'
+import { computed, onMounted, reactive } from 'vue'
 
 const generalStore = useGeneralStore()
 
-const states = {
+const states = reactive({
   start: 'Uruchamianie..',
   'java-install': 'Instalowanie Javy..',
   'files-verify': 'Weryfikowanie plików..',
   'minecraft-start': 'Uruchamianie gry..',
   'minecraft-started': 'Minecraft jest uruchomiony...',
   'minecraft-closed': 'Minecraft został zamknięty.'
-}
+})
 
 const accountType = localStorage.getItem('LOGIN_TYPE')
 const userStore = useUserStore()
@@ -120,6 +121,16 @@ window.electron?.ipcRenderer?.on('launch:show-log', (_event, data: string, ended
   }
 
   generalStore.setCurrentLog('')
+})
+
+onMounted(async () => {
+  const isRunning = await window.electron?.ipcRenderer?.invoke('launch:check-state')
+
+  if (isRunning) {
+    LOGGER.log('MC is running: ' + isRunning)
+    generalStore.setIsOpeningGame(true)
+    generalStore.setCurrentState('minecraft-started')
+  }
 })
 </script>
 

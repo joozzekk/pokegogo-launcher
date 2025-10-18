@@ -89,11 +89,18 @@ export async function launchMinecraft(
     customArgs: [`-DaccessToken=${accessToken}`]
   })
 
+  let mcOpened = false
+
   ipcMain.removeHandler('launch:exit')
   ipcMain.handle('launch:exit', () => {
     client.emit('close', 1)
     process?.kill('SIGTERM')
     console.log('Killed mc')
+  })
+
+  ipcMain.removeHandler('launch:check-state')
+  ipcMain.handle('launch:check-state', async (): Promise<boolean> => {
+    return mcOpened
   })
 
   console.log('MC Started')
@@ -105,13 +112,15 @@ export async function launchMinecraft(
 
     if (data.includes('Initializing Client')) {
       win.webContents.send('launch:change-state', JSON.stringify('minecraft-started'))
-      win.hide()
+      mcOpened = true
+      // win.hide()
     }
   })
   client.on('error', (data) => console.log('ERROR', data))
   client.on('progress', (data) => console.log('PROGRESS', data))
   client.on('close', () => {
     win.webContents.send('launch:change-state', JSON.stringify('minecraft-closed'))
+    mcOpened = false
     win.show()
   })
 }
