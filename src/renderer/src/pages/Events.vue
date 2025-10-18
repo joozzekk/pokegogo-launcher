@@ -110,7 +110,7 @@ onMounted(async () => {
                   <div class="flex items-center gap-3">
                     <img
                       :src="
-                        event.src.includes('https://') || event.src.includes('blob')
+                        event.src.includes('https://')
                           ? event.src
                           : `${url}/events/image/${event.uuid}`
                       "

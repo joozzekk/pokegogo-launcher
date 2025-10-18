@@ -126,12 +126,16 @@ window.electron?.ipcRenderer?.on('launch:show-log', (_event, data: string, ended
 })
 
 onMounted(async () => {
-  const isRunning = await window.electron?.ipcRenderer?.invoke('launch:check-state')
+  try {
+    const isRunning = await window.electron?.ipcRenderer?.invoke('launch:check-state')
 
-  if (isRunning) {
-    generalStore.setIsOpeningGame(true)
-    generalStore.setCurrentState('minecraft-started')
-    LOGGER.log('Minecraft is running..')
+    if (isRunning) {
+      generalStore.setIsOpeningGame(true)
+      generalStore.setCurrentState('minecraft-started')
+      LOGGER.log('Minecraft is running..')
+    }
+  } catch {
+    LOGGER.log('Minecraft is not running.')
   }
 })
 </script>

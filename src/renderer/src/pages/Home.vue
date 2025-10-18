@@ -163,7 +163,7 @@ onMounted(async () => {
                 :src="
                   event.src.includes('https://') || event.src.includes('blob')
                     ? event.src
-                    : `http://localhost:4000/events/image/${event.uuid}`
+                    : `${url}/events/image/${event.uuid}`
                 "
                 alt="News"
               />
