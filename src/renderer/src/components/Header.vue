@@ -4,6 +4,7 @@ import { LOGGER } from '@renderer/services/logger-service'
 import useGeneralStore from '@renderer/stores/general-store'
 import { showToast } from '@renderer/utils'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import UpdateConfirm from './modals/UpdateConfirm.vue'
 
 const generalStore = useGeneralStore()
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -32,6 +33,7 @@ const isUpdateAvailable = computed(() => {
 const handleInstallUpdate = async (): Promise<void> => {
   isInstallingUpdate.value = true
   try {
+    await window.electron?.ipcRenderer?.invoke('launch:exit')
     await window.electron?.ipcRenderer?.invoke('update:start')
   } catch (err) {
     showToast('Wystąpił błąd podczas aktualizacji. Spróbuj ponownie później.', 'error')
@@ -57,6 +59,12 @@ const checkUpdate = async (): Promise<void> => {
   if (res) {
     generalStore.setUpdateAvailable(res)
   }
+}
+
+const confirmModalRef = ref()
+
+const openConfirmModal = (): void => {
+  confirmModalRef.value?.openModal()
 }
 
 onMounted(async () => {
@@ -88,7 +96,15 @@ onUnmounted(() => {
 
     <div class="flex ml-auto mr-[9rem] items-center gap-2">
       <div class="applogo-badge">{{ parsedAppVersion }}</div>
-      <button v-if="isUpdateAvailable" class="nav-icon" @click="handleInstallUpdate">
+      <button
+        v-if="isUpdateAvailable"
+        class="nav-icon"
+        @click="
+          generalStore.currentState === 'minecraft-started'
+            ? openConfirmModal()
+            : handleInstallUpdate()
+        "
+      >
         <i v-if="isInstallingUpdate" class="fas fa-spinner fa-spin"></i>
         <i v-else class="fas fa-download"></i>
       </button>
@@ -104,6 +120,8 @@ onUnmounted(() => {
         <i class="fa-solid fa-xmark fa-xl"></i>
       </button>
     </div>
+
+    <UpdateConfirm ref="confirmModalRef" @accept="handleInstallUpdate" />
   </header>
 </template>
 
