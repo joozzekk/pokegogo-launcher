@@ -10,6 +10,7 @@ import LoadingPage from '@renderer/pages/Loading.vue'
 import UsersPage from '@renderer/pages/Users.vue'
 import FTPPage from '@renderer/pages/FTP.vue'
 import ItemsPage from '@renderer/pages/Items.vue'
+import EventsPage from '@renderer/pages/Events.vue'
 
 const routes = [
   { path: '/', component: LoginPage },
@@ -37,6 +38,11 @@ const routes = [
         path: 'items',
         name: 'items',
         component: ItemsPage
+      },
+      {
+        path: 'events',
+        name: 'events',
+        component: EventsPage
       }
     ]
   }

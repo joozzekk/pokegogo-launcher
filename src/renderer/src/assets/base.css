@@ -7,7 +7,7 @@
   --bg-dark: #000000;
   --bg-medium: #000000;
   --bg-light: #25241a;
-  --bg-card: rgba(20, 19, 17, 0.6);
+  --bg-card: #14131199;
   --bg-toast: rgba(66, 62, 40, 0.6);
   --text-primary: #ffffff;
   --text-secondary: #b8ad94;
@@ -732,8 +732,6 @@ body {
 
 .featured-tag {
   position: absolute;
-  top: 1.5rem;
-  left: 1.5rem;
   background: rgba(0, 0, 0, 0.8);
   color: white;
   padding: 4px 10px;
@@ -1254,4 +1252,20 @@ body {
 
 .search-input:focus ~ .search-icon {
   color: var(--primary1);
+}
+
+.p-datepicker-panel {
+  color: var(--text-secondary) !important;
+  border: 1px solid var(--border) !important;
+  font-size: 0.8rem;
+}
+
+.p-inputtext {
+  border: 1px solid var(--border) !important;
+  font-size: 0.8rem;
+}
+
+.p-inputtext::placeholder {
+  color: var(--text-secondary) !important;
+  font-size: 0.8rem;
 }

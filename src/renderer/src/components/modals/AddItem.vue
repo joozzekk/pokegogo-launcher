@@ -9,6 +9,7 @@ const url = import.meta.env.RENDERER_VITE_API_URL
 const modalVisible = ref(false)
 const photoFile = ref<File | null>(null)
 const uuid = ref<string>('')
+const preview = ref<string>('')
 const state = reactive({
   name: '',
   type: 'rank',
@@ -111,7 +112,6 @@ const openModal = async (item: any, type: 'add' | 'edit' = 'add'): Promise<void>
     state.price = item.price
     state.type = getTypeByServiceName(item.serviceName)
 
-    console.log(state.type)
     if (state.type === 'rank')
       state.rank = item.serviceName?.substring(0, item.serviceName.lastIndexOf('_rank'))
     if (state.type === 'item')
@@ -154,14 +154,17 @@ const getCommandByType = (): string => {
 
 const addItem = async (): Promise<void> => {
   const isValid = await v$.value.$validate()
-  if (!isValid || !photoFile.value) return
+  if (!isValid || !preview.value || !photoFile.value) return
 
-  const uploadResult = await window.electron.ipcRenderer?.invoke(
-    'ftp:upload-file',
-    'items',
-    await photoFile.value.arrayBuffer(),
-    photoFile.value.name
-  )
+  let uploadResult = true
+
+  if (preview.value)
+    uploadResult = await window.electron.ipcRenderer?.invoke(
+      'ftp:upload-file',
+      'items',
+      await photoFile.value.arrayBuffer(),
+      photoFile.value.name
+    )
 
   if (uploadResult) {
     const res = await createItem({
@@ -178,16 +181,19 @@ const addItem = async (): Promise<void> => {
     }
   }
 }
+
 const editItem = async (): Promise<void> => {
   const isValid = await v$.value.$validate()
   if (!isValid || !photoFile.value) return
 
-  const uploadResult = await window.electron.ipcRenderer?.invoke(
-    'ftp:upload-file',
-    'items',
-    await photoFile.value.arrayBuffer(),
-    photoFile.value.name
-  )
+  let uploadResult = true
+  if (preview.value)
+    await window.electron.ipcRenderer?.invoke(
+      'ftp:upload-file',
+      'items',
+      await photoFile.value.arrayBuffer(),
+      photoFile.value.name
+    )
 
   if (uploadResult) {
     const res = await updateItem({
@@ -195,13 +201,13 @@ const editItem = async (): Promise<void> => {
       uuid: uuid.value,
       serviceName: getServiceNameByType(),
       command: getCommandByType(),
-      src: photoFile.value.name
+      src: preview.value ? photoFile.value.name : state.photo
     })
 
     if (res) {
       showToast('Pomyślnie edytowano przedmiot ' + state.name + '.')
-      handleCancel()
       await emits('refreshData')
+      handleCancel()
     }
   }
 }
@@ -211,7 +217,9 @@ const handleUpdatePhoto = async (): Promise<void> => {
   const files = Array.from(fileInputRef.value.files)
   photoFile.value = files[0]
 
-  state.photo = URL.createObjectURL(photoFile.value)
+  state.photo = photoFile.value.name
+  preview.value = URL.createObjectURL(photoFile.value)
+  fileInputRef.value.value = ''
 }
 
 const handleCancel = (): void => {
@@ -227,6 +235,8 @@ const handleCancel = (): void => {
   state.rank = ''
   state.days = 30
   state.count = 1
+  preview.value = ''
+  photoFile.value = null
   modalVisible.value = false
 }
 
@@ -270,9 +280,11 @@ defineExpose({
               >
                 <img
                   :src="
-                    state.photo.includes('https://') || state.photo.includes('blob')
-                      ? state.photo
-                      : `${url}/items/image/${uuid}`
+                    preview?.length
+                      ? preview
+                      : state.photo.includes('https://')
+                        ? state.photo
+                        : `${url}/items/image/${uuid}`
                   "
                   class="h-[4rem]"
                 />

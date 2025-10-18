@@ -1,20 +1,33 @@
 <script lang="ts" setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import LaunchButton from '@renderer/components/buttons/LaunchButton.vue'
 import useGeneralStore from '@renderer/stores/general-store'
 import poke from '@renderer/assets/img/poke.png'
 import superEvent from '@renderer/assets/img/superEvent.png'
-import logo from '@renderer/assets/logo.png'
 import Select from '@renderer/components/Select.vue'
-import { getServerStatus } from '@renderer/api/endpoints'
+import { getEvents, getServerStatus } from '@renderer/api/endpoints'
 import { LOGGER } from '@renderer/services/logger-service'
+import { format, parseISO } from 'date-fns'
 
+const url = import.meta.env.RENDERER_VITE_API_URL
 const generalStore = useGeneralStore()
 const time = ref<number>(0)
 const serverStatus = ref<{ players: { online: number } } | null>(null)
 
+const events = ref<any[]>([])
+
 const versions = [{ label: 'PokemonGoGo.pl', value: 'PokemonGoGo.pl' }]
 const serverStatusInterval = ref<unknown>()
+
+const normalEvents = computed(() => {
+  return events.value
+    .filter((event) => event.type === 'normal')
+    ?.sort((a, b) => (parseISO(a.startDate).getTime() < parseISO(b.startDate).getTime() ? 1 : -1))
+})
+
+const megaEvent = computed(() => {
+  return events.value.find((event) => event.type === 'mega')
+})
 
 const setServerStatus = async (): Promise<void> => {
   serverStatus.value = await getServerStatus(time)
@@ -22,6 +35,9 @@ const setServerStatus = async (): Promise<void> => {
 
 onMounted(async () => {
   await setServerStatus()
+
+  events.value = await getEvents()
+
   serverStatusInterval.value = setInterval(
     async () => {
       await setServerStatus()
@@ -108,39 +124,57 @@ onMounted(async () => {
 
         <div class="news-featured">
           <div class="featured-image">
-            <img :src="superEvent" alt="Super Event" />
+            <img
+              :src="
+                megaEvent
+                  ? megaEvent.src.includes('https://') || megaEvent.src.includes('blob')
+                    ? megaEvent.src
+                    : `${url}/events/image/${megaEvent.uuid}`
+                  : superEvent
+              "
+              alt="Super Event"
+            />
             <div class="featured-gradient"></div>
           </div>
-          <span class="featured-tag">MEGA WYDARZENIE</span>
-          <div class="featured-content">
-            <h3>Event HALLOWEEN!</h3>
-            <p>
-              Baw się wspólnie ze znajomymi na evencie halloweenowym. Nowy content, unikalne
-              pokemony i wiele więcej!
-            </p>
-          </div>
+          <template v-if="megaEvent">
+            <span class="featured-tag top-[1.5rem] left-[1.5rem]">MEGA WYDARZENIE</span>
+            <span class="featured-tag top-[1.5rem] right-[1.5rem]"
+              >{{ megaEvent?.startDate ? format(megaEvent.startDate, 'dd MMMM') : '' }} -
+              {{ megaEvent?.endDate ? format(megaEvent.endDate, 'dd MMMM') : '' }}</span
+            >
+            <div class="featured-content">
+              <h3>{{ megaEvent?.name }}</h3>
+              <p>
+                {{ megaEvent?.desc }}
+              </p>
+            </div>
+          </template>
+          <template v-else></template>
         </div>
 
         <div class="news-list">
-          <article class="news-item">
+          <article
+            v-for="event in normalEvents.filter((_, i) => i < 2)"
+            :key="event.uuid"
+            class="news-item"
+          >
             <div class="news-thumbnail">
-              <img :src="logo" alt="News" />
+              <img
+                :src="
+                  event.src.includes('https://') || event.src.includes('blob')
+                    ? event.src
+                    : `http://localhost:4000/events/image/${event.uuid}`
+                "
+                alt="News"
+              />
             </div>
             <div class="news-info">
-              <span class="news-date">25 Października</span>
-              <h4>Aktualizacja 0.2.0</h4>
-              <p>Oficjalny start Launchera dla społeczności PokemonGoGo!</p>
-            </div>
-          </article>
-
-          <article class="news-item">
-            <div class="news-thumbnail">
-              <img :src="logo" alt="News" />
-            </div>
-            <div class="news-info">
-              <span class="news-date">23 Października</span>
-              <h4>Aktualizacja 0.1.19</h4>
-              <p>Otwarta beta launchera do testów dla społeczności</p>
+              <span class="news-date">
+                {{ event?.startDate ? format(event.startDate, 'dd MMMM') : '' }} -
+                {{ event?.endDate ? format(event.endDate, 'dd MMMM') : '' }}
+              </span>
+              <h4>{{ event.name }}</h4>
+              <p>{{ event.desc }}</p>
             </div>
           </article>
         </div>

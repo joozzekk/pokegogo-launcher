@@ -156,3 +156,27 @@ export const removeItem = async (uuid: number): Promise<any> => {
 
   return res.data
 }
+
+export const getEvents = async (): Promise<any[]> => {
+  const res = await api.get('/events')
+
+  return res.data
+}
+
+export const createEvent = async (event: any): Promise<any> => {
+  const res = await api.post('/events', event)
+
+  return res.data
+}
+
+export const updateEvent = async (event: any): Promise<any> => {
+  const res = await api.put('/events', event)
+
+  return res.data
+}
+
+export const removeEvent = async (uuid: number): Promise<any> => {
+  const res = await api.delete(`/events/${uuid}`)
+
+  return res.data
+}

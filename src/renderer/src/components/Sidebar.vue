@@ -127,6 +127,20 @@ const handleSupDev = (): void => {
         <div class="nav-indicator"></div>
       </a>
       <a
+        v-if="hasAdmin"
+        class="nav-item"
+        :class="{
+          active: $route.path === '/app/events'
+        }"
+        @click="handleChangeRoute('/app/events')"
+      >
+        <div class="nav-icon">
+          <i class="fas fa-newspaper"></i>
+        </div>
+        <span>Wydarzenia</span>
+        <div class="nav-indicator"></div>
+      </a>
+      <a
         class="nav-item"
         :class="{
           active: $route.path === '/app/settings'
