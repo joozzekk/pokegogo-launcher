@@ -325,7 +325,7 @@ const handleChangeEmail = async (): Promise<void> => {
         </div>
 
         <div class="flex gap-2 items-center">
-          <div class="form-group !mt-0 !translate-y-[2px]">
+          <div class="form-group">
             <div class="input-wrapper flex">
               <i class="fas fa-lock input-icon"></i>
               <input
@@ -343,13 +343,13 @@ const handleChangeEmail = async (): Promise<void> => {
               {{ emailV$.email.$errors[0]?.$message }}
             </div>
           </div>
-          <button class="btn-primary mb-5 max-w-1/3" @click="handleChangeEmail">
+          <button class="btn-primary mb-4 max-w-1/3" @click="handleChangeEmail">
             <i class="fas fa-edit"></i>
             Zmień email
           </button>
         </div>
 
-        <template v-if="accountType === 'backend'">
+        <div v-if="accountType === 'backend'" class="flex flex-col gap-2">
           <div class="form-group">
             <div class="input-wrapper">
               <i class="fas fa-lock input-icon"></i>
@@ -435,7 +435,7 @@ const handleChangeEmail = async (): Promise<void> => {
             <i class="fas fa-edit"></i>
             Zmień hasło
           </button>
-        </template>
+        </div>
       </div>
     </div>
   </div>

@@ -86,7 +86,7 @@ onUnmounted(() => {
       </span>
     </div>
 
-    <div class="flex ml-auto mr-[9rem] items-center">
+    <div class="flex ml-auto mr-[9rem] items-center gap-2">
       <div class="applogo-badge">{{ parsedAppVersion }}</div>
       <button v-if="isUpdateAvailable" class="nav-icon" @click="handleInstallUpdate">
         <i v-if="isInstallingUpdate" class="fas fa-spinner fa-spin"></i>

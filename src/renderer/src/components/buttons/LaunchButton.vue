@@ -102,6 +102,7 @@ window.electron?.ipcRenderer?.on('launch:change-state', async (_event, state: st
   generalStore.setCurrentState(parsedState)
 
   if (parsedState === 'minecraft-started') {
+    LOGGER.log('Minecraft is running..')
     await connectPlayer()
   }
 
@@ -110,6 +111,7 @@ window.electron?.ipcRenderer?.on('launch:change-state', async (_event, state: st
       generalStore.setCurrentState('start')
       generalStore.setIsOpeningGame(false)
     }, 500)
+    LOGGER.log('Minecraft is closed.')
     await disconnectPlayer()
   }
 })
@@ -127,9 +129,9 @@ onMounted(async () => {
   const isRunning = await window.electron?.ipcRenderer?.invoke('launch:check-state')
 
   if (isRunning) {
-    LOGGER.log('MC is running: ' + isRunning)
     generalStore.setIsOpeningGame(true)
     generalStore.setCurrentState('minecraft-started')
+    LOGGER.log('Minecraft is running..')
   }
 })
 </script>
