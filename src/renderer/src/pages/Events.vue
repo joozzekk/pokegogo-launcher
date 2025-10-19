@@ -39,10 +39,8 @@ const handleRemoveEvent = async (event: any): Promise<void> => {
 }
 
 watch(searchQuery, () => {
-  filteredEvents.value = allEvents.value.filter(
-    (event: any) =>
-      event.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      event.serviceName.toLowerCase().includes(searchQuery.value.toLowerCase())
+  filteredEvents.value = allEvents.value.filter((event: any) =>
+    event.name.toLowerCase().includes(searchQuery.value.toLowerCase())
   )
 
   if (!filteredEvents.value?.length) {
@@ -130,7 +128,11 @@ onMounted(async () => {
                 </td>
                 <td>
                   <div class="reverse">
-                    <button class="ban-btn" @click="handleRemoveEvent(event)">
+                    <button
+                      v-if="event.type !== 'mega'"
+                      class="ban-btn"
+                      @click="handleRemoveEvent(event)"
+                    >
                       <i :class="'fas fa-trash'"></i>
                     </button>
                     <button class="nav-icon" @click="addEventModalRef?.openModal(event, 'edit')">

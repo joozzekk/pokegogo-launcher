@@ -143,6 +143,19 @@ const handleSupDev = (): void => {
       <a
         class="nav-item"
         :class="{
+          active: $route.path === '/app/changelog'
+        }"
+        @click="handleChangeRoute('/app/changelog')"
+      >
+        <div class="nav-icon">
+          <i class="fas fa-list"></i>
+        </div>
+        <span>Changelog</span>
+        <div class="nav-indicator"></div>
+      </a>
+      <a
+        class="nav-item"
+        :class="{
           active: $route.path === '/app/settings'
         }"
         @click="handleChangeRoute('/app/settings')"

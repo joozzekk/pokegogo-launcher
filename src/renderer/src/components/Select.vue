@@ -126,7 +126,6 @@ onBeforeUnmount(() => {
   border: 2px solid var(--border);
   border-radius: 0.5rem;
   overflow-y: auto;
-  z-index: 1000;
 }
 
 .options-list li {

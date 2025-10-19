@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { createEvent, updateEvent } from '@renderer/api/endpoints'
+import { createChangelog, updateChangelog } from '@renderer/api/endpoints'
 import { showToast } from '@renderer/utils'
 import useVuelidate from '@vuelidate/core'
 import { helpers, required } from '@vuelidate/validators'
@@ -14,12 +14,13 @@ const uuid = ref<string>('')
 const preview = ref<string>('')
 const state = reactive({
   name: '',
+  version: '',
   type: 'normal',
   photo: '',
   desc: '',
   src: '',
   startDate: null as Date | null,
-  endDate: null as Date | null
+  changes: [] as any[]
 })
 
 const fileInputRef = ref<HTMLInputElement | null>(null)
@@ -29,10 +30,10 @@ const rules = computed(() => {
     name: {
       required: helpers.withMessage('Pole jest wymagane', required)
     },
-    type: {
+    version: {
       required: helpers.withMessage('Pole jest wymagane', required)
     },
-    desc: {
+    type: {
       required: helpers.withMessage('Pole jest wymagane', required)
     },
     photo: {
@@ -41,7 +42,7 @@ const rules = computed(() => {
     startDate: {
       required: helpers.withMessage('Pole jest wymagane', required)
     },
-    endDate: {
+    changes: {
       required: helpers.withMessage('Pole jest wymagane', required)
     }
   }
@@ -55,22 +56,23 @@ const emits = defineEmits<{
   (e: 'refreshData'): Promise<void>
 }>()
 
-const openModal = async (event: any, type: 'add' | 'edit' = 'add'): Promise<void> => {
+const openModal = async (changelog: any, type: 'add' | 'edit' = 'add'): Promise<void> => {
   modalVisible.value = true
   actionType.value = type
-  if (event) {
-    uuid.value = event.uuid
-    state.type = event.type
-    state.name = event.name
-    state.desc = event.desc
-    state.startDate = parseISO(event.startDate)
-    state.endDate = parseISO(event.endDate)
-    state.photo = event.src
-    photoFile.value = event.src
+  if (changelog) {
+    uuid.value = changelog.uuid
+    state.type = changelog.type
+    state.name = changelog.name
+    state.version = changelog.version
+    state.desc = changelog.desc
+    state.startDate = parseISO(changelog.startDate)
+    state.changes = changelog.changes
+    state.photo = changelog.src
+    photoFile.value = changelog.src
   }
 }
 
-const addEvent = async (): Promise<void> => {
+const addChangelog = async (): Promise<void> => {
   const isValid = await v$.value.$validate()
   if (!isValid || !preview.value || !photoFile.value) return
 
@@ -85,19 +87,19 @@ const addEvent = async (): Promise<void> => {
     )
 
   if (uploadResult) {
-    const res = await createEvent({
+    const res = await createChangelog({
       ...state,
       src: photoFile.value.name
     })
 
     if (res) {
-      showToast('Pomyślnie dodano nowe wydarzenie ' + state.name + '.')
+      showToast('Pomyślnie dodano nowe changelog ' + state.name + '.')
       handleCancel()
       await emits('refreshData')
     }
   }
 }
-const editEvent = async (): Promise<void> => {
+const editChangelog = async (): Promise<void> => {
   const isValid = await v$.value.$validate()
   if (!isValid || !photoFile.value) return
 
@@ -111,14 +113,14 @@ const editEvent = async (): Promise<void> => {
     )
 
   if (uploadResult) {
-    const res = await updateEvent({
+    const res = await updateChangelog({
       ...state,
       uuid: uuid.value,
       src: preview.value ? photoFile.value.name : state.photo
     })
 
     if (res) {
-      showToast('Pomyślnie edytowano wydarzenie ' + state.name + '.')
+      showToast('Pomyślnie edytowano changelog ' + state.name + '.')
       handleCancel()
       await emits('refreshData')
     }
@@ -138,12 +140,12 @@ const handleUpdatePhoto = async (): Promise<void> => {
 const handleCancel = (): void => {
   v$.value.$reset()
   state.name = ''
-  state.desc = ''
+  state.version = ''
   state.photo = ''
   state.type = 'normal'
   state.src = ''
   state.startDate = null
-  state.endDate = null
+  state.changes = []
   modalVisible.value = false
 }
 
@@ -168,7 +170,7 @@ defineExpose({
               <div class="nav-icon">
                 <i class="fas fa-plus"></i>
               </div>
-              <h2 id="ban-title">{{ actionType === 'add' ? 'Dodaj' : 'Edytuj' }} wydarzenie</h2>
+              <h2 id="ban-title">{{ actionType === 'add' ? 'Dodaj' : 'Edytuj' }} changelog</h2>
             </div>
           </div>
           <div class="nav-icon ml-auto" @click="handleCancel">
@@ -191,7 +193,7 @@ defineExpose({
                       ? preview
                       : state.photo.includes('https://')
                         ? state.photo
-                        : `${url}/events/image/${uuid}`
+                        : `${url}/changelog/image/${uuid}`
                   "
                   class="h-[4rem]"
                 />
@@ -207,9 +209,7 @@ defineExpose({
             </div>
             <div class="flex flex-col w-full">
               <label class="input-label mb-1">Nazwa</label>
-              <small class="mb-1 text-[#5f5a41]">
-                Nazwa wydarzenia wyświetlana na stronie głównej launchera.
-              </small>
+              <small class="mb-1 text-[#5f5a41]"> Nazwa changeloga</small>
               <div class="form-group h-full">
                 <div class="input-wrapper flex">
                   <input
@@ -228,62 +228,35 @@ defineExpose({
                 </div>
               </div>
             </div>
-
             <div class="flex flex-col w-full">
-              <label class="input-label mb-1">Typ</label>
-              <small class="mb-1 text-[#5f5a41]"> Typ dodawanego wydarzenia </small>
-              <div class="toggle-group">
-                <button
-                  v-if="actionType === 'edit'"
-                  class="toggle-option"
-                  :class="{ active: state.type === 'mega' }"
-                  :disabled="actionType === 'edit'"
-                  @click="state.type = 'mega'"
-                >
-                  MEGA
-                </button>
-                <button
-                  class="toggle-option"
-                  :class="{ active: state.type === 'normal' }"
-                  :disabled="actionType === 'edit'"
-                  @click="state.type = 'normal'"
-                >
-                  Normalny
-                </button>
+              <label class="input-label mb-1">Wersja</label>
+              <small class="mb-1 text-[#5f5a41]"> Wersja changeloga</small>
+              <div class="form-group h-full">
+                <div class="input-wrapper flex">
+                  <input
+                    v-model="state.version"
+                    type="text"
+                    class="form-input !pl-[1rem]"
+                    placeholder="Podaj wersję"
+                    :class="{ invalid: v$.version.$error }"
+                    aria-required="true"
+                    required
+                  />
+                  <div class="input-line"></div>
+                </div>
+                <div class="error-message" :class="{ show: v$.version.$error }">
+                  {{ v$.version.$errors[0]?.$message }}
+                </div>
               </div>
             </div>
-          </div>
-
-          <div class="flex flex-col">
-            <label class="input-label mb-1">Opis</label>
-            <small class="mb-1 text-[#5f5a41]">
-              Opis wydarzenia wyświetlany na stronie głównej launchera.
-            </small>
-            <div class="form-group">
-              <textarea
-                v-model="state.desc"
-                placeholder="Podaj opis.."
-                :rows="3"
-                class="form-input !pl-[1rem] !resize-none !outline-none"
-                :class="{ invalid: v$.desc.$error }"
-                required
-                aria-required="true"
-              ></textarea>
-              <div class="error-message" :class="{ show: v$.desc.$error }">
-                {{ v$.desc.$errors[0]?.$message }}
-              </div>
-            </div>
-          </div>
-
-          <div class="flex gap-2 w-full">
             <div class="flex flex-col w-full">
-              <label class="input-label mb-1">Data początkowa</label>
-              <small class="mb-1 text-[#5f5a41]"> Data początku wydarzenia </small>
+              <label class="input-label mb-1">Data</label>
+              <small class="mb-1 text-[#5f5a41]"> Data wydania changeloga </small>
               <div class="form-group">
                 <DatePicker
                   v-model="state.startDate"
                   placeholder="Wybierz datę"
-                  class="w-full my-app-dark"
+                  class="w-full"
                   input-class="!text-[0.8rem] w-full"
                   :class="{ invalid: v$.startDate.$error }"
                   required
@@ -294,23 +267,110 @@ defineExpose({
                 </div>
               </div>
             </div>
+
             <div class="flex flex-col w-full">
-              <label class="input-label mb-1">Data końcowa</label>
-              <small class="mb-1 text-[#5f5a41]"> Data końca wydarzenia </small>
-              <div class="form-group">
-                <DatePicker
-                  v-model="state.endDate"
-                  placeholder="Wybierz datę"
-                  class="w-full"
-                  input-class="!text-[0.8rem] w-full"
-                  :class="{ invalid: v$.endDate.$error }"
-                  required
-                  aria-required="true"
-                />
-                <div class="error-message" :class="{ show: v$.endDate.$error }">
-                  {{ v$.endDate.$errors[0]?.$message }}
-                </div>
+              <label class="input-label mb-1">Typ</label>
+              <small class="mb-1 text-[#5f5a41]"> Typ dodawanego changeloga </small>
+              <div class="toggle-group">
+                <button
+                  class="toggle-option"
+                  :class="{ active: state.type === 'launcher' }"
+                  :disabled="actionType === 'edit'"
+                  @click="state.type = 'launcher'"
+                >
+                  Launcher
+                </button>
+                <button
+                  class="toggle-option"
+                  :class="{ active: state.type === 'server' }"
+                  :disabled="actionType === 'edit'"
+                  @click="state.type = 'server'"
+                >
+                  Serwer
+                </button>
               </div>
+            </div>
+          </div>
+
+          <div class="flex flex-col">
+            <label class="input-label mb-1">Lista zmian</label>
+            <small class="mb-1 text-[#5f5a41]"> Lista zmian wykonanych w danym changelogu </small>
+            <div class="logs-table-wrapper">
+              <table class="logs-table">
+                <thead>
+                  <tr class="font-black text-[0.9rem]">
+                    <th>Typ</th>
+                    <th>Opis</th>
+                    <th>
+                      <div class="relative flex flex-row-reverse gap-2">
+                        <button class="info-btn" @click="state.changes.push({})">
+                          <i :class="'fas fa-plus'"></i>
+                        </button>
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template v-if="state.changes.length">
+                    <tr v-for="(change, i) in state.changes" :key="i">
+                      <td>
+                        <div class="flex items-start gap-2">
+                          <button
+                            class="toggle-option !py-1"
+                            :class="{
+                              active: change.type === 'new'
+                            }"
+                            @click="change.type = 'new'"
+                          >
+                            Nowość
+                          </button>
+                          <button
+                            class="toggle-option !py-1"
+                            :class="{ active: change.type === 'fix' }"
+                            @click="change.type = 'fix'"
+                          >
+                            Poprawka
+                          </button>
+                          <button
+                            class="toggle-option !py-1"
+                            :class="{ active: change.type === 'improve' }"
+                            @click="change.type = 'improve'"
+                          >
+                            Ulepszenie
+                          </button>
+                        </div>
+                      </td>
+                      <td>
+                        <div class="input-wrapper">
+                          <div class="form-group !my-0">
+                            <div class="flex">
+                              <input
+                                v-model="change.desc"
+                                type="text"
+                                class="form-input !py-1 !pl-[1rem]"
+                                placeholder="Co zmieniono?"
+                                aria-required="true"
+                                required
+                              />
+                              <div class="input-line"></div>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div class="flex flex-row-reverse gap-2">
+                          <button class="ban-btn" @click="state.changes.splice(i, 1)">
+                            <i :class="'fas fa-trash'"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  </template>
+                  <tr v-else>
+                    <td class="px-4 py-2 text-[#343123da]" :colspan="3">Brak zmian</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -319,7 +379,7 @@ defineExpose({
           <button
             type="button"
             class="btn-primary"
-            @click="actionType === 'add' ? addEvent() : editEvent()"
+            @click="actionType === 'add' ? addChangelog() : editChangelog()"
           >
             <i class="fa fa-save" />
             Zapisz
@@ -357,7 +417,7 @@ defineExpose({
   display: flex;
   flex-direction: column;
   background: rgba(16, 14, 10, 0.95);
-  box-shadow: 0 0 1rem rgba(52, 49, 35, 0.569);
+  box-shadow: 0 0 1rem #34312391;
 }
 
 .modal-header {
@@ -448,5 +508,45 @@ defineExpose({
   color: var(--primary);
   font-weight: 700;
   cursor: pointer;
+}
+
+.logs-table-wrapper {
+  width: 100%;
+  max-height: 250px;
+  overflow-y: auto;
+  background: var(--bg-card);
+  backdrop-filter: blur(20px);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  position: relative;
+  overflow-y: auto;
+  border: 1px dashed #ffae0067;
+}
+.logs-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.logs-table th {
+  background: #47380c;
+  padding: 0.5rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 2px solid #c59a2211;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.logs-table td {
+  padding: 0.25rem 1rem;
+  border-bottom: 1px solid #c59a2211;
+}
+
+.logs-table tr {
+  background: #0000004d;
+}
+
+.logs-table tr:hover {
+  background: #c59a2207;
 }
 </style>

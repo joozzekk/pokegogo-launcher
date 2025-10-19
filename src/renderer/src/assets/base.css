@@ -901,8 +901,8 @@ body {
 }
 
 .toggle-option {
-  flex: 1;
-  padding: 10px;
+  width: 100%;
+  padding: 0.5rem 1rem;
   background: var(--bg-light);
   color: #5f5a41;
   border: 1px solid transparent;
@@ -997,17 +997,20 @@ body {
 
 /* -------------------------------------- ChangeLog ---------------------------- */
 .changelog-container {
-  max-width: 900px;
-  margin: 0 auto;
+  width: 100%;
+  overflow-y: auto;
 }
 
 .changelog-container h2 {
-  font-size: 32px;
+  font-size: 2rem;
   margin-bottom: 2.25rem;
 }
 
 .changelog-timeline {
+  display: flex;
+  flex-direction: column;
   position: relative;
+  gap: 2rem;
   padding-left: 40px;
 }
 
@@ -1023,7 +1026,7 @@ body {
 
 .changelog-entry {
   position: relative;
-  margin-bottom: 40px;
+  width: 100%;
   animation: slideUp 0.5s ease;
 }
 
@@ -1103,7 +1106,7 @@ body {
 
 .tag.new {
   background: rgba(0, 255, 85, 0.2);
-  color: var(--primary);
+  color: rgb(97, 248, 130);
 }
 
 .tag.fix {

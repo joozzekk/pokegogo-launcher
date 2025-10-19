@@ -180,3 +180,27 @@ export const removeEvent = async (uuid: number): Promise<any> => {
 
   return res.data
 }
+
+export const getChangelog = async (): Promise<any[]> => {
+  const res = await api.get('/changelog')
+
+  return res.data
+}
+
+export const createChangelog = async (event: any): Promise<any> => {
+  const res = await api.post('/changelog', event)
+
+  return res.data
+}
+
+export const updateChangelog = async (event: any): Promise<any> => {
+  const res = await api.put('/changelog', event)
+
+  return res.data
+}
+
+export const removeChangelog = async (uuid: number): Promise<any> => {
+  const res = await api.delete(`/changelog/${uuid}`)
+
+  return res.data
+}

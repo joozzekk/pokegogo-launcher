@@ -47,8 +47,7 @@ const createMainWindow = (): BrowserWindow => {
           try {
             lastModifiedAt = await client.lastMod(remoteURL + file.name)
           } catch {
-            console.log(file)
-            lastModifiedAt = null // jeśli serwer nie wspiera MDTM
+            lastModifiedAt = null
           }
         }
 
