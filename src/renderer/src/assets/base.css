@@ -490,9 +490,10 @@ body {
 /* -------------------------------------- Strona główna ---------------------------- */
 .home-grid {
   width: 100%;
+  height: 100%;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
 /* -------------------------------------- Panel uruchamiania ---------------------------- */
@@ -1069,18 +1070,18 @@ body {
 .changelog-version {
   background: var(--gradient-primary);
   color: white;
-  padding: 5px 12px;
-  border-radius: 20px;
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.5rem;
   font-weight: 600;
 }
 
 .changelog-date {
   color: var(--text-muted);
-  font-size: 1rem;
+  font-size: 0.8rem;
 }
 
 .changelog-content h3 {
-  margin-bottom: 15px;
+  font-size: 1.5rem;
   color: var(--text-primary);
 }
 

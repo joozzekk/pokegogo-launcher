@@ -93,7 +93,7 @@ const addChangelog = async (): Promise<void> => {
     })
 
     if (res) {
-      showToast('Pomyślnie dodano nowe changelog ' + state.name + '.')
+      showToast('Pomyślnie dodano nowy changelog ' + state.name + '.')
       handleCancel()
       await emits('refreshData')
     }

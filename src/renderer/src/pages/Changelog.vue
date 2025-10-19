@@ -6,6 +6,7 @@ import { showToast } from '@renderer/utils'
 import { format } from 'date-fns'
 import { onMounted, ref, watch } from 'vue'
 
+const url = import.meta.env.RENDERER_VITE_API_URL
 const userStore = useUserStore()
 
 const allChangelog = ref<any[]>([])
@@ -90,8 +91,20 @@ onMounted(async () => {
       <div v-for="changelog in filteredChangelog" :key="changelog.uuid" class="changelog-entry">
         <div class="changelog-marker"></div>
         <div class="changelog-content">
-          <div class="changelog-header">
-            <span class="changelog-version">{{ changelog.version }}</span>
+          <div class="changelog-header !flex !justify-between !items-start">
+            <div class="flex gap-2 items-start">
+              <div v-if="changelog.src" class="nav-icon !w-[5.5rem] !h-[5.5rem]">
+                <img
+                  :src="
+                    changelog.src.includes('https://')
+                      ? changelog.src
+                      : `${url}/changelog/image/${changelog.uuid}`
+                  "
+                  class="h-[4rem]"
+                />
+              </div>
+              <span class="changelog-version">{{ changelog.version }}</span>
+            </div>
             <div class="flex gap-2 items-center">
               <span class="changelog-date">
                 {{ changelog.startDate ? format(changelog.startDate, 'dd MMMM yyyy') : '' }}
