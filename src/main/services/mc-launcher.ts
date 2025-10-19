@@ -55,8 +55,6 @@ export async function launchMinecraft(
   const minecraftDir = path.join(baseDir, 'mcfiles')
   const client = new Client()
 
-  // use the java from C:/Program Files/Java if on Windows
-  // otherwise use the system java
   const javaPath =
     plt === 'win32' ? 'C:\\Program Files\\Java\\jdk-21\\bin\\java.exe' : '/usr/bin/java'
   const isFullScreen = settings.displayMode === 'Pełny ekran' ? true : false
@@ -95,20 +93,21 @@ export async function launchMinecraft(
   ipcMain.handle('launch:exit', () => {
     client.emit('close', 1)
     process?.kill('SIGTERM')
-    console.log('Killed mc')
+    console.log('PokeGoGo Launcher > Killed minecraft.')
   })
 
   ipcMain.removeHandler('launch:check-state')
   ipcMain.handle('launch:check-state', async (): Promise<boolean> => {
+    console.log('PokeGoGo Launcher > Checking minecraft status..')
     return mcOpened
   })
 
-  console.log('MC Started')
+  console.log('PokeGoGo Launcher > MC Started')
   win.webContents.send('launch:change-state', JSON.stringify('minecraft-start'))
 
-  client.on('debug', (data) => console.log('DEBUG', data))
+  client.on('debug', (data) => console.log('PokeGoGo Launcher > MC Debug > ', data))
   client.on('data', (data) => {
-    console.log('DATA', data)
+    console.log('PokeGoGo Launcher > MC Data > ', data)
 
     if (data.includes('Initializing Client')) {
       win.webContents.send('launch:change-state', JSON.stringify('minecraft-started'))
@@ -116,8 +115,8 @@ export async function launchMinecraft(
       win.hide()
     }
   })
-  client.on('error', (data) => console.log('ERROR', data))
-  client.on('progress', (data) => console.log('PROGRESS', data))
+  client.on('error', (data) => console.log('PokeGoGo Launcher > MC Error > ', data))
+  client.on('progress', (data) => console.log('PokeGoGo Launcher > MC Progress > ', data))
   client.on('close', () => {
     win.webContents.send('launch:change-state', JSON.stringify('minecraft-closed'))
     mcOpened = false

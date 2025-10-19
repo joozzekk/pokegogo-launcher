@@ -74,7 +74,7 @@ async function downloadAll(
     hasHashesFile = true
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (err) {
-    console.log('Brak hashes.txt na FTP, przyjmujemy pusty zestaw hashy')
+    console.log('PokeGoGo Launcher > Brak zdalnego hashes.txt, przyjmujemy pusty zestaw hashy')
     hasHashesFile = false
   }
 
@@ -173,14 +173,14 @@ async function downloadAll(
         await fs.promises.unlink(path.join(localDir, localFile))
         log(`Usunięto lokalny plik ${localFile}.`)
       } catch (err) {
-        console.log(`Błąd podczas usuwania pliku ${localFile}: ${err}`)
+        console.log(`PokeGoGo Launcher > Błąd podczas usuwania pliku ${localFile}: ${err}`)
       }
     }
   }
 
   try {
     await fs.promises.unlink(path.join(localDir, 'hashes.txt'))
-    console.log('Usunięto lokalny plik hashes.txt po synchronizacji.')
+    console.log('PokeGoGo Launcher > Usunięto lokalny plik hashes.txt po synchronizacji.')
   } catch {
     // Ignorujemy błąd usuwania hashes.txt jeśli plik już nie istnieje
   }

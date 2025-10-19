@@ -100,15 +100,9 @@ onUnmounted(() => {
       <h1>PokeGoGo</h1>
     </div>
     <div v-if="$route.path.includes('/app')" class="breadcrumbs flex items-center gap-2">
-      <div class="nav-icon" @click="$router.push('/app/home')"><i class="fa fa-home" /></div>
-      >
-      <span class="active">
-        {{ $route.meta.displayName }}
-      </span>
-    </div>
-
-    <div class="flex ml-auto mr-[9rem] items-center gap-2">
-      <div class="applogo-badge">{{ parsedAppVersion }}</div>
+      <button class="nav-icon" @click="$router.push('/app/home')">
+        <i class="fa fa-home" />
+      </button>
       <button
         v-if="hasAdmin"
         class="nav-icon"
@@ -141,6 +135,15 @@ onUnmounted(() => {
       >
         <i class="fa fa-folder"></i>
       </button>
+      <div>></div>
+      <div class="active">
+        {{ $route.meta.displayName }}
+      </div>
+    </div>
+
+    <div class="flex ml-auto mr-[9rem] items-center gap-2">
+      <div class="applogo-badge">{{ parsedAppVersion }}</div>
+
       <button
         v-if="isUpdateAvailable"
         class="nav-icon"

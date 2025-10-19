@@ -14,7 +14,7 @@ export const useAppUpdater = (win: BrowserWindow): AppUpdater => {
     win.webContents.send('update:available', false)
   })
   autoUpdater.on('error', (err) => {
-    console.log(err)
+    console.log('Auth err: ', err)
   })
   autoUpdater.on('update-downloaded', () => {
     win.webContents.send('update:available', false)

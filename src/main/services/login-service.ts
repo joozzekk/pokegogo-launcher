@@ -7,7 +7,7 @@ export const useLoginService = (): void => {
   ipcMain.handle(
     'auth:refresh-token',
     async (_, refreshToken: string): Promise<{ msToken: string; mcToken: string }> => {
-      console.log('Refreshing token...')
+      console.log('PokeGoGo Launcher > Refreshing token...')
       const xbox = await auth.refresh(refreshToken)
       const mc = await xbox.getMinecraft()
 
