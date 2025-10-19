@@ -88,24 +88,27 @@ onMounted(async () => {
 
 <template>
   <div
-    class="flex flex-col w-full text-[#bbb] max-h-full overflow-y-auto rounded-xl border-dashed border-1 border-[#ffae0047]"
+    class="flex flex-col w-full text-[var(--text-secondary)] max-h-full overflow-y-auto rounded-xl border-dashed border-1 border-[var(--border)]"
   >
     <template v-if="currentFileContent.length">
       <div class="relative flex w-full h-full">
         <div class="flex flex-col gap-2 absolute right-4 top-2">
           <button
-            class="ban-btn hover:cursor-pointer hover:text-[#ffae00]"
+            class="ban-btn hover:cursor-pointer hover:text-[var(--primary)]"
             @click="currentFileContent = ''"
           >
             <i class="fa fa-close" />
           </button>
-          <button class="nav-icon hover:cursor-pointer hover:text-[#ffae00]" @click="saveFile">
+          <button
+            class="nav-icon hover:cursor-pointer hover:text-[var(--primary)]"
+            @click="saveFile"
+          >
             <i class="fa fa-save" />
           </button>
         </div>
         <textarea
           v-model="currentFileContent"
-          class="w-full h-full bg-[#000] resize-none outline-none px-4 py-2"
+          class="w-full h-full bg-[var(--bg-dark)] resize-none outline-none px-4 py-2"
         >
         </textarea>
       </div>
@@ -113,7 +116,7 @@ onMounted(async () => {
     <template v-else>
       <input ref="inputFile" type="file" multiple hidden @change="uploadFile" />
       <div
-        class="top-0 sticky bg-[#000] px-4 py-2 text-[0.9rem] flex items-center justify-between z-[10] border-dashed border-b border-[#ffae0047]"
+        class="top-0 sticky bg-[var(--bg-dark)] px-4 py-2 text-[0.9rem] flex items-center justify-between z-[10] border-dashed border-b border-[var(--border)]"
         :class="{ 'mb-[44px]': showSearchInput }"
       >
         <div class="flex items-center">
@@ -122,7 +125,10 @@ onMounted(async () => {
               <span class="nav-icon" @click="restoreFolder('')">
                 <i
                   class="fa fa-home"
-                  :class="{ 'hover:cursor-pointer hover:text-[#ffae00]': breadcrumbs.length !== 1 }"
+                  :class="{
+                    'hover:cursor-pointer hover:text-[var(--text-secondary)]':
+                      breadcrumbs.length !== 1
+                  }"
                 />
               </span>
               <span class="mx-1">
@@ -133,7 +139,7 @@ onMounted(async () => {
               <span
                 class="cursor-default text-[0.9rem] text-lg"
                 :class="{
-                  'hover:cursor-pointer hover:text-[#ffae00] hover:underline':
+                  'hover:cursor-pointer hover:text-[var(--text-secondary)] hover:underline':
                     !currentFolder.endsWith(breadcrumb)
                 }"
                 @click="currentFolder.endsWith(breadcrumb) ? null : restoreFolder(breadcrumb)"
@@ -148,13 +154,13 @@ onMounted(async () => {
         </div>
         <div class="flex gap-2 items-center justify-evenly">
           <button
-            class="nav-icon hover:cursor-pointer hover:text-[#ffae00]"
+            class="nav-icon hover:cursor-pointer hover:text-[var(--text-secondary)]"
             @click="handleShowSearch"
           >
             <i class="fa fa-search" />
           </button>
           <button
-            class="nav-icon hover:cursor-pointer hover:text-[#ffae00]"
+            class="nav-icon hover:cursor-pointer hover:text-[var(--text-secondary)]"
             @click="handleUploadFile"
           >
             <i class="fa fa-upload" />
@@ -163,7 +169,7 @@ onMounted(async () => {
         <transition name="slide-fade">
           <div
             v-if="showSearchInput"
-            class="absolute z-[8] left-0 transition-all duration-150 w-full h-full top-[100%] bg-[#000] px-4 py-2 text-lg flex items-center justify-between"
+            class="absolute z-[8] left-0 transition-all duration-150 w-full h-full top-[100%] bg-[var(--bg-card)] px-4 py-2 text-lg flex items-center justify-between"
           >
             <div class="search-input-wrapper">
               <i class="fas fa-search search-icon !text-[0.9rem] ml-3"></i>
@@ -189,9 +195,10 @@ onMounted(async () => {
         v-for="file in filteredFiles"
         v-else
         :key="file.name"
-        class="bg-[#000000ac] w-full px-4 py-2 flex items-center gap-4"
+        class="bg-[var(--bg-card)] w-full px-4 py-2 flex items-center gap-4"
         :class="{
-          'hover:bg-[#C59A2211] hover:cursor-pointer': file.isDirectory || isKnownFile(file.name)
+          'hover:bg-[var(--bg-dark)] hover:cursor-pointer':
+            file.isDirectory || isKnownFile(file.name)
         }"
         @click="
           file.isDirectory
@@ -202,7 +209,7 @@ onMounted(async () => {
         "
       >
         <div class="nav-icon">
-          <i v-if="file.isDirectory" class="fa fa-folder text-[#ffae00]"></i>
+          <i v-if="file.isDirectory" class="fa fa-folder text-[var(--text-secondary)]"></i>
           <i v-else-if="file.name.includes('.zip')" class="fa fa-archive"></i>
           <i v-else class="fa fa-file"></i>
         </div>

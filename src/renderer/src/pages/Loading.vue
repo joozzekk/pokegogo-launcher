@@ -3,6 +3,7 @@ import logo from '@renderer/assets/logo.png'
 import { ref, onMounted } from 'vue'
 import dynia from '@renderer/assets/img/dynia.png'
 import ghost from '@renderer/assets/img/ghost.png'
+import { applyTheme, halloween } from '@renderer/assets/theme/official'
 
 const status = ref<string>('Inicjalizowanie..')
 const progress = ref(0)
@@ -15,6 +16,12 @@ const statuses = {
 }
 
 onMounted(() => {
+  applyTheme(
+    localStorage.getItem('selectedTheme')
+      ? JSON.parse(localStorage.getItem('selectedTheme')!)
+      : halloween
+  )
+
   window.electron?.ipcRenderer?.on('load:status', (_, currentStatus: string) => {
     let val = 0
     const parsedStatus = JSON.parse(currentStatus)
@@ -67,18 +74,6 @@ onMounted(() => {
 </template>
 
 <style scoped>
-:root {
-  --primary1: #ffae00;
-  --primary2: #ad8503d;
-  --bg-primary: #000000;
-}
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
 .container {
   width: 100%;
   height: 100vh;
@@ -100,13 +95,13 @@ onMounted(() => {
 .logo-container {
   width: 80px;
   height: 80px;
-  background: linear-gradient(135deg, var(--primary1), var(--primary2));
+  background: linear-gradient(135deg, var(--primary), var(--primary));
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 32px;
-  box-shadow: 0 8px 24px #ad85033a;
+  box-shadow: 0 8px 24px var(--border);
   animation: pulse 2s ease-in-out infinite;
   overflow: hidden;
 }
@@ -143,9 +138,9 @@ onMounted(() => {
   width: 0%;
   transition: width 0.8s ease-out;
   height: 100%;
-  background-color: #ad8503;
+  background-color: var(--primary);
   border-radius: 4px;
-  box-shadow: 0 0 8px #ad85033a;
+  box-shadow: 0 0 8px var(--border);
 }
 
 @keyframes pulse {
@@ -156,7 +151,7 @@ onMounted(() => {
 
   50% {
     transform: scale(1.05);
-    box-shadow: 0 0 32px #ad8503ca;
+    box-shadow: 0 0 32px var(--border);
   }
 }
 
@@ -194,7 +189,7 @@ onMounted(() => {
   position: absolute;
   width: 100%;
   height: 100%;
-  background: radial-gradient(ellipse at center, #ad85032c 0%, var(--bg-primary) 100%);
+  background: radial-gradient(ellipse at center, var(--border) 0%, var(--bg-primary) 100%);
   animation: gradientShift 10s ease-in-out infinite alternate;
 }
 

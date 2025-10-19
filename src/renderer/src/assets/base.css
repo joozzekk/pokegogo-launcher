@@ -1,23 +1,5 @@
 @import 'tailwindcss';
 
-:root {
-  --primary: #ffae00;
-  --primary-dark: #ad8503;
-  --primary-light: #ffe8bc;
-  --bg-dark: #000000;
-  --bg-medium: #000000;
-  --bg-light: #25241a;
-  --bg-card: #14131199;
-  --bg-toast: rgba(66, 62, 40, 0.6);
-  --text-primary: #ffffff;
-  --text-secondary: #b8ad94;
-  --text-muted: #8b7d64;
-  --border: rgba(255, 222, 154, 0.15);
-  --gradient-primary: linear-gradient(135deg, #ad8503 0%, #ffae00 100%);
-  --gradient-banned: linear-gradient(135deg, #c5223d 0%, #b91035 100%);
-  --shadow-glow: 0 0 15px rgba(197, 167, 34, 0.3);
-}
-
 *,
 *::after,
 *::before {
@@ -63,10 +45,7 @@ body {
   position: absolute;
   width: 200%;
   height: 200%;
-  background:
-    radial-gradient(circle at 20% 50%, rgba(197, 154, 34, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, rgba(163, 154, 16, 0.05) 0%, transparent 50%),
-    radial-gradient(circle at 40% 20%, rgba(222, 175, 74, 0.03) 0%, transparent 50%);
+  background: var(--gradient-overlay);
   animation: gradientShift 20s ease infinite;
 }
 
@@ -128,7 +107,7 @@ body {
   top: 0;
   display: flex;
   align-items: center;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.8) 100%);
+  background: var(--header-bg);
   backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border);
   position: relative;
@@ -169,7 +148,7 @@ body {
   align-items: center;
   justify-content: center;
   font-size: 1.2rem;
-  color: white;
+  color: var(--text-primary);
   animation: rotateCube 10s linear infinite;
 }
 
@@ -192,7 +171,7 @@ body {
 }
 
 .applogo-badge {
-  background: rgba(197, 154, 34, 0.2);
+  background: var(--border);
   color: var(--primary);
   padding: 0.125rem 0.5rem;
   border-radius: 20px;
@@ -222,9 +201,9 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: black;
+  background: var(--bg-card);
   border-radius: 50px;
-  border: 1px dashed #ffae0047;
+  border: 1px dashed var(--border);
   transition: all 0.3s ease;
   animation: slideLeft 0.5s ease;
   user-select: none;
@@ -261,7 +240,7 @@ body {
   background: transparent;
   border: none;
   border-radius: 100%;
-  color: rgb(62, 59, 73);
+  color: var(--player-logout);
   cursor: pointer;
   transition: all 0.15s ease-in-out;
 }
@@ -286,7 +265,7 @@ body {
 @keyframes statusPulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(221, 173, 16, 0.5);
+    box-shadow: 0 0 0 0 var(--status-pulse);
   }
   50% {
     box-shadow: 0 0 0 8px rgba(197, 167, 34, 0);
@@ -376,7 +355,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--nav-icon);
   border-radius: 10px;
   transition: all 0.3s ease;
 }
@@ -400,32 +379,32 @@ body {
 .nav-item:hover,
 .nav-item:focus {
   color: var(--text-primary);
-  background: rgba(197, 154, 34, 0.1);
+  background: var(--nav-item);
   cursor: pointer;
 }
 
 .nav-item:hover .nav-icon,
 .nav-item:focus .nav-icon {
-  background: rgba(197, 145, 34, 0.2);
+  background: var(--nav-item-hover-nav-icon);
   color: var(--primary);
 }
 
 .nav-icon:hover,
 .nav-icon:focus {
   cursor: pointer;
-  background: rgba(197, 145, 34, 0.2);
+  background: var(--nav-item-hover-nav-icon);
   color: var(--primary);
 }
 
 .nav-item.active {
   font-weight: 700;
   color: var(--primary);
-  background: rgba(197, 173, 34, 0.15);
+  background: var(--nav-item-active);
 }
 
 .nav-item.active .nav-icon {
   background: var(--gradient-primary);
-  color: white;
+  color: var(--text-primary);
 }
 
 .nav-item.active .nav-indicator {
@@ -434,7 +413,7 @@ body {
 
 .sidebar-footer {
   padding: 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid var(--nav-icon);
 }
 
 .server-mini-status {
@@ -442,7 +421,7 @@ body {
   align-items: center;
   gap: 10px;
   padding: 10px;
-  background: rgba(197, 173, 34, 0.1);
+  background: var(--nav-item);
   border-radius: 10px;
 }
 
@@ -498,10 +477,10 @@ body {
 
 /* -------------------------------------- Panel uruchamiania ---------------------------- */
 .card-panel {
-  background: #000000aa;
+  background: var(--bg-card);
   border-radius: 1rem;
   padding: 1rem;
-  border: 1px dashed #ffae0047;
+  border: 1px dashed var(--border-2);
   backdrop-filter: blur(10px);
 }
 
@@ -588,7 +567,7 @@ body {
 
 .server-ip {
   background: var(--gradient-primary);
-  color: white;
+  color: var(--text-primary);
   padding: 0.75rem 1rem;
   border-radius: 8px;
   font-weight: 600;
@@ -606,13 +585,13 @@ body {
   align-items: center;
   gap: 12px;
   padding: 0.5rem 0.8rem;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg-light);
   border-radius: 12px;
   transition: all 0.3s ease;
 }
 
 .stat-item:hover {
-  background: #ffae001b;
+  background: var(--border);
   transform: translateY(-2px);
 }
 
@@ -649,7 +628,7 @@ body {
   width: 100%;
   gap: 12px;
   padding: 0.8rem;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg-light);
   border-radius: 12px;
   transition: all 0.3s ease;
 }
@@ -728,13 +707,13 @@ body {
   left: 0;
   right: 0;
   padding: 1.5rem;
-  color: white;
+  color: var(--text-primary);
 }
 
 .featured-tag {
   position: absolute;
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
+  background: var(--tag-dark);
+  color: var(--text-primary);
   padding: 4px 10px;
   border-radius: 6px;
   font-size: 11px;
@@ -764,14 +743,14 @@ body {
   display: flex;
   gap: 15px;
   padding: 15px;
-  background: rgba(197, 145, 34, 0.03);
+  background: var(--news-item);
   border-radius: 12px;
   transition: all 0.3s ease;
   cursor: pointer;
 }
 
 .news-item:hover {
-  background: rgba(197, 145, 34, 0.1);
+  background: var(--news-item-hover);
   transform: translateX(5px);
 }
 
@@ -827,11 +806,6 @@ body {
   margin-bottom: 1.5rem;
 }
 
-.setting-desc {
-  margin: 0 0.5rem;
-  color: rgba(255, 255, 255, 0.4);
-}
-
 .setting-group label {
   display: block;
   margin-bottom: 10px;
@@ -877,7 +851,7 @@ body {
   user-select: none;
   transform: translateX(-50%);
   background: var(--gradient-primary);
-  color: white;
+  color: var(--text-primary);
   padding: 0.2rem 0.4rem;
   font-size: 0.7rem;
   border-radius: 6px;
@@ -905,7 +879,7 @@ body {
   width: 100%;
   padding: 0.5rem 1rem;
   background: var(--bg-light);
-  color: #5f5a41;
+  color: var(--text-secondary);
   border: 1px solid transparent;
   border-radius: 8px;
   cursor: pointer;
@@ -914,7 +888,7 @@ body {
 
 .toggle-option.active {
   background: var(--gradient-primary);
-  color: white;
+  color: var(--text-primary);
 }
 
 .jvm-args {
@@ -971,7 +945,7 @@ body {
 
 .btn-primary {
   background: var(--gradient-primary);
-  color: white;
+  color: var(--text-primary);
 }
 
 .btn-primary:hover,
@@ -979,7 +953,7 @@ body {
 .toggle-option:focus,
 .toggle-option:hover {
   transform: translateY(-2px);
-  box-shadow: 0 5px 10px #ffae003d;
+  box-shadow: 0 5px 10px var(--btn-hover);
 }
 
 .btn-secondary,
@@ -993,7 +967,7 @@ body {
 
 .btn-secondary:hover,
 .btn-secondary:focus {
-  background: #ffae003d;
+  background: var(--btn-hover);
 }
 
 /* -------------------------------------- ChangeLog ---------------------------- */
@@ -1069,7 +1043,7 @@ body {
 
 .changelog-version {
   background: var(--gradient-primary);
-  color: white;
+  color: var(--text-primary);
   padding: 0.2rem 0.4rem;
   border-radius: 0.5rem;
   font-weight: 600;
@@ -1168,11 +1142,11 @@ body {
 }
 
 .toast.error {
-  border-color: #ef4444;
+  border-color: var(--toast-error);
 }
 
 .ban-btn {
-  background: rgba(255, 0, 0, 0.3);
+  background: var(--ban-btn);
   color: var(--bg-primary);
   border: none;
   border-radius: var(--border-radius-small);
@@ -1186,18 +1160,18 @@ body {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  color: #b83232;
+  color: var(--ban-btn-text);
 }
 
 .ban-btn:hover,
 .ban-btn:focus {
   transform: translateY(-1px);
-  box-shadow: 0 0 15px rgba(255, 0, 0, 0.3);
+  box-shadow: 0 0 15px var(--ban-btn);
 }
 
 .info-btn {
   background: var(--gradient-primary);
-  color: white;
+  color: var(--text-primary);
   border: none;
   border-radius: var(--border-radius-small);
   width: 30px;
@@ -1225,7 +1199,7 @@ body {
 
 .search-input {
   width: 100%;
-  background: rgba(51, 48, 35, 0.3);
+  background: var(--bg-card);
   border: 2px solid var(--border-primary);
   border-radius: var(--border-radius-small);
   padding: 0.8rem 1rem 0.8rem 2.5rem;
@@ -1238,7 +1212,7 @@ body {
 
 .search-input:focus,
 .search-input:hover {
-  background: rgba(51, 48, 35, 0.568);
+  background: var(--border);
 }
 
 .search-input::placeholder {

@@ -181,7 +181,7 @@ onUnmounted(() => {
 }
 
 .nav-icon.active {
-  background: rgba(197, 145, 34, 0.2);
+  background: var(--nav-item-active);
   color: var(--primary);
 }
 
@@ -218,7 +218,7 @@ onUnmounted(() => {
 
 .buttons button:hover,
 .buttons button:focus {
-  background: rgba(197, 145, 34, 0.1);
+  background: var(--btn-hover);
 }
 
 .buttons button.red:hover,
@@ -227,7 +227,7 @@ onUnmounted(() => {
 }
 
 .breadcrumbs {
-  color: #575b69;
+  color: var(--breadcrumbs-text);
   margin-left: 0.5rem;
   user-select: none;
   -webkit-app-region: no-drag;
@@ -236,7 +236,7 @@ onUnmounted(() => {
 
 .breadcrumbs > i:hover {
   cursor: pointer;
-  color: white;
+  color: var(--primary);
 }
 
 .breadcrumbs > .active:hover {

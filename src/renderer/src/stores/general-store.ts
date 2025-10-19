@@ -1,3 +1,4 @@
+import { halloween } from '@renderer/assets/theme/official'
 import { MIN_RAM } from '@renderer/utils'
 import { defineStore } from 'pinia'
 import { reactive, ref } from 'vue'
@@ -18,7 +19,7 @@ const useGeneralStore = defineStore('general', () => {
     javaVersion: 21,
     version: 'PokemonGoGo.pl',
     displayMode: 'Okno',
-    theme: 'Dark',
+    theme: halloween,
     autoUpdate: false
   }
 

@@ -207,7 +207,7 @@ defineExpose({
             </div>
             <div class="flex flex-col w-full">
               <label class="input-label mb-1">Nazwa</label>
-              <small class="mb-1 text-[#5f5a41]">
+              <small class="mb-1 text-[var(--text-secondary)]">
                 Nazwa wydarzenia wyświetlana na stronie głównej launchera.
               </small>
               <div class="form-group h-full">
@@ -231,7 +231,7 @@ defineExpose({
 
             <div class="flex flex-col w-full">
               <label class="input-label mb-1">Typ</label>
-              <small class="mb-1 text-[#5f5a41]"> Typ dodawanego wydarzenia </small>
+              <small class="mb-1 text-[var(--text-secondary)]"> Typ dodawanego wydarzenia </small>
               <div class="toggle-group">
                 <button
                   v-if="actionType === 'edit'"
@@ -256,7 +256,7 @@ defineExpose({
 
           <div class="flex flex-col">
             <label class="input-label mb-1">Opis</label>
-            <small class="mb-1 text-[#5f5a41]">
+            <small class="mb-1 text-[var(--text-secondary)]">
               Opis wydarzenia wyświetlany na stronie głównej launchera.
             </small>
             <div class="form-group">
@@ -278,7 +278,7 @@ defineExpose({
           <div class="flex gap-2 w-full">
             <div class="flex flex-col w-full">
               <label class="input-label mb-1">Data początkowa</label>
-              <small class="mb-1 text-[#5f5a41]"> Data początku wydarzenia </small>
+              <small class="mb-1 text-[var(--text-secondary)]"> Data początku wydarzenia </small>
               <div class="form-group">
                 <DatePicker
                   v-model="state.startDate"
@@ -296,7 +296,7 @@ defineExpose({
             </div>
             <div class="flex flex-col w-full">
               <label class="input-label mb-1">Data końcowa</label>
-              <small class="mb-1 text-[#5f5a41]"> Data końca wydarzenia </small>
+              <small class="mb-1 text-[var(--text-secondary)]"> Data końca wydarzenia </small>
               <div class="form-group">
                 <DatePicker
                   v-model="state.endDate"
@@ -356,14 +356,14 @@ defineExpose({
   padding-bottom: 1rem;
   display: flex;
   flex-direction: column;
-  background: rgba(16, 14, 10, 0.95);
-  box-shadow: 0 0 1rem rgba(52, 49, 35, 0.569);
+  background: var(--bg-dark);
+  box-shadow: 0 0 1rem var(--border);
 }
 
 .modal-header {
   position: sticky;
   z-index: 700;
-  background: rgba(16, 14, 10, 0.95);
+  background: var(--bg-dark);
   padding: 1rem 0;
   top: 0;
   display: flex;

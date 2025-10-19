@@ -119,12 +119,12 @@ defineExpose({
 .modal-card {
   width: 90%;
   max-width: 420px;
-  background: rgba(16, 14, 10, 0.95);
+  background: var(--bg-card);
   border-radius: 1rem;
   padding: 1.5rem 2rem 1.25rem;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 0 1rem rgba(51, 48, 35, 0.568);
+  box-shadow: 0 0 1rem var(--border);
 }
 
 .modal-header {

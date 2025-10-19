@@ -262,7 +262,7 @@ onMounted(async () => {
 
 .launch-button .info {
   font-size: 0.5rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-secondary);
 }
 
 .launch-button-bg {
@@ -282,7 +282,7 @@ onMounted(async () => {
 .launch-button:hover,
 .launch-button:focus {
   transform: translateY(-3px);
-  box-shadow: 0 0.25rem 1rem rgba(197, 167, 34, 0.3);
+  box-shadow: 0 0.25rem 1rem var(--border);
 }
 
 .launch-button:active {

@@ -122,7 +122,7 @@ onMounted(async () => {
                 </td>
                 <td>
                   <pre
-                    class="px-4 py-2 border-dashed border-[#ffae0067] border rounded-xl flex-wrap whitespace-break-spaces"
+                    class="px-4 py-2 border-dashed border-[var(--border)] border rounded-xl flex-wrap whitespace-break-spaces"
                     >{{ event.desc }}</pre
                   >
                 </td>
@@ -182,33 +182,33 @@ onMounted(async () => {
   overflow: hidden;
   position: relative;
   overflow-y: auto;
-  border: 1px dashed #ffae0067;
+  border: 1px dashed var(--border);
 }
 .logs-table {
   width: 100%;
   border-collapse: collapse;
 }
 .logs-table th {
-  background: rgb(0, 0, 0);
+  background: var(--bg-dark);
   padding: 0.5rem 1rem;
   text-align: left;
   font-weight: 600;
-  border-bottom: 2px solid #c59a2211;
+  border-bottom: 2px solid var(--border);
   position: sticky;
   top: 0;
   z-index: 10;
 }
 .logs-table td {
   padding: 0.5rem 1rem;
-  border-bottom: 1px solid #c59a2211;
+  border-bottom: 1px solid var(--border);
 }
 
 .logs-table tr {
-  background: #000;
+  background: var(--bg-card);
 }
 
 .logs-table tr:hover {
-  background: #c59a2207;
+  background: var(--bg-dark);
 }
 
 .copy-btn {
@@ -216,7 +216,7 @@ onMounted(async () => {
   font-size: 0.7rem;
   padding: 0.2rem 0.3rem;
   border-radius: 0.3rem;
-  background: rgba(0, 0, 0, 0.3);
+  background: var(--bg-dark);
   color: rgba(255, 255, 255, 0.4);
 }
 

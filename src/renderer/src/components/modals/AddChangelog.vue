@@ -209,7 +209,7 @@ defineExpose({
             </div>
             <div class="flex flex-col w-full">
               <label class="input-label mb-1">Nazwa</label>
-              <small class="mb-1 text-[#5f5a41]"> Nazwa changeloga</small>
+              <small class="mb-1 text-[var(--text-secondary)]"> Nazwa changeloga</small>
               <div class="form-group h-full">
                 <div class="input-wrapper flex">
                   <input
@@ -230,7 +230,7 @@ defineExpose({
             </div>
             <div class="flex flex-col w-full">
               <label class="input-label mb-1">Wersja</label>
-              <small class="mb-1 text-[#5f5a41]"> Wersja changeloga</small>
+              <small class="mb-1 text-[var(--text-secondary)]"> Wersja changeloga</small>
               <div class="form-group h-full">
                 <div class="input-wrapper flex">
                   <input
@@ -251,7 +251,7 @@ defineExpose({
             </div>
             <div class="flex flex-col w-full">
               <label class="input-label mb-1">Data</label>
-              <small class="mb-1 text-[#5f5a41]"> Data wydania changeloga </small>
+              <small class="mb-1 text-[var(--text-secondary)]"> Data wydania changeloga </small>
               <div class="form-group">
                 <DatePicker
                   v-model="state.startDate"
@@ -270,7 +270,7 @@ defineExpose({
 
             <div class="flex flex-col w-full">
               <label class="input-label mb-1">Typ</label>
-              <small class="mb-1 text-[#5f5a41]"> Typ dodawanego changeloga </small>
+              <small class="mb-1 text-[var(--text-secondary)]"> Typ dodawanego changeloga </small>
               <div class="toggle-group">
                 <button
                   class="toggle-option"
@@ -294,7 +294,9 @@ defineExpose({
 
           <div class="flex flex-col">
             <label class="input-label mb-1">Lista zmian</label>
-            <small class="mb-1 text-[#5f5a41]"> Lista zmian wykonanych w danym changelogu </small>
+            <small class="mb-1 text-[var(--text-secondary)]">
+              Lista zmian wykonanych w danym changelogu
+            </small>
             <div class="logs-table-wrapper">
               <table class="logs-table">
                 <thead>
@@ -367,7 +369,7 @@ defineExpose({
                     </tr>
                   </template>
                   <tr v-else>
-                    <td class="px-4 py-2 text-[#343123da]" :colspan="3">Brak zmian</td>
+                    <td class="px-4 py-2 text-[var(--text-secondary)]" :colspan="3">Brak zmian</td>
                   </tr>
                 </tbody>
               </table>
@@ -416,14 +418,14 @@ defineExpose({
   padding-bottom: 1rem;
   display: flex;
   flex-direction: column;
-  background: rgba(16, 14, 10, 0.95);
-  box-shadow: 0 0 1rem #34312391;
+  background: var(--bg-dark);
+  box-shadow: 0 0 1rem var(--border);
 }
 
 .modal-header {
   position: sticky;
   z-index: 700;
-  background: rgba(16, 14, 10, 0.95);
+  background: var(--bg-dark);
   padding: 1rem 0;
   top: 0;
   display: flex;
@@ -521,25 +523,25 @@ defineExpose({
   overflow: hidden;
   position: relative;
   overflow-y: auto;
-  border: 1px dashed #ffae0067;
+  border: 1px dashed var(--border);
 }
 .logs-table {
   width: 100%;
   border-collapse: collapse;
 }
 .logs-table th {
-  background: #47380c;
+  background: var(--primary-dark);
   padding: 0.5rem 1rem;
   text-align: left;
   font-weight: 600;
-  border-bottom: 2px solid #c59a2211;
+  border-bottom: 2px solid var(--border);
   position: sticky;
   top: 0;
   z-index: 10;
 }
 .logs-table td {
   padding: 0.25rem 1rem;
-  border-bottom: 1px solid #c59a2211;
+  border-bottom: 1px solid var(--border);
 }
 
 .logs-table tr {
@@ -547,6 +549,6 @@ defineExpose({
 }
 
 .logs-table tr:hover {
-  background: #c59a2207;
+  background: var(--bg-card);
 }
 </style>

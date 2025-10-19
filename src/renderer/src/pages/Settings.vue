@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { changeEmail, changePassword } from '@renderer/api/endpoints'
+import { applyTheme, themes } from '@renderer/assets/theme/official'
 import Select from '@renderer/components/Select.vue'
 import useGeneralStore from '@renderer/stores/general-store'
 import useUserStore from '@renderer/stores/user-store'
@@ -240,59 +241,8 @@ const handleChangeEmail = async (): Promise<void> => {
               1200x720
             </button>
           </div>
-
-          <div class="card-header mt-5">
-            <div class="card-title">
-              <div class="nav-icon">
-                <i class="fas fa-user"></i>
-              </div>
-              <h2>Ustawienia launchera</h2>
-            </div>
-          </div>
-
-          <div class="setting-group">
-            <label>Otrzymywanie powiadmień</label>
-            <div class="toggle-group">
-              <button
-                class="toggle-option"
-                :class="{ active: generalStore.settings.showNotifications === true }"
-                @click="generalStore.setShowNotifications(true)"
-              >
-                Otrzymuj
-              </button>
-              <button
-                class="toggle-option"
-                :class="{ active: generalStore.settings.showNotifications === false }"
-                @click="generalStore.setShowNotifications(false)"
-              >
-                Nie powiadamiaj
-              </button>
-            </div>
-          </div>
-
-          <div class="setting-group">
-            <label>Wyłączanie launchera</label>
-            <div class="toggle-group">
-              <button
-                class="toggle-option"
-                :class="{ active: generalStore.settings.hideToTray === true }"
-                @click="generalStore.setHideToTray(true)"
-              >
-                Do zasobnika
-              </button>
-              <button
-                class="toggle-option"
-                :class="{ active: generalStore.settings.hideToTray === false }"
-                @click="generalStore.setHideToTray(false)"
-              >
-                Całkowite wyłączanie
-              </button>
-            </div>
-          </div>
         </div>
-      </div>
 
-      <div>
         <div class="card-header">
           <div class="card-title">
             <div class="nav-icon">
@@ -300,6 +250,23 @@ const handleChangeEmail = async (): Promise<void> => {
             </div>
             <h2>Ustawienia Javy</h2>
           </div>
+        </div>
+
+        <div class="setting-group">
+          <label>Wersja Java</label>
+          <Select v-model="generalStore.settings.javaVersion" :options="javaVersions" disabled />
+        </div>
+      </div>
+
+      <div>
+        <div class="card-header">
+          <div class="card-title">
+            <div class="nav-icon">
+              <i class="fas fa-user"></i>
+            </div>
+            <h2>Ustawienia launchera</h2>
+          </div>
+
           <div class="settings-actions">
             <button id="saveSettings" class="nav-icon" @click="saveSettings">
               <i class="fas fa-save"></i>
@@ -310,9 +277,59 @@ const handleChangeEmail = async (): Promise<void> => {
           </div>
         </div>
 
+        <div v-if="userStore.user?.role === 'admin'" class="setting-group">
+          <label>Motyw</label>
+
+          <div class="flex gap-2">
+            <button
+              v-for="theme in themes"
+              :key="theme.primary"
+              class="nav-icon !w-[3rem] !h-[3rem] !text-[1.5rem]"
+              @click="applyTheme(theme)"
+            >
+              <i class="fa fa-home" :style="{ color: theme.primary }" />
+            </button>
+          </div>
+        </div>
+
         <div class="setting-group">
-          <label>Wersja Java</label>
-          <Select v-model="generalStore.settings.javaVersion" :options="javaVersions" disabled />
+          <label>Otrzymywanie powiadmień</label>
+          <div class="toggle-group">
+            <button
+              class="toggle-option"
+              :class="{ active: generalStore.settings.showNotifications === true }"
+              @click="generalStore.setShowNotifications(true)"
+            >
+              Otrzymuj
+            </button>
+            <button
+              class="toggle-option"
+              :class="{ active: generalStore.settings.showNotifications === false }"
+              @click="generalStore.setShowNotifications(false)"
+            >
+              Nie powiadamiaj
+            </button>
+          </div>
+        </div>
+
+        <div class="setting-group">
+          <label>Wyłączanie launchera</label>
+          <div class="toggle-group">
+            <button
+              class="toggle-option"
+              :class="{ active: generalStore.settings.hideToTray === true }"
+              @click="generalStore.setHideToTray(true)"
+            >
+              Do zasobnika
+            </button>
+            <button
+              class="toggle-option"
+              :class="{ active: generalStore.settings.hideToTray === false }"
+              @click="generalStore.setHideToTray(false)"
+            >
+              Całkowite wyłączanie
+            </button>
+          </div>
         </div>
 
         <div class="card-header">
@@ -324,31 +341,33 @@ const handleChangeEmail = async (): Promise<void> => {
           </div>
         </div>
 
-        <div class="flex gap-2 items-center">
-          <div class="form-group">
-            <div class="input-wrapper flex">
-              <i class="fas fa-lock input-icon"></i>
-              <input
-                id="login-email"
-                v-model="state.email"
-                type="email"
-                class="form-input"
-                placeholder="Adres email"
-                :class="{ invalid: emailV$.email.$error }"
-                required
-              />
-              <div class="input-line"></div>
+        <div class="setting-group">
+          <label>Zmiana emaila</label>
+          <div class="flex gap-2 items-center">
+            <div class="form-group">
+              <div class="input-wrapper flex">
+                <i class="fas fa-lock input-icon"></i>
+                <input
+                  id="login-email"
+                  v-model="state.email"
+                  type="email"
+                  class="form-input"
+                  placeholder="Adres email"
+                  :class="{ invalid: emailV$.email.$error }"
+                  required
+                />
+                <div class="input-line"></div>
+              </div>
+              <div class="error-message" :class="{ show: emailV$.email.$error }">
+                {{ emailV$.email.$errors[0]?.$message }}
+              </div>
             </div>
-            <div class="error-message" :class="{ show: emailV$.email.$error }">
-              {{ emailV$.email.$errors[0]?.$message }}
-            </div>
+            <button class="btn-primary mb-4 max-w-1/3" @click="handleChangeEmail">
+              <i class="fas fa-edit"></i>
+              Zmień email
+            </button>
           </div>
-          <button class="btn-primary mb-4 max-w-1/3" @click="handleChangeEmail">
-            <i class="fas fa-edit"></i>
-            Zmień email
-          </button>
         </div>
-
         <div v-if="accountType === 'backend'" class="flex flex-col gap-2">
           <div class="form-group">
             <div class="input-wrapper">

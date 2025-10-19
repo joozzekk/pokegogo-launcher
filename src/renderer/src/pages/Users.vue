@@ -149,7 +149,7 @@ onUnmounted(() => {
                     <span
                       v-if="player.mcid"
                       :style="`
-                      background: #ffae0067;
+                      background: var(--primary);
                       font-size: 0.6rem;
                       color: white;
                       padding: 2px 6px;
@@ -335,33 +335,29 @@ onUnmounted(() => {
   overflow: hidden;
   position: relative;
   overflow-y: auto;
-  border: 1px dashed #ffae0067;
+  border: 1px dashed var(--border);
 }
 .logs-table {
   width: 100%;
   border-collapse: collapse;
 }
 .logs-table th {
-  background: rgb(0, 0, 0);
+  background: var(--bg-dark);
   padding: 0.5rem 1rem;
   text-align: left;
   font-weight: 600;
-  border-bottom: 2px solid #c59a2211;
+  border-bottom: 2px solid var(--border);
   position: sticky;
   top: 0;
   z-index: 10;
 }
 .logs-table td {
   padding: 0.5rem 1rem;
-  border-bottom: 1px solid #c59a2211;
+  border-bottom: 1px solid var(--border);
 }
 
 .logs-table tr {
-  background: #000;
-}
-
-.logs-table tr:hover {
-  background: #c59a2207;
+  background: var(--bg-card);
 }
 
 .copy-btn {
@@ -411,7 +407,7 @@ onUnmounted(() => {
 }
 .player-details {
   display: block;
-  background: rgba(17, 17, 14, 0.363);
+  background: var(--bg-card);
   padding: 20px;
   border-top: 1px solid var(--border);
   animation: slideDown 0.3s ease-out;
@@ -429,15 +425,14 @@ onUnmounted(() => {
   border: 1px solid var(--border);
 }
 .detail-label {
-  color: var(--text-muted);
+  color: var(--text-secondary);
   font-size: 0.9rem;
   margin-bottom: 5px;
-  color: rgba(255, 255, 255, 0.3);
 }
 .detail-value {
   color: var(--text-primary);
   font-weight: 500;
-  color: rgba(255, 255, 255, 1);
+  color: var(--primary);
 }
 .no-results {
   text-align: center;

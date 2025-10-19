@@ -79,16 +79,14 @@ onMounted(async () => {
   position: absolute;
   inset: -30% -10% auto -10%;
   height: 60%;
-  background:
-    radial-gradient(600px 200px at 20% 40%, #ffae002f, transparent 70%),
-    radial-gradient(500px 180px at 80% 60%, #ad85032f, transparent 70%);
+  background: var(--shop-item);
   pointer-events: none;
 }
 
 .shopitem:hover {
   transform: translateY(-5px);
   box-shadow: 0 16px 34px rgba(0, 0, 0, 0.5);
-  border-color: #ffae00b5;
+  border-color: var(--border);
   cursor: pointer;
 }
 
@@ -127,9 +125,9 @@ onMounted(async () => {
   font-size: 13px;
   padding: 6px 10px;
   border-radius: 999px;
-  color: #ffae00;
+  color: var(--primary);
   background: black;
-  border: 1px dashed #ffae007e;
+  border: 1px dashed var(--border);
   box-shadow:
     inset 0 0 0 1px rgba(0, 0, 0, 0.06),
     0 6px 14px rgba(0, 0, 0, 0.25);

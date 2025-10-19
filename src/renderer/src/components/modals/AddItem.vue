@@ -300,7 +300,9 @@ defineExpose({
             </div>
             <div class="flex flex-col w-full">
               <label class="input-label mb-1">Nazwa</label>
-              <small class="mb-1 text-[#5f5a41]"> Nazwa przedmiotu wyświetlana na stronie. </small>
+              <small class="mb-1 text-[var(--text-secondary)]">
+                Nazwa przedmiotu wyświetlana na stronie.
+              </small>
               <div class="form-group h-full">
                 <div class="input-wrapper flex">
                   <input
@@ -323,7 +325,9 @@ defineExpose({
 
             <div class="flex flex-col w-full">
               <label class="input-label mb-1">Cena</label>
-              <small class="mb-1 text-[#5f5a41]"> Podaj cene przedmiotu. Minimalnie 1 </small>
+              <small class="mb-1 text-[var(--text-secondary)]">
+                Podaj cene przedmiotu. Minimalnie 1
+              </small>
               <div class="form-group h-full">
                 <div class="input-wrapper flex">
                   <input
@@ -348,7 +352,7 @@ defineExpose({
 
             <div class="flex flex-col w-full">
               <label class="input-label mb-1">Typ</label>
-              <small class="mb-1 text-[#5f5a41]"> Typ dodawanego przedmiotu </small>
+              <small class="mb-1 text-[var(--text-secondary)]"> Typ dodawanego przedmiotu </small>
               <div class="toggle-group">
                 <button
                   class="toggle-option"
@@ -388,7 +392,7 @@ defineExpose({
 
           <div class="flex flex-col">
             <label class="input-label mb-1">Opis</label>
-            <small class="mb-1 text-[#5f5a41]">
+            <small class="mb-1 text-[var(--text-secondary)]">
               Opis jest formatowany. Jeśli chcesz, aby wyświetlał się dobrze na stronie pamiętaj,
               aby pisać tekst w nowych liniach.
             </small>
@@ -413,7 +417,7 @@ defineExpose({
           <div class="flex gap-2">
             <div class="flex flex-col w-full">
               <label class="input-label">Nazwa rangi</label>
-              <small class="mb-1 text-[#5f5a41]"
+              <small class="mb-1 text-[var(--text-secondary)]"
                 >Nazwa rangi z LuckyPerms. Przykłady: vip, mvp, ultra, legend.</small
               >
               <div class="form-group !mt-0 !translate-y-[2px]">
@@ -438,7 +442,7 @@ defineExpose({
 
             <div class="flex flex-col w-full">
               <label class="input-label">Długość trwania</label>
-              <small class="mb-1 text-[#5f5a41]"
+              <small class="mb-1 text-[var(--text-secondary)]"
                 >Podaj czas na jaki gracz otrzyma tę rangę. Domyślnie 30</small
               >
               <div class="form-group !mt-0 !translate-y-[2px]">
@@ -471,7 +475,7 @@ defineExpose({
             <label class="input-label">{{
               state.type === 'key_item' ? 'Nazwa klucza' : 'ID Przedmiotu'
             }}</label>
-            <small class="mb-1 text-[#5f5a41]">
+            <small class="mb-1 text-[var(--text-secondary)]">
               {{
                 state.type === 'key_item'
                   ? 'Wpisz nazwę klucza z pluginu, np. legendary, mythic'
@@ -500,7 +504,7 @@ defineExpose({
 
           <div class="flex flex-col w-full">
             <label class="input-label">Ilość do sprzedaży</label>
-            <small class="mb-1 text-[#5f5a41]">
+            <small class="mb-1 text-[var(--text-secondary)]">
               Podaj ilość w jakiej będzie sprzedawany przedmiot. Domyślnie 1
             </small>
             <div class="form-group !mt-0 !translate-y-[2px]">
@@ -526,7 +530,7 @@ defineExpose({
 
         <template v-if="state.type === 'custom'">
           <label class="input-label">Komenda</label>
-          <small class="mb-1 text-[#5f5a41]">
+          <small class="mb-1 text-[var(--text-secondary)]">
             Możesz wykorzystywać różne zmienne podane wyżej. {player} - nick gracza. Podane wyżej:
             {amount} - ilość przedmiotu, {item} - nazwa przedmiotu, {rank} - nazwa rangi, {days} -
             długość trwania.
@@ -592,14 +596,14 @@ defineExpose({
   padding-bottom: 1rem;
   display: flex;
   flex-direction: column;
-  background: rgba(16, 14, 10, 0.95);
-  box-shadow: 0 0 1rem rgba(52, 49, 35, 0.569);
+  background: var(--bg-dark);
+  box-shadow: 0 0 1rem var(--border);
 }
 
 .modal-header {
   position: sticky;
   z-index: 1100;
-  background: rgba(16, 14, 10, 0.95);
+  background: var(--bg-dark);
   padding: 1rem 0;
   top: 0;
   display: flex;
