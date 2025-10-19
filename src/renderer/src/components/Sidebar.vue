@@ -8,7 +8,6 @@ const userStore = useUserStore()
 const generalStore = useGeneralStore()
 const router = useRouter()
 const playerName = computed(() => userStore.user?.nickname ?? 'Guest')
-const hasAdmin = computed(() => userStore.user?.role === 'admin')
 
 const handleLogout = async (): Promise<void> => {
   await userStore.logout()
@@ -85,62 +84,6 @@ const handleSupDev = (): void => {
         <div class="nav-indicator"></div>
       </a>
       <a
-        v-if="hasAdmin"
-        class="nav-item"
-        :class="{
-          active: $route.path === '/app/users'
-        }"
-        @click="handleChangeRoute('/app/users')"
-      >
-        <div class="nav-icon">
-          <i class="fas fa-users"></i>
-        </div>
-        <span>Gracze</span>
-        <div class="nav-indicator"></div>
-      </a>
-      <a
-        v-if="hasAdmin"
-        class="nav-item"
-        :class="{
-          active: $route.path === '/app/ftp'
-        }"
-        @click="handleChangeRoute('/app/ftp')"
-      >
-        <div class="nav-icon">
-          <i class="fas fa-folder"></i>
-        </div>
-        <span>Pliki MC</span>
-        <div class="nav-indicator"></div>
-      </a>
-      <a
-        v-if="hasAdmin"
-        class="nav-item"
-        :class="{
-          active: $route.path === '/app/items'
-        }"
-        @click="handleChangeRoute('/app/items')"
-      >
-        <div class="nav-icon">
-          <i class="fas fa-list"></i>
-        </div>
-        <span>Itemy</span>
-        <div class="nav-indicator"></div>
-      </a>
-      <a
-        v-if="hasAdmin"
-        class="nav-item"
-        :class="{
-          active: $route.path === '/app/events'
-        }"
-        @click="handleChangeRoute('/app/events')"
-      >
-        <div class="nav-icon">
-          <i class="fas fa-newspaper"></i>
-        </div>
-        <span>Wydarzenia</span>
-        <div class="nav-indicator"></div>
-      </a>
-      <a
         class="nav-item"
         :class="{
           active: $route.path === '/app/changelog'
@@ -148,7 +91,7 @@ const handleSupDev = (): void => {
         @click="handleChangeRoute('/app/changelog')"
       >
         <div class="nav-icon">
-          <i class="fas fa-list"></i>
+          <i class="fa-solid fa-calendar-days"></i>
         </div>
         <span>Changelog</span>
         <div class="nav-indicator"></div>

@@ -20,29 +20,69 @@ const routes = [
     component: Launcher,
     name: 'app',
     children: [
-      { path: 'home', name: 'home', component: HomePage },
-      { path: 'shop', name: 'shop', component: ShopPage },
-      { path: 'settings', name: 'settings', component: SettingsPage },
-      { path: 'changelog', name: 'changelog', component: ChangelogPage },
+      {
+        path: 'home',
+        name: 'home',
+        component: HomePage,
+        meta: {
+          displayName: 'Home'
+        }
+      },
+      {
+        path: 'shop',
+        name: 'shop',
+        component: ShopPage,
+        meta: {
+          displayName: 'Sklep'
+        }
+      },
+      {
+        path: 'settings',
+        name: 'settings',
+        component: SettingsPage,
+        meta: {
+          displayName: 'Ustawienia'
+        }
+      },
+      {
+        path: 'changelog',
+        name: 'changelog',
+        component: ChangelogPage,
+        meta: {
+          displayName: 'Changelog'
+        }
+      },
       {
         path: 'users',
         name: 'users',
-        component: UsersPage
+        component: UsersPage,
+        meta: {
+          displayName: 'Gracze'
+        }
       },
       {
         path: 'ftp',
         name: 'ftp',
-        component: FTPPage
+        component: FTPPage,
+        meta: {
+          displayName: 'FTP'
+        }
       },
       {
         path: 'items',
         name: 'items',
-        component: ItemsPage
+        component: ItemsPage,
+        meta: {
+          displayName: 'Itemy'
+        }
       },
       {
         path: 'events',
         name: 'events',
-        component: EventsPage
+        component: EventsPage,
+        meta: {
+          displayName: 'Wydarzenia'
+        }
       }
     ]
   }

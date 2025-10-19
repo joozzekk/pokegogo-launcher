@@ -5,11 +5,21 @@ import useGeneralStore from '@renderer/stores/general-store'
 import { showToast } from '@renderer/utils'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import UpdateConfirm from './modals/UpdateConfirm.vue'
+import { useRouter } from 'vue-router'
+import useUserStore from '@renderer/stores/user-store'
 
+const userStore = useUserStore()
 const generalStore = useGeneralStore()
+const router = useRouter()
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const updateInterval = ref<any>()
 const isInstallingUpdate = ref<boolean>(false)
+
+const hasAdmin = computed(() => userStore.user?.role === 'admin')
+
+const handleChangeRoute = (newRoute: string): void => {
+  router.push(newRoute)
+}
 
 const maximizeWindow = (): void => {
   window.electron?.ipcRenderer?.send('window:maximize', generalStore.settings.resolution)
@@ -93,12 +103,44 @@ onUnmounted(() => {
       <div class="nav-icon" @click="$router.push('/app/home')"><i class="fa fa-home" /></div>
       >
       <span class="active">
-        {{ $route.name }}
+        {{ $route.meta.displayName }}
       </span>
     </div>
 
     <div class="flex ml-auto mr-[9rem] items-center gap-2">
       <div class="applogo-badge">{{ parsedAppVersion }}</div>
+      <button
+        v-if="hasAdmin"
+        class="nav-icon"
+        :class="{ active: $route.path === '/app/users' }"
+        @click="handleChangeRoute('/app/users')"
+      >
+        <i class="fa fa-users"></i>
+      </button>
+      <button
+        v-if="hasAdmin"
+        class="nav-icon"
+        :class="{ active: $route.path === '/app/events' }"
+        @click="handleChangeRoute('/app/events')"
+      >
+        <i class="fa fa-calendar-week"></i>
+      </button>
+      <button
+        v-if="hasAdmin"
+        class="nav-icon"
+        :class="{ active: $route.path === '/app/items' }"
+        @click="handleChangeRoute('/app/items')"
+      >
+        <i class="fa fa-list"></i>
+      </button>
+      <button
+        v-if="hasAdmin"
+        class="nav-icon"
+        :class="{ active: $route.path === '/app/ftp' }"
+        @click="handleChangeRoute('/app/ftp')"
+      >
+        <i class="fa fa-folder"></i>
+      </button>
       <button
         v-if="isUpdateAvailable"
         class="nav-icon"
@@ -133,6 +175,11 @@ onUnmounted(() => {
   border: none;
   -webkit-app-region: no-drag;
   transition: background 0.1s ease-in-out;
+}
+
+.nav-icon.active {
+  background: rgba(197, 145, 34, 0.2);
+  color: var(--primary);
 }
 
 .buttons {
