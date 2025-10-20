@@ -119,7 +119,7 @@ defineExpose({
 .modal-card {
   width: 90%;
   max-width: 420px;
-  background: var(--bg-card);
+  background: var(--bg-light);
   border-radius: 1rem;
   padding: 1.5rem 2rem 1.25rem;
   display: flex;

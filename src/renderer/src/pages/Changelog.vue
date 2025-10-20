@@ -23,7 +23,7 @@ async function fetchChangelog(): Promise<void> {
   const res = await getChangelog()
 
   if (res) {
-    allChangelog.value = res.filter((changelog) => changelog.type === 'launcher')
+    allChangelog.value = res
     filteredChangelog.value = [...allChangelog.value]
     noResultsVisible.value = false
     isLoadingChangelog.value = false

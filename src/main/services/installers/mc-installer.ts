@@ -193,7 +193,7 @@ export async function copyMCFiles(
   const { client, connect } = useFTP()
   const localRoot = path.join(app.getPath('userData'), 'mcfiles')
   const markerFile = path.join(app.getPath('userData'), '.mcfiles_installed')
-  const importantFiles = ['mods', 'versions', 'resourcepacks', 'datapacks', 'config']
+  const importantFiles = ['mods', 'versions', 'resourcepacks', 'datapacks', 'config', 'fancymenu']
   const ignoreFiles = ['options']
 
   try {

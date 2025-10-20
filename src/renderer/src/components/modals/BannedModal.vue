@@ -72,7 +72,7 @@ const acknowledgeBan = (): void => {
   width: 90%;
   max-width: 420px;
   min-height: 220px;
-  background: var(--bg-card);
+  background: var(--bg-light);
   box-shadow: 0 0 1rem var(--border);
   border-radius: 1rem;
   padding: 1.5rem 2rem 1.25rem;
@@ -82,7 +82,7 @@ const acknowledgeBan = (): void => {
 
 .modal-header {
   display: flex;
-  background: var(--bg-card);
+  background: var(--bg-light);
   align-items: center;
   margin-bottom: 1rem;
 }

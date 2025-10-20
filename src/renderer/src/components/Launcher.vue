@@ -47,6 +47,7 @@ const refreshToken = async (): Promise<void> => {
 
 socket.on('player:banned', async (data) => {
   const isCurrentPlayer = userStore.user?.uuid === data.uuid
+  LOGGER.log(`Banned: ${data.uuid}, ${userStore.user?.uuid === data.uuid}`)
 
   if (isCurrentPlayer) {
     await refreshToken()
@@ -57,6 +58,7 @@ socket.on('player:banned', async (data) => {
 
 socket.on('player:unbanned', async (data) => {
   const isCurrentPlayer = userStore.user?.uuid === data.uuid
+  LOGGER.log(`Unbanned: ${data.uuid} ${userStore.user?.uuid === data.uuid}`)
 
   if (isCurrentPlayer) {
     await refreshToken()

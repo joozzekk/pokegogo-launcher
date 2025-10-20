@@ -2,7 +2,7 @@ import io, { type Socket } from 'socket.io-client'
 import { LOGGER } from './logger-service'
 
 export const useSocket = (): Socket => {
-  const socket = io(import.meta.env.RENDERER_VITE_API_URL)
+  const socket = io(import.meta.env.RENDERER_VITE_SOCKET_URL)
 
   socket.on('connect', async () => {
     LOGGER.success('Connected to websocket.')
