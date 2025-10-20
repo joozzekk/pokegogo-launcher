@@ -277,7 +277,7 @@ body {
 
 .player-label {
   font-size: 0.7rem;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 1px;
 }

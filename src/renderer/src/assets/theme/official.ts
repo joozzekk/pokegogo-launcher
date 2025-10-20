@@ -52,10 +52,7 @@ export const halloween = {
   toastWarning: '#ffa502',
   loadingOverlay: 'rgba(10, 10, 11, 0.9)',
   footerHover: 'rgba(255, 255, 255, 0.05)',
-  shopItem: `
-    radial-gradient(600px 200px at 20% 40%, #ffae002f, transparent 70%),
-    radial-gradient(500px 180px at 80% 60%, #ad85032f, transparent 70%)
-    `,
+  shopItem: `linear-gradient(180deg, var(--btn-hover) 0%, transparent 100%)`,
   breadcrumbsText: '#575b69'
 }
 
@@ -111,10 +108,7 @@ export const rose = {
   toastWarning: '#ff69b4',
   loadingOverlay: 'rgba(42, 0, 26, 0.9)',
   footerHover: 'rgba(255, 105, 180, 0.05)',
-  shopItem: `
-    radial-gradient(600px 200px at 20% 40%, #ff69b42f, transparent 70%),
-    radial-gradient(500px 180px at 80% 60%, #b1396e2f, transparent 70%)
-    `,
+  shopItem: `linear-gradient(180deg, var(--btn-hover) 0%, transparent 100%)`,
   breadcrumbsText: '#d5a3c7'
 }
 
@@ -170,10 +164,7 @@ export const violet = {
   toastWarning: '#b269ff',
   loadingOverlay: 'rgba(26, 0, 26, 0.9)',
   footerHover: 'rgba(178, 105, 255, 0.05)',
-  shopItem: `
-    radial-gradient(600px 200px at 20% 40%, #b269ff2f, transparent 70%),
-    radial-gradient(500px 180px at 80% 60%, #7a3fb82f, transparent 70%)
-    `,
+  shopItem: `linear-gradient(180deg, var(--btn-hover) 0%, transparent 100%)`,
   breadcrumbsText: '#a59adb'
 }
 
@@ -187,10 +178,10 @@ export const grayscale = {
   textPrimary: '#f0f0f0', // jasny szary do tekstu
   textSecondary: '#b8b8b8', // delikatny szary
   border: 'rgba(176, 176, 176, 0.15)', // półprzezroczysty szary
-  border2: '#b0b0477a',
+  border2: '#6e6e6e7a',
   newsItem: 'rgba(176, 176, 176, 0.03)', // delikatny, bardzo jasny szary
   newsItemHover: 'rgba(176, 176, 176, 0.1)',
-  btnHover: '#b0b03d3d',
+  btnHover: '#6e6e6e3d',
   banBtn: 'rgba(255, 0, 0, 0.3)', // czerwony pozostaje dla wyjątków
   banBtnText: '#b83232',
   headerBg: 'linear-gradient(180deg, rgba(26, 26, 26, 0.95) 0%, rgba(26, 26, 26, 0.8) 100%)',
@@ -225,7 +216,7 @@ export const grayscale = {
   toastWarning: '#b0b0b0',
   loadingOverlay: 'rgba(26, 26, 26, 0.9)',
   footerHover: 'rgba(176, 176, 176, 0.05)',
-  shopItem: `radial-gradient(600px 200px at 20% 40%, #b0b02f2f, transparent 70%), radial-gradient(500px 180px at 80% 60%, #6e6e6e2f, transparent 70%)`,
+  shopItem: `linear-gradient(180deg, var(--btn-hover) 0%, transparent 100%)`,
   breadcrumbsText: '#a5a5a5'
 }
 
@@ -277,7 +268,7 @@ export const blue = {
   toastWarning: '#3a7bd5',
   loadingOverlay: 'rgba(13, 27, 42, 0.9)',
   footerHover: 'rgba(58, 123, 213, 0.05)',
-  shopItem: `radial-gradient(600px 200px at 20% 40%, #3a7bd52f, transparent 70%), radial-gradient(500px 180px at 80% 60%, #1f4d8a2f, transparent 70%)`,
+  shopItem: `linear-gradient(180deg, var(--btn-hover) 0%, transparent 100%)`,
   breadcrumbsText: '#7f9ed8'
 }
 
@@ -329,7 +320,7 @@ export const green = {
   toastWarning: '#32cd32',
   loadingOverlay: 'rgba(0, 51, 0, 0.9)',
   footerHover: 'rgba(50, 205, 50, 0.05)',
-  shopItem: `radial-gradient(600px 200px at 20% 40%, #32cd322f, transparent 70%), radial-gradient(500px 180px at 80% 60%, #228b222f, transparent 70%)`,
+  shopItem: `linear-gradient(180deg, var(--btn-hover) 0%, transparent 100%)`,
   breadcrumbsText: '#b2d8b2'
 }
 

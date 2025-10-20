@@ -36,6 +36,7 @@ onMounted(async () => {
 
 .shop-grid {
   display: grid;
+  padding-top: 1rem;
   gap: 1rem;
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -77,8 +78,10 @@ onMounted(async () => {
 .shopitem::before {
   content: '';
   position: absolute;
-  inset: -30% -10% auto -10%;
-  height: 60%;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 50%;
   background: var(--shop-item);
   pointer-events: none;
 }

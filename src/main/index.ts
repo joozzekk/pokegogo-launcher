@@ -48,7 +48,7 @@ if (!gotTheLock) {
 
   app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
-      if (ipcMain.listenerCount('launch:exit')) ipcMain.emit('launch:exit')
+      if (ipcMain.listenerCount('launch:exit')) mainWindow?.webContents.emit('launch:exit')
       app.quit()
     }
   })
