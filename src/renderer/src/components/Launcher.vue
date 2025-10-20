@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 import { onMounted, onUnmounted, ref } from 'vue'
 import { initAnimations } from '@renderer/assets/scripts/animations'
-
 import Header from '@renderer/components/Header.vue'
 import Sidebar from '@renderer/components/Sidebar.vue'
 import useUserStore from '@renderer/stores/user-store'
@@ -12,6 +11,7 @@ import BannedModal from '@renderer/components/modals/BannedModal.vue'
 import { useSocket } from '@renderer/services/socket-service'
 import api from '@renderer/utils/client'
 import { LOGGER } from '@renderer/services/logger-service'
+import superEvent from '@renderer/assets/img/superEvent.png'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const refreshInterval = ref<any>(null)
@@ -103,7 +103,9 @@ onUnmounted(() => {
 
 <template>
   <div class="animated-bg">
-    <div class="gradient-overlay"></div>
+    <img :src="superEvent" alt="background" class="absolute !h-[100vh] z-[0] opacity-15" />
+
+    <!-- <div class="gradient-overlay"></div> -->
     <div class="particles"></div>
   </div>
 
