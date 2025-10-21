@@ -9,7 +9,7 @@ import { getMaxRAMInGB } from '../utils'
 import { machineId } from 'node-machine-id'
 import { address } from 'address/promises'
 import { useFTP } from './ftp-service'
-import { mkdir, readFile, unlink, writeFile } from 'fs/promises'
+import { readFile, unlink, writeFile } from 'fs/promises'
 import { createHash } from 'crypto'
 import { Client } from 'basic-ftp'
 
@@ -133,7 +133,7 @@ const createMainWindow = (): BrowserWindow => {
       const remoteHashesPath = `${folder}${folder.length ? '/' : ''}hashes.txt`
 
       try {
-        await client.downloadTo(localHashesPath, remoteHashesPath)
+        await client.downloadTo(localHashesPath, remoteHashesPath.replace(/\\/g, '/'))
         const data = await readFile(localHashesPath, 'utf-8')
         data.split('\n').forEach((line) => {
           line = line.trim()
@@ -152,13 +152,15 @@ const createMainWindow = (): BrowserWindow => {
       }
 
       const pwd = await client.pwd()
-      const dir = join(pwd, folder)
+      const dir = join(pwd, folder).replace(/\\/g, '/')
 
       for (const file of files) {
         const { path, buffer } = file
 
-        const relativeDir = dirname(path)
-        const fileName = basename(path)
+        const normalizedPath = path.replace(/\\/g, '/')
+
+        const relativeDir = dirname(normalizedPath)
+        const fileName = basename(normalizedPath)
 
         const remoteFolderPath = join(dir, relativeDir)
         const remoteFilePath = fileName
@@ -169,15 +171,15 @@ const createMainWindow = (): BrowserWindow => {
         if (remoteFolderPath) {
           try {
             if (dir) {
-              await client.cd(dir)
+              await client.cd(dir.replace(/\\/g, '/'))
             } else {
               await client.cd(await client.pwd())
             }
 
-            await client.ensureDir(remoteFolderPath)
-          } catch (e) {
+            await client.ensureDir(remoteFolderPath.replace(/\\/g, '/'))
+          } catch (e: any) {
             throw new Error(
-              `Failed to create remote directory: ${remoteFolderPath}. Details: ${e.message}`
+              `Failed to create remote directory: ${remoteFolderPath.replace(/\\/g, '/')}. Details: ${e.message}`
             )
           }
         }
@@ -185,7 +187,7 @@ const createMainWindow = (): BrowserWindow => {
         await writeFile(tempFileUniquePath, Buffer.from(buffer))
 
         try {
-          await client.uploadFrom(tempFileUniquePath, remoteFilePath)
+          await client.uploadFrom(tempFileUniquePath, remoteFilePath.replace(/\\/g, '/'))
         } catch (e) {
           await unlink(tempFileUniquePath)
           throw e

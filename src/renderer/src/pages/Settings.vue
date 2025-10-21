@@ -6,7 +6,6 @@ import useUserStore from '@renderer/stores/user-store'
 import { calculateValueFromPercentage, MIN_RAM, showToast } from '@renderer/utils'
 import useVuelidate from '@vuelidate/core'
 import { helpers, required, sameAs } from '@vuelidate/validators'
-import SelectButton from 'primevue/selectbutton'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 
 const userStore = useUserStore()
