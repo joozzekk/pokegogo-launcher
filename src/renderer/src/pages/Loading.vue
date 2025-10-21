@@ -216,13 +216,13 @@ onMounted(() => {
   height: 60px;
   top: 60%;
   left: 80%;
-  animation: float 20s linear infinite;
+  animation: float 18s linear infinite;
   animation-delay: -8s;
   opacity: 0.3;
 }
 
 .block-3 {
-  animation: float 20s linear infinite;
+  animation: float 22s linear infinite;
   position: absolute;
   width: 30px;
   height: 30px;
@@ -231,6 +231,7 @@ onMounted(() => {
   animation-delay: -15s;
   opacity: 0.3;
 }
+
 .ghost-1 {
   animation: sway 3s ease-in-out infinite;
   width: 100px;
@@ -241,21 +242,23 @@ onMounted(() => {
 }
 
 .ghost-2 {
-  animation: sway 3s ease-in-out infinite;
+  animation: sway 2s ease-in-out infinite;
   width: 80px;
   position: absolute;
   top: 70%;
   left: 50%;
   opacity: 0.1;
 }
+
 .ghost-3 {
-  animation: sway 3s ease-in-out infinite;
+  animation: sway 4s ease-in-out infinite;
   width: 40px;
   position: absolute;
   top: 50%;
   left: 10%;
   opacity: 0.1;
 }
+
 @keyframes sway {
   0% {
     transform: translateX(0);

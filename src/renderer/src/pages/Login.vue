@@ -102,11 +102,6 @@ onMounted(() => {
               <i class="fab fa-microsoft"></i>
               <span>Zaloguj przez Microsoft</span>
             </button>
-            <div>
-              <p style="text-align: center; margin-top: 30px">
-                Nie pamiętasz hasła? <button type="button" class="btn">Przypomnij hasło</button>
-              </p>
-            </div>
           </form>
         </div>
 

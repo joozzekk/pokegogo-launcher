@@ -85,7 +85,10 @@ const createMainWindow = (): BrowserWindow => {
 
       const hashes: { [key: string]: string } = {}
       try {
-        await client.downloadTo(join(process.cwd(), 'tmp', 'hashes.txt'), `${folder}/hashes.txt`)
+        await client.downloadTo(
+          join(process.cwd(), 'tmp', 'hashes.txt'),
+          `${folder}${folder.length ? '/' : ''}hashes.txt`
+        )
         const data = await readFile(join(process.cwd(), 'tmp', 'hashes.txt'), 'utf-8')
         data.split('\n').forEach((line) => {
           line = line.trim()
@@ -110,7 +113,10 @@ const createMainWindow = (): BrowserWindow => {
         .join('\n')
       await writeFile(join(process.cwd(), 'tmp', 'hashes.txt'), hashesContent)
 
-      await client.uploadFrom(join(process.cwd(), 'tmp', 'hashes.txt'), `${folder}/hashes.txt`)
+      await client.uploadFrom(
+        join(process.cwd(), 'tmp', 'hashes.txt'),
+        `${folder}${folder.length ? '/' : ''}hashes.txt`
+      )
 
       await unlink(tempFilePath)
       await unlink(join(process.cwd(), 'tmp', 'hashes.txt'))
