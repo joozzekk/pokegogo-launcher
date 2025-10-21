@@ -11,6 +11,7 @@ interface FTPService {
   changeFolder: (name: string) => Promise<void>
   restoreFolder: (name: string) => Promise<void>
   uploadFile: () => Promise<void>
+  uploadFolder: () => Promise<void>
   removeFile: (name: string) => Promise<void>
   openFile: (name: string) => Promise<void>
   saveFile: () => Promise<void>
@@ -25,7 +26,10 @@ interface FTPFile {
   isFile: boolean
 }
 
-export const useFTP = (inputFile?: Ref<HTMLInputElement | null>): FTPService => {
+export const useFTP = (
+  inputFile?: Ref<HTMLInputElement | null>,
+  inputFolder?: Ref<HTMLInputElement | null>
+): FTPService => {
   const currentFileName = ref<string>('')
   const currentFileContent = ref<string>('')
   const currentFolder = ref<string>('')
@@ -46,6 +50,36 @@ export const useFTP = (inputFile?: Ref<HTMLInputElement | null>): FTPService => 
     await getFolderContent(name)
   }
 
+  const uploadFolder = async (): Promise<void> => {
+    if (!inputFolder?.value?.files?.length) return
+
+    const files = Array.from(inputFolder.value.files).map(async (file) => ({
+      path: file.webkitRelativePath || file.name,
+      buffer: await file.arrayBuffer()
+    }))
+
+    try {
+      // Resolve all file buffers before sending
+      const resolvedFiles = await Promise.all(files)
+
+      const res = await window.electron.ipcRenderer?.invoke(
+        'ftp:upload-folder',
+        currentFolder.value, // FTP remote folder
+        resolvedFiles // array of {path, buffer}
+      )
+
+      if (res) {
+        showToast('Folder pomyślnie przesłano.')
+        await getFolderContent(currentFolder.value)
+      }
+    } catch (err) {
+      LOGGER.err(err as string)
+      showToast('Wystąpił błąd podczas przesyłania folderu.', 'error')
+    } finally {
+      inputFolder.value.value = ''
+    }
+  }
+
   const restoreFolder = async (name: string): Promise<void> => {
     const prevFolder = currentFolder.value.substring(
       0,
@@ -60,11 +94,6 @@ export const useFTP = (inputFile?: Ref<HTMLInputElement | null>): FTPService => 
     if (!inputFile?.value?.files?.length) return
 
     const files = Array.from(inputFile.value.files)
-
-    if (files.some((file) => file.size > 100 * 1024 * 1024)) {
-      showToast('Rozmiar pliku lub plików przekracza 100MB')
-      return
-    }
 
     try {
       const res = await Promise.all(
@@ -104,7 +133,7 @@ export const useFTP = (inputFile?: Ref<HTMLInputElement | null>): FTPService => 
       )
 
       if (res) {
-        showToast('Pomyślnie usunięto plik')
+        showToast('Pomyślnie usunięto ' + name)
         currentFileContent.value = res
         await getFolderContent(currentFolder.value)
       }
@@ -165,6 +194,7 @@ export const useFTP = (inputFile?: Ref<HTMLInputElement | null>): FTPService => 
     changeFolder,
     restoreFolder,
     uploadFile,
+    uploadFolder,
     removeFile,
     openFile,
     saveFile

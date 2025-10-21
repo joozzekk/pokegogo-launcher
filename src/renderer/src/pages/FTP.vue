@@ -6,6 +6,7 @@ import { computed, onMounted, ref } from 'vue'
 const showSearchInput = ref<boolean>(false)
 const searchQuery = ref<string>('')
 const inputFile = ref<HTMLInputElement | null>(null)
+const inputFolder = ref<HTMLInputElement | null>(null)
 
 const {
   currentFileContent,
@@ -15,10 +16,11 @@ const {
   currentFolder,
   restoreFolder,
   uploadFile,
+  uploadFolder,
   removeFile,
   openFile,
   saveFile
-} = useFTP(inputFile)
+} = useFTP(inputFile, inputFolder)
 
 const mapPathToBreadCrumbs = (path: string): string[] => {
   return path.split('/')
@@ -52,6 +54,10 @@ const breadcrumbs = computed(() => {
 
 const handleUploadFile = (): void => {
   inputFile.value?.click()
+}
+
+const handleUploadFolder = (): void => {
+  inputFolder.value?.click()
 }
 
 const handleShowSearch = (): void => {
@@ -115,6 +121,15 @@ onMounted(async () => {
     </template>
     <template v-else>
       <input ref="inputFile" type="file" multiple hidden @change="uploadFile" />
+      <input
+        ref="inputFolder"
+        type="file"
+        multiple
+        hidden
+        directory
+        webkitdirectory
+        @change="uploadFolder"
+      />
       <div
         class="top-0 sticky bg-[var(--bg-dark)] px-4 py-2 text-[0.9rem] flex items-center justify-between z-[10] border-dashed border-b border-[var(--border)]"
         :class="{ 'mb-[44px]': showSearchInput }"
@@ -161,6 +176,12 @@ onMounted(async () => {
           </button>
           <button
             class="nav-icon hover:cursor-pointer hover:text-[var(--text-secondary)]"
+            @click="handleUploadFolder"
+          >
+            <i class="fa fa-folder-plus" />
+          </button>
+          <button
+            class="nav-icon hover:cursor-pointer hover:text-[var(--text-secondary)]"
             @click="handleUploadFile"
           >
             <i class="fa fa-upload" />
@@ -197,7 +218,7 @@ onMounted(async () => {
         :key="file.name"
         class="bg-[var(--bg-card)] w-full px-4 py-2 flex items-center gap-4"
         :class="{
-          'hover:bg-[var(--bg-dark)] hover:cursor-pointer':
+          'hover:bg-[var(--btn-hover)] hover:cursor-pointer':
             file.isDirectory || isKnownFile(file.name)
         }"
         @click="
@@ -209,7 +230,7 @@ onMounted(async () => {
         "
       >
         <div class="nav-icon">
-          <i v-if="file.isDirectory" class="fa fa-folder text-[var(--text-secondary)]"></i>
+          <i v-if="file.isDirectory" class="fa fa-folder text-[var(--primary)]"></i>
           <i v-else-if="file.name.includes('.zip')" class="fa fa-archive"></i>
           <i v-else class="fa fa-file"></i>
         </div>

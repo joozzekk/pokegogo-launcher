@@ -1,6 +1,6 @@
 import { is } from '@electron-toolkit/utils'
 import { app, BrowserWindow, ipcMain, shell } from 'electron'
-import { join } from 'path'
+import { basename, dirname, join, posix } from 'path'
 import icon from '../../../resources/icon.png?asset'
 import { AppUpdater } from 'electron-updater'
 import { useLoginService } from './login-service'
@@ -9,8 +9,9 @@ import { getMaxRAMInGB } from '../utils'
 import { machineId } from 'node-machine-id'
 import { address } from 'address/promises'
 import { useFTP } from './ftp-service'
-import { readFile, unlink, writeFile } from 'fs/promises'
+import { mkdir, readFile, unlink, writeFile } from 'fs/promises'
 import { createHash } from 'crypto'
+import { Client } from 'basic-ftp'
 
 const createMainWindow = (): BrowserWindow => {
   const mainWindow = new BrowserWindow({
@@ -80,10 +81,8 @@ const createMainWindow = (): BrowserWindow => {
       await writeFile(tempFilePath, Buffer.from(buffer))
       await connect()
 
-      // Upload głównego pliku
       await client.uploadFrom(tempFilePath, `${folder}/${fileName}`)
 
-      // Pobierz lub utwórz hashes.txt
       const hashes: { [key: string]: string } = {}
       try {
         await client.downloadTo(join(process.cwd(), 'tmp', 'hashes.txt'), `${folder}/hashes.txt`)
@@ -93,7 +92,7 @@ const createMainWindow = (): BrowserWindow => {
           if (!line) return
 
           const lastSpaceIndex = line.lastIndexOf(' ')
-          if (lastSpaceIndex === -1) return // niepoprawny format
+          if (lastSpaceIndex === -1) return
 
           const name = line.substring(0, lastSpaceIndex)
           const hash = line.substring(lastSpaceIndex + 1)
@@ -103,20 +102,16 @@ const createMainWindow = (): BrowserWindow => {
         // Plik może nie istnieć, to nie jest błąd
       }
 
-      // Oblicz hash nowego pliku i dodaj do obiektu
       const fileHash = await computeHash(buffer)
       hashes[fileName] = fileHash
 
-      // Stwórz nowy plik hashes.txt
       const hashesContent = Object.entries(hashes)
         .map(([name, hash]) => `${name} ${hash}`)
         .join('\n')
       await writeFile(join(process.cwd(), 'tmp', 'hashes.txt'), hashesContent)
 
-      // Upload zaktualizowanego hashes.txt
       await client.uploadFrom(join(process.cwd(), 'tmp', 'hashes.txt'), `${folder}/hashes.txt`)
 
-      // Czyszczenie
       await unlink(tempFilePath)
       await unlink(join(process.cwd(), 'tmp', 'hashes.txt'))
       client.close()
@@ -125,54 +120,188 @@ const createMainWindow = (): BrowserWindow => {
     }
   )
 
+  ipcMain.handle('ftp:upload-folder', async (_, folder: string, files: any[]) => {
+    const { client, connect } = useFTP()
+
+    const hashes: { [key: string]: string } = {}
+    const tmpDir = join(process.cwd(), 'tmp')
+    const localHashesPath = join(tmpDir, 'hashes.txt')
+
+    try {
+      await connect()
+
+      const remoteHashesPath = `${folder}${folder.length ? '/' : ''}hashes.txt`
+
+      try {
+        await client.downloadTo(localHashesPath, remoteHashesPath)
+        const data = await readFile(localHashesPath, 'utf-8')
+        data.split('\n').forEach((line) => {
+          line = line.trim()
+          if (!line) return
+          const lastSpaceIndex = line.lastIndexOf(' ')
+          if (lastSpaceIndex === -1) return
+          const name = line.substring(0, lastSpaceIndex)
+          const hash = line.substring(lastSpaceIndex + 1)
+          if (name && hash) hashes[name] = hash
+        })
+        await unlink(localHashesPath)
+      } catch (e) {
+        try {
+          await unlink(localHashesPath)
+        } catch {}
+      }
+
+      const pwd = await client.pwd()
+      const dir = join(pwd, folder)
+
+      for (const file of files) {
+        const { path, buffer } = file
+
+        const relativeDir = dirname(path)
+        const fileName = basename(path)
+
+        const remoteFolderPath = join(dir, relativeDir)
+        const remoteFilePath = fileName
+
+        const tempFileUniqueName = `${Date.now()}-${fileName}`
+        const tempFileUniquePath = join(tmpDir, tempFileUniqueName)
+
+        if (remoteFolderPath) {
+          try {
+            if (dir) {
+              await client.cd(dir)
+            } else {
+              await client.cd(await client.pwd())
+            }
+
+            await client.ensureDir(remoteFolderPath)
+          } catch (e) {
+            throw new Error(
+              `Failed to create remote directory: ${remoteFolderPath}. Details: ${e.message}`
+            )
+          }
+        }
+
+        await writeFile(tempFileUniquePath, Buffer.from(buffer))
+
+        try {
+          await client.uploadFrom(tempFileUniquePath, remoteFilePath)
+        } catch (e) {
+          await unlink(tempFileUniquePath)
+          throw e
+        }
+
+        const fileHash = await computeHash(buffer)
+        hashes[fileName] = fileHash
+
+        await unlink(tempFileUniquePath)
+      }
+
+      const hashesContent = Object.entries(hashes)
+        .map(([name, hash]) => `${name} ${hash}`)
+        .join('\n')
+
+      if (folder) {
+        await client.cd(folder)
+      } else {
+        await client.cd(await client.pwd())
+      }
+
+      await writeFile(localHashesPath, hashesContent)
+      await client.uploadFrom(localHashesPath, 'hashes.txt')
+
+      await unlink(localHashesPath)
+      client.close()
+
+      return true
+    } catch (error) {
+      try {
+        client.close()
+      } catch {}
+      try {
+        await unlink(localHashesPath)
+      } catch {}
+
+      throw error
+    }
+  })
+
+  async function removeFTPPath(client: Client, ftpPath: string): Promise<void> {
+    try {
+      const list = await client.list(ftpPath)
+
+      if (list.length === 0) {
+        await client.removeDir(ftpPath)
+      } else {
+        for (const item of list) {
+          const fullPath = ftpPath + '/' + item.name
+          if (item.isDirectory) {
+            await removeFTPPath(client, fullPath)
+          } else {
+            await client.remove(fullPath)
+          }
+        }
+        await client.removeDir(ftpPath)
+      }
+    } catch (err: any) {
+      if (err.code === 550) {
+        await client.remove(ftpPath)
+      } else {
+        throw err
+      }
+    }
+  }
+
   ipcMain.handle('ftp:remove-file', async (_, folder: string, fileName: string) => {
     const { client, connect } = useFTP()
 
     await connect()
 
-    // Usuwamy plik
-    const res = await client.remove(`${folder}/${fileName}`)
+    const fullPath = posix.join(folder, fileName)
 
-    // Aktualizacja hashes.txt
+    await removeFTPPath(client, fullPath)
+
     const hashes: { [key: string]: string } = {}
     try {
-      await client.downloadTo(join(process.cwd(), 'tmp', 'hashes.txt'), `${folder}/hashes.txt`)
-      const data = await readFile(join(process.cwd(), 'tmp', 'hashes.txt'), 'utf-8')
+      const tmpHashesPath = join(process.cwd(), 'tmp', 'hashes.txt')
+      await client.downloadTo(tmpHashesPath, `${folder}${folder.length ? '/' : ''}hashes.txt`)
+      const data = await readFile(tmpHashesPath, 'utf-8')
       data.split('\n').forEach((line) => {
-        line = line.trim()
-        if (!line) return
-
-        const lastSpaceIndex = line.lastIndexOf(' ')
-        if (lastSpaceIndex === -1) return // niepoprawny format
-
-        const name = line.substring(0, lastSpaceIndex)
-        const hash = line.substring(lastSpaceIndex + 1)
-        if (name && hash) hashes[name] = hash
+        const trimmed = line.trim()
+        if (!trimmed) return
+        const lastSpaceIndex = trimmed.lastIndexOf(' ')
+        if (lastSpaceIndex === -1) return
+        const name = trimmed.substring(0, lastSpaceIndex)
+        const hash = trimmed.substring(lastSpaceIndex + 1)
+        hashes[name] = hash
       })
 
-      // Usuwamy wpis
-      delete hashes[fileName]
+      for (const key of Object.keys(hashes)) {
+        if (key === fileName || key.startsWith(fileName + '/')) {
+          delete hashes[key]
+        }
+      }
 
       const hashesContent = Object.entries(hashes)
         .map(([name, hash]) => `${name} ${hash}`)
         .join('\n')
-      await writeFile(join(process.cwd(), 'tmp', 'hashes.txt'), hashesContent)
 
-      // Jeśli hashes.txt jest pusty, usuwamy plik na serwerze
+      await writeFile(tmpHashesPath, hashesContent)
+
       if (hashesContent.length === 0) {
-        await client.remove(`${folder}/hashes.txt`)
+        await client.remove(`${folder}${folder.length ? '/' : ''}hashes.txt`)
       } else {
-        await client.uploadFrom(join(process.cwd(), 'tmp', 'hashes.txt'), `${folder}/hashes.txt`)
+        await client.uploadFrom(tmpHashesPath, `${folder}${folder.length ? '/' : ''}hashes.txt`)
       }
 
-      await unlink(join(process.cwd(), 'tmp', 'hashes.txt'))
+      await unlink(tmpHashesPath)
     } catch {
-      // Jeśli plik hashes.txt nie istnieje, nic nie robimy
+      // jeśli plik hashes.txt nie istnieje, nic nie robimy
     }
 
     client.close()
 
-    return res
+    return true
   })
 
   ipcMain.handle('ftp:read-file', async (_, folder: string, name: string) => {
