@@ -13,18 +13,35 @@ const JAR_URLS = {
   }
 }
 
-function checkJavaInstalled(version: string): Promise<boolean | string> {
+function checkJavaInstalled(): Promise<boolean | string> {
   return new Promise((resolve) => {
-    exec('java -version', (_, stdout, stderr) => {
-      const isJavaInstalled = stdout.includes(version) || stderr.includes(version)
-
-      resolve(isJavaInstalled)
-    })
+    switch (platform()) {
+      case 'win32':
+        fsPromises
+          .readdir('C:/Program Files/java/jdk-21/bin')
+          .then((res) => {
+            if (res) {
+              resolve(true)
+            }
+          })
+          .catch(() => resolve(false))
+        break
+      case 'linux':
+        fsPromises
+          .readdir('/usr/bin/java')
+          .then((res) => {
+            if (res) {
+              resolve(true)
+            }
+          })
+          .catch(() => resolve(false))
+        break
+    }
   })
 }
 
 export async function installJava(version: string): Promise<string> {
-  const javaInstalled = await checkJavaInstalled(version)
+  const javaInstalled = await checkJavaInstalled()
   if (javaInstalled) {
     return Promise.resolve('Java jest już zainstalowana')
   }
@@ -51,18 +68,21 @@ export async function installJava(version: string): Promise<string> {
 
   if (plt === 'win32') {
     return new Promise((resolve, reject) => {
-      exec(`start /wait "" "${installerPath}" /s`, async (error) => {
-        if (error) {
-          reject(`Błąd instalacji Javy: ${error.message}`)
-          return
+      exec(
+        `start /wait "" "${installerPath}" /s INSTALLDIR="C:\\Program Files\\java"`,
+        async (error) => {
+          if (error) {
+            reject(`Błąd instalacji Javy: ${error.message}`)
+            return
+          }
+          try {
+            await fsPromises.unlink(installerPath)
+          } catch {
+            // ignoruj błędy usuwania pliku
+          }
+          resolve('Java została zainstalowana pomyślnie')
         }
-        try {
-          await fsPromises.unlink(installerPath)
-        } catch {
-          // ignoruj błędy usuwania pliku
-        }
-        resolve('Java została zainstalowana pomyślnie')
-      })
+      )
     })
   } else if (plt === 'linux') {
     return new Promise((resolve, reject) => {
