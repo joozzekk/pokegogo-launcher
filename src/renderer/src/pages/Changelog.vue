@@ -9,6 +9,7 @@ import { onMounted, ref, watch } from 'vue'
 const url = import.meta.env.RENDERER_VITE_API_URL
 const userStore = useUserStore()
 
+const selectedType = ref<string>('launcher')
 const allChangelog = ref<any[]>([])
 const isLoadingChangelog = ref<boolean>(true)
 const filteredChangelog = ref<any[]>([])
@@ -24,7 +25,9 @@ async function fetchChangelog(): Promise<void> {
 
   if (res) {
     allChangelog.value = res
-    filteredChangelog.value = [...allChangelog.value]
+    filteredChangelog.value = [
+      ...allChangelog.value.filter((changelog: any) => changelog.type === selectedType.value)
+    ]
     noResultsVisible.value = false
     isLoadingChangelog.value = false
   }
@@ -53,9 +56,25 @@ const getChangeTagByType = (type: string): string => {
 }
 
 watch(searchQuery, () => {
-  filteredChangelog.value = allChangelog.value.filter((changelog: any) =>
-    changelog.name.toLowerCase().includes(searchQuery.value.toLowerCase())
-  )
+  filteredChangelog.value = allChangelog.value
+    .filter((changelog: any) => changelog.type === selectedType.value)
+    .filter((changelog: any) =>
+      changelog.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+    )
+
+  if (!filteredChangelog.value?.length) {
+    noResultsVisible.value = true
+  } else {
+    noResultsVisible.value = false
+  }
+})
+
+watch(selectedType, () => {
+  filteredChangelog.value = allChangelog.value
+    .filter((changelog: any) => changelog.type === selectedType.value)
+    .filter((changelog: any) =>
+      changelog.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+    )
 
   if (!filteredChangelog.value?.length) {
     noResultsVisible.value = true
@@ -82,9 +101,25 @@ onMounted(async () => {
         />
       </div>
 
-      <button class="nav-icon" @click="addChangelogModalRef?.openModal(null, 'add')">
-        <i class="fa fa-plus" />
-      </button>
+      <div class="flex gap-2">
+        <button
+          class="nav-icon"
+          :class="{ active: selectedType === 'server' }"
+          @click="selectedType = 'server'"
+        >
+          <i class="fa fa-server" />
+        </button>
+        <button
+          class="nav-icon"
+          :class="{ active: selectedType === 'launcher' }"
+          @click="selectedType = 'launcher'"
+        >
+          <i class="fa fa-computer" />
+        </button>
+        <button class="nav-icon" @click="addChangelogModalRef?.openModal(null, 'add')">
+          <i class="fa fa-plus" />
+        </button>
+      </div>
     </div>
 
     <div class="changelog-timeline">

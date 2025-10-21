@@ -382,7 +382,8 @@ body {
 }
 
 .nav-item:hover .nav-icon,
-.nav-item:focus .nav-icon {
+.nav-item:focus .nav-icon,
+.nav-icon.active {
   background: var(--nav-item-hover-nav-icon);
   color: var(--primary);
 }
