@@ -207,7 +207,7 @@ onMounted(async () => {
   background: var(--bg-dark);
   padding: 0.5rem;
   font-size: 0.6rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-secondary);
   text-align: center;
   border-radius: 0 0 15px 15px;
 }
@@ -262,7 +262,7 @@ onMounted(async () => {
 
 .launch-button .info {
   font-size: 0.5rem;
-  color: var(--text-secondary);
+  color: var(--bg-dark);
 }
 
 .launch-button-bg {

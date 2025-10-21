@@ -4,7 +4,6 @@ import LaunchButton from '@renderer/components/buttons/LaunchButton.vue'
 import useGeneralStore from '@renderer/stores/general-store'
 import poke from '@renderer/assets/img/poke.png'
 import superEvent from '@renderer/assets/img/superEvent.png'
-import Select from '@renderer/components/Select.vue'
 import { getEvents, getServerStatus } from '@renderer/api/endpoints'
 import { LOGGER } from '@renderer/services/logger-service'
 import { format, parseISO } from 'date-fns'
@@ -16,7 +15,6 @@ const serverStatus = ref<{ players: { online: number } } | null>(null)
 
 const events = ref<any[]>([])
 
-const versions = [{ label: 'PokemonGoGo.pl', value: 'PokemonGoGo.pl' }]
 const serverStatusInterval = ref<unknown>()
 
 const normalEvents = computed(() => {
@@ -59,8 +57,6 @@ onMounted(async () => {
             </div>
             <h2>Graj Teraz</h2>
           </div>
-
-          <Select v-model="generalStore.settings.version" :options="versions" />
         </div>
 
         <div class="server-showcase">

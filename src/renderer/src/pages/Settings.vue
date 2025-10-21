@@ -1,12 +1,12 @@
 <script lang="ts" setup>
 import { changeEmail, changePassword } from '@renderer/api/endpoints'
 import { applyTheme, themes } from '@renderer/assets/theme/official'
-import Select from '@renderer/components/Select.vue'
 import useGeneralStore from '@renderer/stores/general-store'
 import useUserStore from '@renderer/stores/user-store'
 import { calculateValueFromPercentage, MIN_RAM, showToast } from '@renderer/utils'
 import useVuelidate from '@vuelidate/core'
 import { helpers, required, sameAs } from '@vuelidate/validators'
+import SelectButton from 'primevue/selectbutton'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 
 const userStore = useUserStore()
@@ -53,12 +53,6 @@ const emailV$ = useVuelidate(
 
 const sliderRef = ref<HTMLInputElement | null>(null)
 const displayRef = ref<HTMLInputElement | null>(null)
-const javaVersions = [
-  {
-    label: 'Java 21 (Zalecana)',
-    value: 21
-  }
-]
 
 const percent = ref(0)
 
@@ -159,7 +153,7 @@ const handleChangeEmail = async (): Promise<void> => {
 
 <template>
   <div class="settings-container">
-    <div class="settings-grid card-panel">
+    <div class="settings-grid card-panel min-h-full overflow-y-auto">
       <div>
         <div class="card-header">
           <div class="card-title">
@@ -200,14 +194,14 @@ const handleChangeEmail = async (): Promise<void> => {
           <label>Tryb wyświetlania gry</label>
           <div class="toggle-group">
             <button
-              class="toggle-option"
+              class="toggle-option !py-[0.25rem]"
               :class="{ active: generalStore.settings.displayMode === 'Okno' }"
               @click="generalStore.settings.displayMode = 'Okno'"
             >
               Okno
             </button>
             <button
-              class="toggle-option"
+              class="toggle-option !py-[0.25rem]"
               :class="{ active: generalStore.settings.displayMode === 'Pełny ekran' }"
               @click="generalStore.settings.displayMode = 'Pełny ekran'"
             >
@@ -220,21 +214,21 @@ const handleChangeEmail = async (): Promise<void> => {
           <label>Rozdzielczość</label>
           <div class="toggle-group">
             <button
-              class="toggle-option"
+              class="toggle-option !py-[0.25rem]"
               :class="{ active: generalStore.settings.resolution === '1920x1080' }"
               @click="changeResolution('1920x1080')"
             >
               1920x1080
             </button>
             <button
-              class="toggle-option"
+              class="toggle-option !py-[0.25rem]"
               :class="{ active: generalStore.settings.resolution === '1366x768' }"
               @click="changeResolution('1366x768')"
             >
               1366x768
             </button>
             <button
-              class="toggle-option"
+              class="toggle-option !py-[0.25rem]"
               :class="{ active: generalStore.settings.resolution === '1200x720' }"
               @click="changeResolution('1200x720')"
             >
@@ -243,18 +237,73 @@ const handleChangeEmail = async (): Promise<void> => {
           </div>
         </div>
 
-        <div class="card-header">
+        <div class="card-header !mb-0">
           <div class="card-title">
             <div class="nav-icon">
-              <i class="fas fa-coffee"></i>
+              <i class="fas fa-user"></i>
             </div>
-            <h2>Ustawienia Javy</h2>
+            <h2>Ustawienia launchera</h2>
           </div>
         </div>
 
-        <div class="setting-group">
-          <label>Wersja Java</label>
-          <Select v-model="generalStore.settings.javaVersion" :options="javaVersions" disabled />
+        <div
+          v-if="userStore.user?.role === 'admin'"
+          class="my-0 flex flex-row items-center justify-between"
+        >
+          <div class="text-[var(--text-secondary)]">Motyw</div>
+
+          <div class="flex gap-2 my-4">
+            <button
+              v-for="theme in themes"
+              :key="theme.primary"
+              class="nav-icon !w-[2rem] !h-[2rem] !text-[1rem]"
+              @click="applyTheme(theme)"
+            >
+              <i class="fa fa-home" :style="{ color: theme.primary }" />
+            </button>
+          </div>
+        </div>
+
+        <div class="my-0 flex flex-row items-center justify-between">
+          <div class="text-[var(--text-secondary)]">Powiadomienia</div>
+
+          <div class="flex items-center gap-2">
+            <button
+              class="toggle-option !py-[0.25rem]"
+              :class="{ active: generalStore.settings.showNotifications === true }"
+              @click="generalStore.setShowNotifications(true)"
+            >
+              Włączone
+            </button>
+            <button
+              class="toggle-option !py-[0.25rem]"
+              :class="{ active: generalStore.settings.showNotifications === false }"
+              @click="generalStore.setShowNotifications(false)"
+            >
+              Wyłączone
+            </button>
+          </div>
+        </div>
+
+        <div class="my-0 mt-4 flex flex-row items-center justify-between">
+          <div class="text-[var(--text-secondary)]">Ukrywanie w zasobniku</div>
+
+          <div class="flex items-center gap-2">
+            <button
+              class="toggle-option !py-[0.25rem]"
+              :class="{ active: generalStore.settings.hideToTray === true }"
+              @click="generalStore.setHideToTray(true)"
+            >
+              Włączone
+            </button>
+            <button
+              class="toggle-option !py-[0.25rem]"
+              :class="{ active: generalStore.settings.hideToTray === false }"
+              @click="generalStore.setHideToTray(false)"
+            >
+              Wyłączone
+            </button>
+          </div>
         </div>
       </div>
 
@@ -264,7 +313,7 @@ const handleChangeEmail = async (): Promise<void> => {
             <div class="nav-icon">
               <i class="fas fa-user"></i>
             </div>
-            <h2>Ustawienia launchera</h2>
+            <h2>Ustawienia Konta</h2>
           </div>
 
           <div class="settings-actions">
@@ -274,70 +323,6 @@ const handleChangeEmail = async (): Promise<void> => {
             <button id="resetSettings" class="nav-icon" @click="resetSettings">
               <i class="fas fa-undo"></i>
             </button>
-          </div>
-        </div>
-
-        <div v-if="userStore.user?.role === 'admin'" class="setting-group">
-          <label>Motyw</label>
-
-          <div class="flex gap-2">
-            <button
-              v-for="theme in themes"
-              :key="theme.primary"
-              class="nav-icon !w-[3rem] !h-[3rem] !text-[1.5rem]"
-              @click="applyTheme(theme)"
-            >
-              <i class="fa fa-home" :style="{ color: theme.primary }" />
-            </button>
-          </div>
-        </div>
-
-        <div class="setting-group">
-          <label>Otrzymywanie powiadmień</label>
-          <div class="toggle-group">
-            <button
-              class="toggle-option"
-              :class="{ active: generalStore.settings.showNotifications === true }"
-              @click="generalStore.setShowNotifications(true)"
-            >
-              Otrzymuj
-            </button>
-            <button
-              class="toggle-option"
-              :class="{ active: generalStore.settings.showNotifications === false }"
-              @click="generalStore.setShowNotifications(false)"
-            >
-              Nie powiadamiaj
-            </button>
-          </div>
-        </div>
-
-        <div class="setting-group">
-          <label>Wyłączanie launchera</label>
-          <div class="toggle-group">
-            <button
-              class="toggle-option"
-              :class="{ active: generalStore.settings.hideToTray === true }"
-              @click="generalStore.setHideToTray(true)"
-            >
-              Do zasobnika
-            </button>
-            <button
-              class="toggle-option"
-              :class="{ active: generalStore.settings.hideToTray === false }"
-              @click="generalStore.setHideToTray(false)"
-            >
-              Całkowite wyłączanie
-            </button>
-          </div>
-        </div>
-
-        <div class="card-header">
-          <div class="card-title">
-            <div class="nav-icon">
-              <i class="fas fa-user"></i>
-            </div>
-            <h2>Ustawienia Konta</h2>
           </div>
         </div>
 
@@ -367,93 +352,99 @@ const handleChangeEmail = async (): Promise<void> => {
               Zmień email
             </button>
           </div>
-        </div>
-        <div v-if="accountType === 'backend'" class="flex flex-col gap-2">
-          <div class="form-group">
-            <div class="input-wrapper">
-              <i class="fas fa-lock input-icon"></i>
-              <input
-                v-model="state.old"
-                :type="!state.showedOld ? 'password' : 'text'"
-                class="form-input"
-                placeholder="Stare hasło"
-                :class="{ invalid: v$.old.$error }"
-                required
-              />
-              <button
-                id="login-toggle"
-                type="button"
-                class="password-toggle"
-                @click="state.showedOld = !state.showedOld"
-              >
-                <i v-if="state.showedOld" class="far fa-eye-slash"></i>
-                <i v-else class="far fa-eye"></i>
-              </button>
-              <div class="input-line"></div>
-            </div>
-            <div class="error-message" :class="{ show: v$.old.$error }">
-              {{ v$.old.$errors[0]?.$message }}
-            </div>
-          </div>
 
-          <div class="form-group">
-            <div class="input-wrapper">
-              <i class="fas fa-lock input-icon"></i>
-              <input
-                v-model="state.new"
-                :type="!state.showedNew ? 'password' : 'text'"
-                class="form-input"
-                placeholder="Hasło"
-                :class="{ invalid: v$.new.$error }"
-                required
-              />
-              <button
-                id="login-toggle"
-                type="button"
-                class="password-toggle"
-                @click="state.showedNew = !state.showedNew"
-              >
-                <i v-if="state.showedNew" class="far fa-eye-slash"></i>
-                <i v-else class="far fa-eye"></i>
-              </button>
-              <div class="input-line"></div>
+          <template v-if="accountType === 'backend'">
+            <label class="mt-[11px]">Zmiana hasła</label>
+            <div class="form-group" :class="{ '!mb-5': v$.old.$error }">
+              <div class="input-wrapper">
+                <i class="fas fa-lock input-icon"></i>
+                <input
+                  v-model="state.old"
+                  :type="!state.showedOld ? 'password' : 'text'"
+                  class="form-input"
+                  placeholder="Stare hasło"
+                  :class="{ invalid: v$.old.$error }"
+                  required
+                />
+                <button
+                  id="login-toggle"
+                  type="button"
+                  class="password-toggle"
+                  @click="state.showedOld = !state.showedOld"
+                >
+                  <i v-if="state.showedOld" class="far fa-eye-slash"></i>
+                  <i v-else class="far fa-eye"></i>
+                </button>
+                <div class="input-line"></div>
+              </div>
+              <div class="error-message" :class="{ show: v$.old.$error }">
+                {{ v$.old.$errors[0]?.$message }}
+              </div>
             </div>
-            <div class="error-message" :class="{ show: v$.new.$error }">
-              {{ v$.new.$errors[0]?.$message }}
-            </div>
-          </div>
 
-          <div class="form-group">
-            <div class="input-wrapper">
-              <i class="fas fa-lock input-icon"></i>
-              <input
-                v-model="state.repeatNew"
-                :type="!state.showedRepeatNew ? 'password' : 'text'"
-                class="form-input"
-                placeholder="Potwórz hasło"
-                :class="{ invalid: v$.repeatNew.$error }"
-                required
-              />
-              <button
-                id="login-toggle"
-                type="button"
-                class="password-toggle"
-                @click="state.showedRepeatNew = !state.showedRepeatNew"
-              >
-                <i v-if="state.showedRepeatNew" class="far fa-eye-slash"></i>
-                <i v-else class="far fa-eye"></i>
-              </button>
-              <div class="input-line"></div>
+            <div class="form-group" :class="{ '!mb-5': v$.new.$error }">
+              <div class="input-wrapper">
+                <i class="fas fa-lock input-icon"></i>
+                <input
+                  v-model="state.new"
+                  :type="!state.showedNew ? 'password' : 'text'"
+                  class="form-input"
+                  placeholder="Hasło"
+                  :class="{ invalid: v$.new.$error }"
+                  required
+                />
+                <button
+                  id="login-toggle"
+                  type="button"
+                  class="password-toggle"
+                  @click="state.showedNew = !state.showedNew"
+                >
+                  <i v-if="state.showedNew" class="far fa-eye-slash"></i>
+                  <i v-else class="far fa-eye"></i>
+                </button>
+                <div class="input-line"></div>
+              </div>
+              <div class="error-message" :class="{ show: v$.new.$error }">
+                {{ v$.new.$errors[0]?.$message }}
+              </div>
             </div>
-            <div class="error-message" :class="{ show: v$.repeatNew.$error }">
-              {{ v$.repeatNew.$errors[0]?.$message }}
-            </div>
-          </div>
 
-          <button class="btn-primary max-w-1/2" @click="handleChangePassword">
-            <i class="fas fa-edit"></i>
-            Zmień hasło
-          </button>
+            <div class="form-group" :class="{ '!mb-5': v$.repeatNew.$error }">
+              <div class="input-wrapper">
+                <i class="fas fa-lock input-icon"></i>
+                <input
+                  v-model="state.repeatNew"
+                  :type="!state.showedRepeatNew ? 'password' : 'text'"
+                  class="form-input"
+                  placeholder="Potwórz hasło"
+                  :class="{ invalid: v$.repeatNew.$error }"
+                  required
+                />
+                <button
+                  id="login-toggle"
+                  type="button"
+                  class="password-toggle"
+                  @click="state.showedRepeatNew = !state.showedRepeatNew"
+                >
+                  <i v-if="state.showedRepeatNew" class="far fa-eye-slash"></i>
+                  <i v-else class="far fa-eye"></i>
+                </button>
+                <div class="input-line"></div>
+              </div>
+              <div class="error-message" :class="{ show: v$.repeatNew.$error }">
+                {{ v$.repeatNew.$errors[0]?.$message }}
+              </div>
+            </div>
+
+            <button
+              class="btn-primary max-w-1/2"
+              :class="{ 'mt-2': v$.repeatNew.$error }"
+              @click="handleChangePassword"
+            >
+              <i class="fas fa-edit"></i>
+              Zmień hasło
+            </button>
+          </template>
         </div>
       </div>
     </div>
