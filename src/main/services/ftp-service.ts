@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import ftp, { type Client } from 'basic-ftp'
 import { createHash } from 'crypto'
 import { ipcMain } from 'electron'
@@ -168,7 +169,7 @@ export const useFTPService = (): {
           if (name && hash) hashes[name] = hash
         })
         await unlink(localTempPath)
-      } catch (e) {
+      } catch {
         // Błąd (np. brak pliku) jest OK, oznacza to, że nie ma starych hashy
         try {
           await unlink(localTempPath) // Posprzątaj, jeśli pobieranie się udało, a czytanie nie
@@ -309,7 +310,6 @@ export const useFTPService = (): {
           }
           await client.removeDir(ftpPath)
         }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         if (err.code === 550) {
           await client.remove(ftpPath)
