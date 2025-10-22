@@ -153,7 +153,7 @@ const handleChangeUpdateChannel = async (channel: string): Promise<void> => {
   generalStore.settings.updateChannel = channel
   generalStore.saveSettings()
   await checkUpdate()
-  showToast('App is up-to-date.')
+  showToast(generalStore.isUpdateAvailable ? 'Update available.' : 'App is up-to-date.')
 }
 
 onUnmounted(() => {
@@ -212,9 +212,9 @@ onUnmounted(() => {
               type="range"
               :min="MIN_RAM"
               :max="generalStore.settings.maxRAM"
-              :step="0.5"
+              :step="1"
             />
-            <div id="ramDisplay" ref="displayRef" class="ram-display">6 GB</div>
+            <div ref="displayRef" class="ram-display"></div>
             <div class="ram-markers">
               <span>{{ MIN_RAM }}GB</span>
               <span
