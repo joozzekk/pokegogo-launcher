@@ -102,7 +102,7 @@ const useGeneralStore = defineStore('general', () => {
     settings.displayMode = 'Okno'
     settings.theme = 'Dark'
     settings.autoUpdate = true
-    settings.updateChannel = 'dev'
+    settings.updateChannel = 'beta'
     saveSettings()
   }
 

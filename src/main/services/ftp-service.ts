@@ -124,114 +124,168 @@ export const useFTPService = (): {
       }
     )
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ipcMain.handle('ftp:upload-folder', async (_, folder: string, files: any[]) => {
+    function groupFilesByDirectory(files: any[]): Map<string, any[]> {
+      const directoryMap = new Map<string, any[]>()
+
+      for (const file of files) {
+        // Używamy normalizedPath (z ukośnikami /) dla spójności
+        const normalizedPath = file.path.replace(/\\/g, '/')
+        const dir = dirname(normalizedPath)
+
+        if (!directoryMap.has(dir)) {
+          directoryMap.set(dir, [])
+        }
+        // Dodajemy plik z już znormalizowaną ścieżką
+        directoryMap.get(dir)!.push({ ...file, path: normalizedPath })
+      }
+      return directoryMap
+    }
+
+    /**
+     * Funkcja pomocnicza do wczytania i sparsowania pliku hashes.txt
+     */
+    async function loadRemoteHashes(
+      remoteDir: string,
+      localTempPath: string
+    ): Promise<{ [key: string]: string }> {
       const hashes: { [key: string]: string } = {}
+      const remoteHashesPath = join(remoteDir, 'hashes.txt').replace(/\\/g, '/')
+
+      try {
+        // Pobierz plik hashes.txt z konkretnego katalogu
+        await client.downloadTo(localTempPath, remoteHashesPath)
+
+        const data = await readFile(localTempPath, 'utf-8')
+        data.split('\n').forEach((line) => {
+          line = line.trim()
+          if (!line) return
+          const lastSpaceIndex = line.lastIndexOf(' ')
+          if (lastSpaceIndex === -1) return
+
+          // Ważne: w hashes.txt przechowujemy tylko NAZWY PLIKÓW (basename)
+          const name = line.substring(0, lastSpaceIndex)
+          const hash = line.substring(lastSpaceIndex + 1)
+          if (name && hash) hashes[name] = hash
+        })
+        await unlink(localTempPath)
+      } catch (e) {
+        // Błąd (np. brak pliku) jest OK, oznacza to, że nie ma starych hashy
+        try {
+          await unlink(localTempPath) // Posprzątaj, jeśli pobieranie się udało, a czytanie nie
+        } catch {
+          /* Ignoruj błąd usuwania */
+        }
+      }
+      return hashes
+    }
+
+    // --- Główna funkcja IPC ---
+
+    ipcMain.handle('ftp:upload-folder', async (_, folder: string, files: any[]) => {
       const tmpDir = join(process.cwd(), 'tmp')
-      const localHashesPath = join(tmpDir, 'hashes.txt')
+      // Użyjemy jednej tymczasowej ścieżki dla wszystkich plików hashes.txt
+      const localHashesPath = join(tmpDir, 'hashes.temp.txt')
+      // Użyjemy jednej tymczasowej ścieżki dla wysyłanych plików
+      const localUploadTempPath = join(tmpDir, 'upload.temp.bin')
 
       try {
         await connect()
 
-        const remoteHashesPath = `${folder}${folder.length ? '/' : ''}hashes.txt`
-
-        try {
-          await client.downloadTo(localHashesPath, remoteHashesPath.replace(/\\/g, '/'))
-          const data = await readFile(localHashesPath, 'utf-8')
-          data.split('\n').forEach((line) => {
-            line = line.trim()
-            if (!line) return
-            const lastSpaceIndex = line.lastIndexOf(' ')
-            if (lastSpaceIndex === -1) return
-            const name = line.substring(0, lastSpaceIndex)
-            const hash = line.substring(lastSpaceIndex + 1)
-            if (name && hash) hashes[name] = hash
-          })
-          await unlink(localHashesPath)
-        } catch {
-          try {
-            await unlink(localHashesPath)
-          } catch {
-            /* Ignore error in */
-          }
-        }
-
         const pwd = await client.pwd()
-        const dir = join(pwd, folder).replace(/\\/g, '/')
+        // Główny folder projektu na serwerze, np. /home/user/my-project
+        const baseRemoteDir = join(pwd, folder).replace(/\\/g, '/')
 
-        for (const file of files) {
-          const { path, buffer } = file
+        // 1. Pogrupuj pliki według ich katalogów
+        const filesByDir = groupFilesByDirectory(files)
 
-          const normalizedPath = path.replace(/\\/g, '/')
+        // 2. Przejdź pętlą po każdym katalogu, który zawiera pliki
+        for (const [relativeDir, filesInDir] of filesByDir.entries()) {
+          // Katalog na serwerze, do którego będziemy wysyłać, np. /home/user/my-project/src/components
+          // Jeśli relativeDir to '.', baseRemoteDir pozostanie niezmieniony
+          const currentRemoteDir =
+            relativeDir === '.'
+              ? baseRemoteDir
+              : join(baseRemoteDir, relativeDir).replace(/\\/g, '/')
 
-          const relativeDir = dirname(normalizedPath)
-          const fileName = basename(normalizedPath)
-
-          const remoteFolderPath = join(dir, relativeDir)
-          const remoteFilePath = fileName
-
-          const tempFileUniqueName = `${Date.now()}-${fileName}`
-          const tempFileUniquePath = join(tmpDir, tempFileUniqueName)
-
-          if (remoteFolderPath) {
-            try {
-              if (dir) {
-                await client.cd(dir.replace(/\\/g, '/'))
-              } else {
-                await client.cd(await client.pwd())
-              }
-
-              await client.ensureDir(remoteFolderPath.replace(/\\/g, '/'))
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            } catch (e: any) {
-              throw new Error(
-                `Failed to create remote directory: ${remoteFolderPath.replace(/\\/g, '/')}. Details: ${e.message}`
-              )
-            }
-          }
-
-          await writeFile(tempFileUniquePath, Buffer.from(buffer))
-
+          // Upewnij się, że katalog istnieje i do niego przejdź
           try {
-            await client.uploadFrom(tempFileUniquePath, remoteFilePath.replace(/\\/g, '/'))
-          } catch (e) {
-            await unlink(tempFileUniquePath)
-            throw e
+            await client.ensureDir(currentRemoteDir)
+            await client.cd(currentRemoteDir)
+          } catch (e: any) {
+            throw new Error(`Failed to cd/ensureDir ${currentRemoteDir}. Details: ${e.message}`)
           }
 
-          const fileHash = await computeHash(buffer)
-          hashes[fileName] = fileHash
+          // 3. Wczytaj istniejący plik hashes.txt z TEGO katalogu
+          // hashes przechowuje teraz wpisy typu { 'Button.js': 'hash123' }
+          const hashes = await loadRemoteHashes(currentRemoteDir, localHashesPath)
 
-          await unlink(tempFileUniquePath)
-        }
+          let hashesChanged = false // Flaga, czy trzeba będzie wgrać nowy hashes.txt
 
-        const hashesContent = Object.entries(hashes)
-          .map(([name, hash]) => `${name} ${hash}`)
-          .join('\n')
+          // 4. Przejdź pętlą po plikach w tym katalogu
+          for (const file of filesInDir) {
+            const { path: normalizedPath, buffer } = file
+            const fileName = basename(normalizedPath) // Np. 'Button.js'
 
-        if (folder) {
-          await client.cd(folder)
-        } else {
-          await client.cd(await client.pwd())
-        }
+            // Oblicz hash dla pliku z bufora
+            const fileHash = await computeHash(buffer)
 
-        await writeFile(localHashesPath, hashesContent)
-        await client.uploadFrom(localHashesPath, 'hashes.txt')
+            // TODO: Tutaj powinieneś dodać logikę porównywania hashy
+            // if (hashes[fileName] === fileHash) {
+            //   console.log(`Skipping ${normalizedPath} (hash matches)`);
+            //   continue; // Pomiń wysyłanie, jeśli hash się zgadza
+            // }
 
-        await unlink(localHashesPath)
+            // Przygotuj plik lokalnie
+            await writeFile(localUploadTempPath, Buffer.from(buffer))
+
+            try {
+              // Wysyłamy plik używając TYLKO jego nazwy (fileName),
+              // ponieważ jesteśmy już w odpowiednim katalogu (client.cd)
+              await client.uploadFrom(localUploadTempPath, fileName)
+            } catch (e) {
+              await unlink(localUploadTempPath) // Sprzątanie po błędzie
+              throw e
+            }
+
+            // Zaktualizuj hash dla tego pliku i oznacz, że plik hashes.txt wymaga aktualizacji
+            hashes[fileName] = fileHash
+            hashesChanged = true
+
+            await unlink(localUploadTempPath) // Sprzątanie po sukcesie
+          } // Koniec pętli po plikach
+
+          // 5. Jeśli cokolwiek się zmieniło, zapisz i wyślij nowy plik hashes.txt
+          if (hashesChanged) {
+            const hashesContent = Object.entries(hashes)
+              .map(([name, hash]) => `${name} ${hash}`) // name to już jest basename
+              .join('\n')
+
+            // Jesteśmy już w `currentRemoteDir`
+            await writeFile(localHashesPath, hashesContent)
+            await client.uploadFrom(localHashesPath, 'hashes.txt')
+            await unlink(localHashesPath)
+          }
+        } // Koniec pętli po katalogach
+
         client.close()
-
         return true
       } catch (error) {
         try {
           client.close()
         } catch {
-          /* Ignore */
+          /* Ignoruj */
         }
+
+        // Posprzątaj pliki tymczasowe na wszelki wypadek
         try {
           await unlink(localHashesPath)
         } catch {
-          /* Ignore */
+          /* Ignoruj */
+        }
+        try {
+          await unlink(localUploadTempPath)
+        } catch {
+          /* Ignoruj */
         }
 
         throw error
