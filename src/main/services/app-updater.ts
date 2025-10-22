@@ -20,28 +20,55 @@ export const useAppUpdater = (win: BrowserWindow): AppUpdater => {
     win.webContents.send('update:available', false)
   })
 
-  ipcMain.handle('update:check', async (_event, showNotifications: boolean) => {
-    const res = await autoUpdater.checkForUpdates()
+  ipcMain.handle(
+    'update:check',
+    async (_event, channel?: string, showNotifications: boolean = true) => {
+      if (channel) {
+        autoUpdater.channel = channel
+        console.log(`Ustawiono kanał aktualizacji na: ${autoUpdater.channel}`)
+      } else {
+        autoUpdater.channel = 'beta'
+      }
 
-    if (res?.isUpdateAvailable && showNotifications) {
-      const updateNotify = new Notification({
-        icon: update,
-        title: 'Hej, nowa wersja launchera już czeka 👻',
-        body: 'Pobierz najnowszą wersję launchera i już teraz ciesz się najnowszymi funkcjami 😉'
-      })
+      try {
+        const res = await autoUpdater.checkForUpdates()
 
-      updateNotify.on('click', () => {
-        win.show()
-      })
+        if (res) console.log(res)
 
-      if (!notified) {
-        updateNotify.show()
-        notified = true
+        if (
+          res?.updateInfo &&
+          res.updateInfo.version !== autoUpdater.currentVersion &&
+          showNotifications
+        ) {
+          const isUpdateAvailable =
+            !!res.updateInfo && res.updateInfo.version !== autoUpdater.currentVersion
+
+          if (isUpdateAvailable) {
+            const updateNotify = new Notification({
+              icon: update,
+              title: 'Hej, nowa wersja launchera już czeka 👻',
+              body: 'Pobierz najnowszą wersję launchera i już teraz ciesz się najnowszymi funkcjami 😉'
+            })
+
+            updateNotify.on('click', () => {
+              win.show()
+            })
+
+            if (!notified) {
+              updateNotify.show()
+              notified = true
+            }
+          }
+          return isUpdateAvailable
+        }
+
+        return res?.updateInfo && res.updateInfo.version !== autoUpdater.currentVersion
+      } catch (error) {
+        console.error('Błąd podczas sprawdzania aktualizacji:', error)
+        return false
       }
     }
-
-    return res?.isUpdateAvailable ?? false
-  })
+  )
 
   ipcMain.handle('update:start', async () => {
     await autoUpdater.downloadUpdate()

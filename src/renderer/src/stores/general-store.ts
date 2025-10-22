@@ -20,7 +20,8 @@ const useGeneralStore = defineStore('general', () => {
     version: 'PokemonGoGo.pl',
     displayMode: 'Okno',
     theme: halloween,
-    autoUpdate: false
+    autoUpdate: false,
+    updateChannel: 'beta'
   }
 
   const savedSettings = localStorage.getItem('launcherSettings')
@@ -81,6 +82,7 @@ const useGeneralStore = defineStore('general', () => {
       if (loaded.displayMode) settings.displayMode = loaded.displayMode
       if (loaded.theme) settings.theme = loaded.theme
       if (typeof loaded.autoUpdate === 'boolean') settings.autoUpdate = loaded.autoUpdate
+      if (loaded.updateChannel) settings.updateChannel = loaded.updateChannel
     } catch {
       // brak obsługi błędu
     }
@@ -100,6 +102,7 @@ const useGeneralStore = defineStore('general', () => {
     settings.displayMode = 'Okno'
     settings.theme = 'Dark'
     settings.autoUpdate = false
+    settings.updateChannel = 'dev'
     saveSettings()
   }
 

@@ -56,14 +56,11 @@ const handleInstallUpdate = async (): Promise<void> => {
   }
 }
 
-const parsedAppVersion = computed(() => {
-  return generalStore.appVersion.split('-')[1]
-})
-
 const checkUpdate = async (): Promise<void> => {
   LOGGER.log('Checking for update..')
   const res = await window.electron?.ipcRenderer?.invoke(
     'update:check',
+    generalStore.settings.updateChannel,
     generalStore.settings.showNotifications
   )
 
@@ -142,7 +139,7 @@ onUnmounted(() => {
     </div>
 
     <div class="flex ml-auto mr-[9rem] items-center gap-2">
-      <div class="applogo-badge">{{ parsedAppVersion }}</div>
+      <div class="applogo-badge">{{ generalStore.settings.updateChannel }}</div>
 
       <button
         v-if="isUpdateAvailable"

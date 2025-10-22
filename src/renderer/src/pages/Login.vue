@@ -204,15 +204,15 @@ onMounted(() => {
     </div>
     <footer class="footer">
       <div class="footer-links">
-        <a href="#" class="footer-link" @click="handleDiscordLink">
+        <a href="#" class="footer-link" @click="handleDiscordLink" @dragstart.prevent="null">
           <i class="fab fa-discord"></i>
           <span>Discord</span>
         </a>
-        <a href="#" class="footer-link" @click="handleRulesLink">
+        <a href="#" class="footer-link" @click="handleRulesLink" @dragstart.prevent="null">
           <i class="fas fa-file-contract"></i>
           <span>Regulamin</span>
         </a>
-        <a href="#" class="footer-link" @click="handleHelpLink">
+        <a href="#" class="footer-link" @click="handleHelpLink" @dragstart.prevent="null">
           <i class="fas fa-question-circle"></i>
           <span>Pomoc</span>
         </a>

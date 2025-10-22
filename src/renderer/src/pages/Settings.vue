@@ -6,7 +6,7 @@ import useUserStore from '@renderer/stores/user-store'
 import { calculateValueFromPercentage, MIN_RAM, showToast } from '@renderer/utils'
 import useVuelidate from '@vuelidate/core'
 import { helpers, required, sameAs } from '@vuelidate/validators'
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 
 const userStore = useUserStore()
 const generalStore = useGeneralStore()
@@ -148,6 +148,10 @@ const handleChangeEmail = async (): Promise<void> => {
     return
   }
 }
+
+onUnmounted(() => {
+  generalStore.saveSettings()
+})
 </script>
 
 <template>
@@ -305,6 +309,30 @@ const handleChangeEmail = async (): Promise<void> => {
               @click="generalStore.setHideToTray(false)"
             >
               Wyłączone
+            </button>
+          </div>
+        </div>
+
+        <div
+          v-if="userStore.user?.role === 'admin'"
+          class="my-0 mt-4 flex flex-row items-center justify-between"
+        >
+          <div class="text-[var(--text-secondary)] w-full">Kanał aktualizacji</div>
+
+          <div class="flex items-center gap-2">
+            <button
+              class="toggle-option !py-[0.25rem]"
+              :class="{ active: generalStore.settings.updateChannel === 'beta' }"
+              @click="generalStore.settings.updateChannel = 'beta'"
+            >
+              Beta
+            </button>
+            <button
+              class="toggle-option !py-[0.25rem]"
+              :class="{ active: generalStore.settings.updateChannel === 'dev' }"
+              @click="generalStore.settings.updateChannel = 'dev'"
+            >
+              Dev
             </button>
           </div>
         </div>
