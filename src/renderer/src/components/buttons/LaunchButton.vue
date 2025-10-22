@@ -143,7 +143,7 @@ onMounted(async () => {
 <template>
   <div
     class="launch-button-container"
-    :class="{ 'margin-64': generalStore.currentState === 'files-verify' }"
+    :class="{ 'margin-36': generalStore.currentState === 'files-verify' }"
   >
     <button
       id="launchBtn"
@@ -194,18 +194,19 @@ onMounted(async () => {
   position: relative;
 }
 
-.margin-64 {
-  margin-bottom: 42px;
+.margin-36 {
+  margin-bottom: 2.5rem;
 }
 
 .launch-button-info {
   width: 100%;
-  height: 30px;
+  height: 2rem;
   position: absolute;
-  top: 100%;
+  top: 90%;
   width: 100%;
   background: var(--bg-dark);
-  padding: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  padding-top: 0.75rem;
   font-size: 0.6rem;
   color: var(--text-secondary);
   text-align: center;
