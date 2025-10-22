@@ -8,19 +8,6 @@ export const useAppUpdater = (win: BrowserWindow): AppUpdater => {
   let notified = false
   const autoUpdater = getAutoUpdater()
 
-  autoUpdater.on('update-available', () => {
-    win.webContents.send('update:available', true)
-  })
-  autoUpdater.on('update-not-available', () => {
-    win.webContents.send('update:available', false)
-  })
-  autoUpdater.on('error', (err) => {
-    Logger.log('Auth err: ', err)
-  })
-  autoUpdater.on('update-downloaded', () => {
-    win.webContents.send('update:available', false)
-  })
-
   ipcMain.handle(
     'update:check',
     async (_event, channel?: string, showNotifications: boolean = true): Promise<boolean> => {
@@ -38,11 +25,11 @@ export const useAppUpdater = (win: BrowserWindow): AppUpdater => {
 
         if (
           res?.updateInfo &&
-          res.updateInfo.version !== autoUpdater.currentVersion &&
+          res.updateInfo.version !== autoUpdater.currentVersion.version &&
           showNotifications
         ) {
           const isUpdateAvailable =
-            !!res.updateInfo && res.updateInfo.version !== autoUpdater.currentVersion
+            !!res.updateInfo && res.updateInfo.version !== autoUpdater.currentVersion.version
 
           if (isUpdateAvailable) {
             const updateNotify = new Notification({
@@ -63,7 +50,9 @@ export const useAppUpdater = (win: BrowserWindow): AppUpdater => {
           return isUpdateAvailable
         }
 
-        return res?.updateInfo ? res.updateInfo.version !== autoUpdater.currentVersion : false
+        return res?.updateInfo
+          ? res.updateInfo.version !== autoUpdater.currentVersion.version
+          : false
       } catch (error) {
         Logger.error('Błąd podczas sprawdzania aktualizacji:', error)
         return false
