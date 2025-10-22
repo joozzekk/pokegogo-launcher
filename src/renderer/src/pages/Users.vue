@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { fetchAllPlayers } from '@renderer/api/endpoints'
 import BanPlayerModal from '@renderer/components/modals/BanPlayerModal.vue'
+import PasswordResetConfirm from '@renderer/components/modals/PasswordResetConfirm.vue'
 import { IUser } from '@renderer/env'
 import useUserStore from '@renderer/stores/user-store'
 import { format } from 'date-fns'
@@ -15,6 +16,7 @@ const searchQuery = ref('')
 const expandedPlayer = ref<IUser | null>(null)
 const noResultsVisible = ref(false)
 const banPlayerModalRef = ref()
+const passwordResetModalRef = ref()
 
 async function loadPlayerData(): Promise<void> {
   isLoadingPlayers.value = true
@@ -62,6 +64,10 @@ const handleLauncherBan = async (player: IUser): Promise<void> => {
 
 const handleLauncherUnban = async (player: IUser): Promise<void> => {
   banPlayerModalRef.value?.openModal(player, 'unban')
+}
+
+const handleResetPassword = async (player: IUser): Promise<void> => {
+  passwordResetModalRef.value?.openModal(player)
 }
 
 const getPlayerID = (player: IUser): string => {
@@ -201,10 +207,18 @@ onUnmounted(() => {
                       >
                         <i :class="'fas fa-ban'"></i>
                       </button>
+
                       <button v-else class="unban-btn" @click="handleLauncherUnban(player)">
                         <i :class="'fas fa-rotate-left'"></i>
                       </button>
                     </template>
+                    <button
+                      v-if="player?.accountType !== 'microsoft'"
+                      class="nav-icon"
+                      @click="handleResetPassword(player)"
+                    >
+                      <i :class="'fas fa-key'"></i>
+                    </button>
                     <button class="nav-icon" @click="togglePlayerDetails(getPlayerID(player))">
                       <i
                         :class="
@@ -300,6 +314,7 @@ onUnmounted(() => {
       </template>
     </div>
     <BanPlayerModal ref="banPlayerModalRef" @refresh-data="loadPlayerData" />
+    <PasswordResetConfirm ref="passwordResetModalRef" />
   </div>
 </template>
 
@@ -430,9 +445,8 @@ onUnmounted(() => {
   margin-bottom: 5px;
 }
 .detail-value {
-  color: var(--text-primary);
   font-weight: 500;
-  color: var(--primary);
+  color: var(--text-primary);
 }
 .no-results {
   text-align: center;

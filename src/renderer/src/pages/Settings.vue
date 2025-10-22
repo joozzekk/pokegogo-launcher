@@ -325,9 +325,9 @@ const handleChangeEmail = async (): Promise<void> => {
           </div>
         </div>
 
-        <div class="setting-group">
+        <div class="setting-group !w-full">
           <label>Zmiana emaila</label>
-          <div class="flex gap-2 items-center">
+          <div class="flex gap-2 items-center !w-full">
             <div class="form-group">
               <div class="input-wrapper flex">
                 <i class="fas fa-lock input-icon"></i>

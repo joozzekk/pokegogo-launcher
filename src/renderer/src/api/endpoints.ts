@@ -204,3 +204,11 @@ export const removeChangelog = async (uuid: number): Promise<any> => {
 
   return res.data
 }
+
+export const resetPassword = async (nickname: string): Promise<any> => {
+  const res = await api.post(`/users/reset-password`, {
+    nickname
+  })
+
+  return res.data
+}
