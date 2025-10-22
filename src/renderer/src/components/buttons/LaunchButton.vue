@@ -38,8 +38,11 @@ const handleToggleGame = async (e: Event): Promise<void> => {
         generalStore.setIsOpeningGame(false)
         generalStore.setCurrentState('start')
         break
-      default:
+      case 'start':
         await handleLaunchGame(e)
+        break
+      default:
+        break
     }
   } catch (err) {
     console.error(err)
