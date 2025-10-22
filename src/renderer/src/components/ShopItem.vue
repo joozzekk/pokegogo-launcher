@@ -8,7 +8,8 @@
       "
       :alt="item.name"
       loading="lazy"
-      class="!max-w-[500px]"
+      class="!max-w-[500px] select-none"
+      @dragstart.prevent="null"
     />
     <div class="meta">
       <h3>{{ item.name }}</h3>

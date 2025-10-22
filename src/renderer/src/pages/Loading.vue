@@ -51,12 +51,12 @@ onMounted(() => {
     <div class="background">
       <div class="bg-gradient"></div>
       <div class="floating-blocks">
-        <img :src="dynia" class="block-1" />
-        <img :src="dynia" class="block-2" />
-        <img :src="dynia" class="block-3" />
-        <img :src="ghost" class="ghost-1" />
-        <img :src="ghost" class="ghost-2" />
-        <img :src="ghost" class="ghost-3" />
+        <img :src="dynia" class="block-1" @dragstart.prevent="null" />
+        <img :src="dynia" class="block-2" @dragstart.prevent="null" />
+        <img :src="dynia" class="block-3" @dragstart.prevent="null" />
+        <img :src="ghost" class="ghost-1" @dragstart.prevent="null" />
+        <img :src="ghost" class="ghost-2" @dragstart.prevent="null" />
+        <img :src="ghost" class="ghost-3" @dragstart.prevent="null" />
       </div>
     </div>
     <div class="loading-container">

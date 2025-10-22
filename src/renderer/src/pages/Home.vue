@@ -61,7 +61,7 @@ onMounted(async () => {
 
         <div class="server-showcase">
           <div class="server-image">
-            <img :src="poke" alt="PokeGoGo" />
+            <img :src="poke" alt="PokeGoGo" @dragstart.prevent="null" />
             <div class="server-overlay">
               <span class="server-ip">PokemonGoGo.pl</span>
             </div>
@@ -129,6 +129,7 @@ onMounted(async () => {
                   : superEvent
               "
               alt="Super Event"
+              @dragstart.prevent="null"
             />
             <div class="featured-gradient"></div>
           </div>
@@ -162,6 +163,7 @@ onMounted(async () => {
                     : `${url}/events/image/${event.uuid}`
                 "
                 alt="News"
+                @dragstart.prevent="null"
               />
             </div>
             <div class="news-info">

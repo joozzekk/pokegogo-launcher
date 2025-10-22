@@ -196,6 +196,7 @@ defineExpose({
                         : `${url}/changelog/image/${uuid}`
                   "
                   class="h-[4rem]"
+                  @dragstart.prevent="null"
                 />
               </div>
               <button

@@ -95,7 +95,7 @@ onUnmounted(() => {
   <header class="header">
     <div class="applogo">
       <div class="applogo-icon">
-        <img :src="logo" width="100%" />
+        <img :src="logo" width="100%" @dragstart.prevent="null" />
       </div>
       <h1>PokeGoGo</h1>
     </div>

@@ -287,6 +287,7 @@ defineExpose({
                         : `${url}/items/image/${uuid}`
                   "
                   class="h-[4rem]"
+                  @dragstart.prevent="null"
                 />
               </div>
               <button

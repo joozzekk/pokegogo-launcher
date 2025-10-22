@@ -6,7 +6,7 @@ import dynia from '@renderer/assets/img/dynia.png'
 import ghost from '@renderer/assets/img/ghost.png'
 
 const handleDiscordLink = (): void => {
-  window.open('https://discord.gg/nKgfmbCD', '_blank')
+  window.open('https://discord.com/invite/pokemongogo', '_blank')
 }
 
 const handleRulesLink = (): void => {
@@ -26,12 +26,12 @@ onMounted(() => {
   <div class="background">
     <div class="bg-gradient"></div>
     <div class="floating-blocks">
-      <img :src="dynia" class="block-1" />
-      <img :src="dynia" class="block-2" />
-      <img :src="dynia" class="block-3" />
-      <img :src="ghost" class="ghost-1" />
-      <img :src="ghost" class="ghost-2" />
-      <img :src="ghost" class="ghost-3" />
+      <img :src="dynia" class="block-1" @dragstart.prevent="null" />
+      <img :src="dynia" class="block-2" @dragstart.prevent="null" />
+      <img :src="dynia" class="block-3" @dragstart.prevent="null" />
+      <img :src="ghost" class="ghost-1" @dragstart.prevent="null" />
+      <img :src="ghost" class="ghost-2" @dragstart.prevent="null" />
+      <img :src="ghost" class="ghost-3" @dragstart.prevent="null" />
     </div>
   </div>
 

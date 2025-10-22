@@ -115,6 +115,7 @@ onMounted(async () => {
                           : `${url}/items/image/${item.uuid}`
                       "
                       class="w-[30px] h-[30px]"
+                      @dragstart.prevent="null"
                     />
                     <strong>{{ item.name }}</strong>
                   </div>

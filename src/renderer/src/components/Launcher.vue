@@ -103,7 +103,12 @@ onUnmounted(() => {
 
 <template>
   <div class="animated-bg">
-    <img :src="superEvent" alt="background" class="absolute !h-[100vh] z-[0] opacity-15" />
+    <img
+      :src="superEvent"
+      alt="background"
+      class="absolute !h-[100vh] z-[0] opacity-15"
+      @dragstart.prevent="null"
+    />
 
     <!-- <div class="gradient-overlay"></div> -->
     <div class="particles"></div>

@@ -113,6 +113,7 @@ onMounted(async () => {
                           : `${url}/events/image/${event.uuid}`
                       "
                       class="w-[30px] h-[30px]"
+                      @dragstart.prevent="null"
                     />
                     <strong>{{ event.name }}</strong>
                   </div>

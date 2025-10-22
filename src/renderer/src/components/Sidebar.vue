@@ -45,6 +45,7 @@ const handleSupDev = (): void => {
               :src="`https://mineskin.eu/helm/${playerName}/100.png`"
               class="player-skin"
               alt="Player Skin"
+              @dragstart.prevent="null"
             />
             <div class="status-dot"></div>
           </div>

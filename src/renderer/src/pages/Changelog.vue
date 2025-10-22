@@ -136,6 +136,7 @@ onMounted(async () => {
                       : `${url}/changelog/image/${changelog.uuid}`
                   "
                   class="h-[4rem]"
+                  @dragstart.prevent="null"
                 />
               </div>
               <span class="changelog-version">{{ changelog.version }}</span>
