@@ -29,7 +29,7 @@ const createMainWindow = (): BrowserWindow => {
   })
 
   mainWindow.on('ready-to-show', () => {
-    mainWindow.webContents.send('change:max-ram', Math.floor(getMaxRAMInGB() * 0.75))
+    mainWindow.webContents.send('change:max-ram', Math.floor(getMaxRAMInGB() * 0.95))
     mainWindow.webContents.send('change:version', app.getVersion())
   })
 

@@ -215,7 +215,7 @@ export const grayscale = {
   loginInvalidBg: 'rgba(255, 71, 87, 0.1)',
   loginInvalidBorder: 'rgba(255, 71, 87, 0.3)',
   gradientOverlay: `radial-gradient(circle at 20% 50%, rgba(176, 176, 176, 0.08) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(160, 160, 160, 0.05) 0%, transparent 50%), radial-gradient(circle at 40% 20%, rgba(210, 210, 210, 0.03) 0%, transparent 50%)`,
-  btnMicrosoft: 'linear-gradient(90deg, #b0b065, #6e6e6e)',
+  btnMicrosoft: 'linear-gradient(90deg, #6b6b73, #6e6e6e)',
   toastError: '#ff4757',
   toastWarning: '#b0b0b0',
   loadingOverlay: 'rgba(26, 26, 26, 0.9)',

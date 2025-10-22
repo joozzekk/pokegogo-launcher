@@ -14,6 +14,7 @@ export const useLaunchService = (win: BrowserWindow): void => {
     currentAbortController = new AbortController()
     const signal = currentAbortController.signal
 
+    win.webContents.send('launch:change-state', JSON.stringify('java-install'))
     await installJava(data.javaVersion)
     win.webContents.send('launch:change-state', JSON.stringify('files-verify'))
 

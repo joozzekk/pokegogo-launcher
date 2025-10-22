@@ -153,6 +153,7 @@ const handleChangeUpdateChannel = async (channel: string): Promise<void> => {
   generalStore.settings.updateChannel = channel
   generalStore.saveSettings()
   await checkUpdate()
+  showToast('App is up-to-date.')
 }
 
 onUnmounted(() => {

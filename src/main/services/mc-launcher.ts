@@ -1,5 +1,5 @@
 import { Authenticator, Client } from 'minecraft-launcher-core'
-import path from 'path'
+import path, { join } from 'path'
 import { app, BrowserWindow, ipcMain, screen } from 'electron'
 import { getMaxRAMInGB } from '../utils'
 import os from 'os'
@@ -56,8 +56,7 @@ export async function launchMinecraft(
   const minecraftDir = path.join(baseDir, 'mcfiles')
   const client = new Client()
 
-  const javaPath =
-    plt === 'win32' ? 'C:\\Program Files\\Java\\jdk-21\\bin\\java.exe' : '/usr/bin/java'
+  const javaPath = join(baseDir, 'java/jdk-21.0.8/bin/', plt === 'win32' ? 'java.exe' : 'java')
 
   const isFullScreen = settings.displayMode === 'Pełny ekran' ? true : false
   const { width: fullWidth, height: fullHeight } = screen.getPrimaryDisplay().bounds

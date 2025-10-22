@@ -178,7 +178,11 @@ onMounted(async () => {
           <i v-if="generalStore.isOpeningGame" class="fas fa-spinner fa-spin"></i>
           <span>{{ state }}</span>
         </div>
-        <span v-if="generalStore.isOpeningGame" class="info">Kliknij, aby przerwać</span>
+        <span
+          v-if="generalStore.isOpeningGame && generalStore.currentState !== 'java-install'"
+          class="info"
+          >Kliknij, aby przerwać</span
+        >
       </div>
     </button>
     <Transition name="slide-down">

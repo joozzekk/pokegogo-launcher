@@ -13,7 +13,6 @@ export const checkUpdate = async (): Promise<void> => {
 
   LOGGER.success(res ? 'Update available.' : 'App is up-to-date.')
   generalStore.setUpdateAvailable(res)
-  showToast(res ? 'Update available.' : 'App is up-to-date.')
 }
 
 export const MIN_RAM = 5
