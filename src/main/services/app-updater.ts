@@ -2,6 +2,7 @@ import { type AppUpdater } from 'electron-updater'
 import { getAutoUpdater } from './electron-updater'
 import { ipcMain, Notification, type BrowserWindow } from 'electron'
 import update from '../../../resources/update.png?asset'
+import Logger from 'electron-log'
 
 export const useAppUpdater = (win: BrowserWindow): AppUpdater => {
   let notified = false
@@ -14,7 +15,7 @@ export const useAppUpdater = (win: BrowserWindow): AppUpdater => {
     win.webContents.send('update:available', false)
   })
   autoUpdater.on('error', (err) => {
-    console.log('Auth err: ', err)
+    Logger.log('Auth err: ', err)
   })
   autoUpdater.on('update-downloaded', () => {
     win.webContents.send('update:available', false)
@@ -25,7 +26,7 @@ export const useAppUpdater = (win: BrowserWindow): AppUpdater => {
     async (_event, channel?: string, showNotifications: boolean = true) => {
       if (channel) {
         autoUpdater.channel = channel
-        console.log(`Ustawiono kanał aktualizacji na: ${autoUpdater.channel}`)
+        Logger.log(`Ustawiono kanał aktualizacji na: ${autoUpdater.channel}`)
       } else {
         autoUpdater.channel = 'beta'
       }
@@ -33,7 +34,7 @@ export const useAppUpdater = (win: BrowserWindow): AppUpdater => {
       try {
         const res = await autoUpdater.checkForUpdates()
 
-        if (res) console.log(res)
+        if (res) Logger.log(res)
 
         if (
           res?.updateInfo &&
@@ -64,7 +65,7 @@ export const useAppUpdater = (win: BrowserWindow): AppUpdater => {
 
         return res?.updateInfo && res.updateInfo.version !== autoUpdater.currentVersion
       } catch (error) {
-        console.error('Błąd podczas sprawdzania aktualizacji:', error)
+        Logger.error('Błąd podczas sprawdzania aktualizacji:', error)
         return false
       }
     }

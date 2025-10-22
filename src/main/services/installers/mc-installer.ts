@@ -2,8 +2,9 @@ import fs from 'fs'
 import path from 'path'
 import crypto from 'crypto'
 import { Client } from 'basic-ftp'
-import { safeCd, useFTP } from '../ftp-service'
+import { safeCd, useFTPService } from '../ftp-service'
 import { app, BrowserWindow } from 'electron'
+import Logger from 'electron-log'
 
 async function fileExists(filePath: string): Promise<boolean> {
   try {
@@ -74,7 +75,7 @@ async function downloadAll(
     hasHashesFile = true
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (err) {
-    console.log('PokeGoGo Launcher > Brak zdalnego hashes.txt, przyjmujemy pusty zestaw hashy')
+    Logger.log('PokeGoGo Launcher > Brak zdalnego hashes.txt, przyjmujemy pusty zestaw hashy')
     hasHashesFile = false
   }
 
@@ -173,14 +174,14 @@ async function downloadAll(
         await fs.promises.unlink(path.join(localDir, localFile))
         log(`Usunięto lokalny plik ${localFile}.`)
       } catch (err) {
-        console.log(`PokeGoGo Launcher > Błąd podczas usuwania pliku ${localFile}: ${err}`)
+        Logger.log(`PokeGoGo Launcher > Błąd podczas usuwania pliku ${localFile}: ${err}`)
       }
     }
   }
 
   try {
     await fs.promises.unlink(path.join(localDir, 'hashes.txt'))
-    console.log('PokeGoGo Launcher > Usunięto lokalny plik hashes.txt po synchronizacji.')
+    Logger.log('PokeGoGo Launcher > Usunięto lokalny plik hashes.txt po synchronizacji.')
   } catch {
     // Ignorujemy błąd usuwania hashes.txt jeśli plik już nie istnieje
   }
@@ -190,7 +191,7 @@ export async function copyMCFiles(
   mainWindow: BrowserWindow,
   signal: AbortSignal
 ): Promise<string | undefined> {
-  const { client, connect } = useFTP()
+  const { client, connect } = useFTPService()
   const localRoot = path.join(app.getPath('userData'), 'mcfiles')
   const markerFile = path.join(app.getPath('userData'), '.mcfiles_installed')
   const importantFiles = ['mods', 'versions', 'resourcepacks', 'datapacks', 'config', 'fancymenu']
@@ -221,11 +222,14 @@ export async function copyMCFiles(
       return 'stop'
     }
 
-    if (isFirstInstall) await fs.promises.writeFile(markerFile, 'installed')
+    if (isFirstInstall) {
+      await fs.promises.writeFile(markerFile, 'installed')
+      Logger.log('PokeGoGo Launcher > Created marker file')
+    }
 
     mainWindow.webContents.send('launch:show-log', '', true)
   } catch (err) {
-    console.error(err)
+    Logger.error(err)
   } finally {
     client.close()
   }

@@ -3,7 +3,7 @@ import path from 'path'
 import { app, BrowserWindow, ipcMain, screen } from 'electron'
 import { getMaxRAMInGB } from '../utils'
 import os from 'os'
-import logger from 'electron-log'
+import Logger from 'electron-log'
 
 const toMCLC = (token: string): unknown => {
   const data = JSON.parse(token)
@@ -95,25 +95,23 @@ export async function launchMinecraft(
   ipcMain.handle('launch:exit', () => {
     client.emit('close', 1)
     process?.kill('SIGTERM')
-    console.log('PokeGoGo Launcher > Killed minecraft.')
+    Logger.log('PokeGoGo Launcher > Killed minecraft.')
   })
 
   ipcMain.removeHandler('launch:check-state')
   ipcMain.handle('launch:check-state', async (): Promise<boolean> => {
-    console.log('PokeGoGo Launcher > Checking minecraft status..')
+    Logger.log('PokeGoGo Launcher > Checking minecraft status..')
     return mcOpened
   })
 
-  console.log('PokeGoGo Launcher > MC Started')
+  Logger.log('PokeGoGo Launcher > MC Started')
   win.webContents.send('launch:change-state', JSON.stringify('minecraft-start'))
 
   client.on('debug', (data) => {
-    console.log('PokeGoGo Launcher > MC Debug > ', data)
-    logger.log('PokeGoGo Launcher > MC Debug > ', data)
+    Logger.log('PokeGoGo Launcher > MC Debug > ', data)
   })
   client.on('data', (data) => {
-    console.log('PokeGoGo Launcher > MC Data > ', data)
-    logger.log('PokeGoGo Launcher > MC Data > ', data)
+    Logger.log('PokeGoGo Launcher > MC Data > ', data)
 
     if (data.includes('Initializing Client')) {
       win.webContents.send('launch:change-state', JSON.stringify('minecraft-started'))
@@ -122,16 +120,13 @@ export async function launchMinecraft(
     }
   })
   client.on('error', (data) => {
-    console.log('PokeGoGo Launcher > MC Error > ', data)
-    logger.log('PokeGoGo Launcher > MC Error > ', data)
+    Logger.log('PokeGoGo Launcher > MC Error > ', data)
   })
   client.on('progress', (data) => {
-    console.log('PokeGoGo Launcher > MC Progress > ', data)
-    logger.log('PokeGoGo Launcher > MC Error > ', data)
+    Logger.log('PokeGoGo Launcher > MC Progress > ', data)
   })
   client.on('close', () => {
-    console.log('PokeGoGo Launcher > MC Closed')
-    logger.log('PokeGoGo Launcher > MC Closed')
+    Logger.log('PokeGoGo Launcher > MC Closed')
     win.webContents.send('launch:change-state', JSON.stringify('minecraft-closed'))
     mcOpened = false
     win.show()

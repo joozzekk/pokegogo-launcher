@@ -317,6 +317,30 @@ onUnmounted(() => {
           v-if="userStore.user?.role === 'admin'"
           class="my-0 mt-4 flex flex-row items-center justify-between"
         >
+          <div class="text-[var(--text-secondary)] w-full">Automatyczne aktualizacje</div>
+
+          <div class="flex items-center gap-2">
+            <button
+              class="toggle-option !py-[0.25rem]"
+              :class="{ active: generalStore.settings.autoUpdate === true }"
+              @click="generalStore.settings.autoUpdate = true"
+            >
+              Włączone
+            </button>
+            <button
+              class="toggle-option !py-[0.25rem]"
+              :class="{ active: generalStore.settings.autoUpdate === false }"
+              @click="generalStore.settings.autoUpdate = false"
+            >
+              Wyłączone
+            </button>
+          </div>
+        </div>
+
+        <div
+          v-if="userStore.user?.role === 'admin'"
+          class="my-0 mt-4 flex flex-row items-center justify-between"
+        >
           <div class="text-[var(--text-secondary)] w-full">Kanał aktualizacji</div>
 
           <div class="flex items-center gap-2">

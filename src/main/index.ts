@@ -5,6 +5,7 @@ import useWindowService from './services/window-service'
 import { useAppUpdater } from './services/app-updater'
 import { createTray } from './services/tray-service'
 import { ensureDir } from './utils'
+import { useFTPService } from './services/ftp-service'
 
 const gotTheLock = app.requestSingleInstanceLock()
 
@@ -15,17 +16,19 @@ if (!gotTheLock) {
 
   app.whenReady().then(async () => {
     electronApp.setAppUserModelId('pl.pokemongogo.launcher')
+    const { createHandlers } = useFTPService()
 
     ensureDir(process.cwd() + '/tmp')
 
     const { createMainWindow, createLoadingWindow } = useWindowService()
     mainWindow = createMainWindow()
     const { startApp } = createLoadingWindow()
-    const appUpdater = useAppUpdater(mainWindow)
+    useAppUpdater(mainWindow)
 
+    await startApp(mainWindow)
     createTray(mainWindow)
-    await startApp(appUpdater, mainWindow)
     await installExtension(VUEJS_DEVTOOLS)
+    createHandlers()
 
     app.on('browser-window-created', (_, window) => {
       optimizer.watchWindowShortcuts(window)

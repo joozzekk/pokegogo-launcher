@@ -7,6 +7,7 @@ export const halloween = {
   bgDark: '#000000',
   bgCard: '#25241a20',
   bgLight: '#25241a',
+  bgBody: '#000000ff',
   textPrimary: '#ffffff',
   textSecondary: '#b8ad94',
   border: 'rgba(255, 222, 154, 0.15)',
@@ -63,6 +64,7 @@ export const rose = {
   bgDark: '#2a001a', // ciemny fioletowo-różowy jako tło
   bgCard: '#5a294620', // półprzezroczysty ciemny róż
   bgLight: '#5a2946', // ciemny różowy
+  bgBody: '#000000ff',
   textPrimary: '#fff0f6', // bardzo jasny róż, prawie biały
   textSecondary: '#d8a1c4', // delikatny różowo-szary
   border: 'rgba(255, 105, 180, 0.15)', // półprzezroczysty róż
@@ -119,6 +121,7 @@ export const violet = {
   bgDark: '#1a001a', // bardzo ciemny fiolet zamiast czerni
   bgCard: '#3b294620', // półprzezroczysty ciemny fiolet
   bgLight: '#3b2946', // ciemny fiolet
+  bgBody: '#000000ff', // ciemny fiolet
   textPrimary: '#f5e6ff', // jasnoróżowy fiolet, żeby tekst dobrze się czytał
   textSecondary: '#c1a8e4', // delikatny fioletowo-szary
   border: 'rgba(178, 105, 255, 0.15)', // półprzezroczysty fiolet
@@ -175,6 +178,7 @@ export const grayscale = {
   bgDark: '#1a1a1a', // bardzo ciemny szary prawie czarny
   bgCard: '#4a4a4a20', // półprzezroczysty ciemny szary
   bgLight: '#4a4a4a', // ciemny szary
+  bgBody: '#000000ff', // ciemny szary
   textPrimary: '#f0f0f0', // jasny szary do tekstu
   textSecondary: '#b8b8b8', // delikatny szary
   border: 'rgba(176, 176, 176, 0.15)', // półprzezroczysty szary
@@ -227,6 +231,7 @@ export const blue = {
   bgDark: '#0d1b2a', // bardzo ciemny niebieski, prawie czarny
   bgCard: '#27406020', // półprzezroczysty ciemny niebieski
   bgLight: '#274060', // ciemny niebieski
+  bgBody: '#000000ff', // ciemny niebieski
   textPrimary: '#e6f0ff', // bardzo jasny błękit, prawie biały
   textSecondary: '#9bb4d6', // delikatny niebieskawy szary
   border: 'rgba(58, 123, 213, 0.15)', // półprzezroczysty niebieski
@@ -279,6 +284,7 @@ export const green = {
   bgDark: '#003300', // bardzo ciemny zielony, niemal czarny
   bgCard: '#22662220', // półprzezroczysty ciemny zielony
   bgLight: '#226622', // ciemny zielony
+  bgBody: '#000000ff', // ciemny zielony
   textPrimary: '#f0fff0', // bardzo jasny zielony do tekstu
   textSecondary: '#b8d1b8', // delikatny zielonkawy szary
   border: 'rgba(50, 205, 50, 0.15)', // półprzezroczysty zielony

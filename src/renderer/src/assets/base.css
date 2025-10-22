@@ -22,7 +22,7 @@ select:hover {
 
 body {
   font-family: 'Poppins', sans-serif;
-  background: var(--bg-dark);
+  background: var(--bg-body);
   color: var(--text-primary);
   width: 100%;
   height: 100vh;

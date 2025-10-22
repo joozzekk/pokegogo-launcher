@@ -20,7 +20,7 @@ const useGeneralStore = defineStore('general', () => {
     version: 'PokemonGoGo.pl',
     displayMode: 'Okno',
     theme: halloween,
-    autoUpdate: false,
+    autoUpdate: true,
     updateChannel: 'beta'
   }
 
@@ -101,7 +101,7 @@ const useGeneralStore = defineStore('general', () => {
     settings.resolution = '1366x768'
     settings.displayMode = 'Okno'
     settings.theme = 'Dark'
-    settings.autoUpdate = false
+    settings.autoUpdate = true
     settings.updateChannel = 'dev'
     saveSettings()
   }

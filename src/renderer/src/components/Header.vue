@@ -2,7 +2,7 @@
 import logo from '@renderer/assets/logo.png'
 import { LOGGER } from '@renderer/services/logger-service'
 import useGeneralStore from '@renderer/stores/general-store'
-import { showToast } from '@renderer/utils'
+import { checkUpdate, showToast } from '@renderer/utils'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import UpdateConfirm from './modals/UpdateConfirm.vue'
 import { useRouter } from 'vue-router'
@@ -53,21 +53,6 @@ const handleInstallUpdate = async (): Promise<void> => {
     LOGGER.log(err as string)
   } finally {
     isInstallingUpdate.value = false
-  }
-}
-
-const checkUpdate = async (): Promise<void> => {
-  LOGGER.log('Checking for update..')
-  const res = await window.electron?.ipcRenderer?.invoke(
-    'update:check',
-    generalStore.settings.updateChannel,
-    generalStore.settings.showNotifications
-  )
-
-  LOGGER.success(res ? 'Update available.' : 'App is up-to-date.')
-
-  if (res) {
-    generalStore.setUpdateAvailable(res)
   }
 }
 

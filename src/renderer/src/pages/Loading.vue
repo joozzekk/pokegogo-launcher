@@ -4,15 +4,18 @@ import { ref, onMounted } from 'vue'
 import dynia from '@renderer/assets/img/dynia.png'
 import ghost from '@renderer/assets/img/ghost.png'
 import { applyTheme, halloween } from '@renderer/assets/theme/official'
+import { checkUpdate } from '@renderer/utils'
+import useGeneralStore from '@renderer/stores/general-store'
 
 const status = ref<string>('Inicjalizowanie..')
 const progress = ref(0)
 
+const generalStore = useGeneralStore()
+
 const statuses = {
   'check-for-update': 'Sprawdzanie aktualizacji..',
   updating: 'Aktualizowanie..',
-  starting: 'Uruchamianie..',
-  'app-started': 'Witamy!'
+  starting: 'Witamy!'
 }
 
 onMounted(() => {
@@ -22,21 +25,21 @@ onMounted(() => {
       : halloween
   )
 
-  window.electron?.ipcRenderer?.on('load:status', (_, currentStatus: string) => {
+  window.electron?.ipcRenderer?.on('load:status', async (_, currentStatus: string) => {
     let val = 0
     const parsedStatus = JSON.parse(currentStatus)
 
     switch (parsedStatus) {
       case 'check-for-update':
-        val = 10
+        await checkUpdate()
+        val = 25
         break
       case 'updating':
-        val = 45
+        if (generalStore.isUpdateAvailable && generalStore.settings.autoUpdate)
+          await window.electron?.ipcRenderer?.invoke('update:start')
+        val = 60
         break
       case 'starting':
-        val = 80
-        break
-      case 'app-started':
         val = 100
         break
     }

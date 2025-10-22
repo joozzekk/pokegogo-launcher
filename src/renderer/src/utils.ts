@@ -1,4 +1,22 @@
 import { LOGGER } from './services/logger-service'
+import useGeneralStore from './stores/general-store'
+
+export const checkUpdate = async (): Promise<void> => {
+  const generalStore = useGeneralStore()
+
+  LOGGER.log('Checking for update..')
+  const res = await window.electron?.ipcRenderer?.invoke(
+    'update:check',
+    generalStore.settings.updateChannel,
+    generalStore.settings.showNotifications
+  )
+
+  LOGGER.success(res ? 'Update available.' : 'App is up-to-date.')
+
+  if (res) {
+    generalStore.setUpdateAvailable(res)
+  }
+}
 
 export const MIN_RAM = 5
 
