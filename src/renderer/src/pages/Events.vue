@@ -190,7 +190,7 @@ onMounted(async () => {
   border-collapse: collapse;
 }
 .logs-table th {
-  background: var(--bg-dark);
+  background: var(--bg-light);
   padding: 0.5rem 1rem;
   text-align: left;
   font-weight: 600;
@@ -209,7 +209,7 @@ onMounted(async () => {
 }
 
 .logs-table tr:hover {
-  background: var(--bg-dark);
+  background: none;
 }
 
 .copy-btn {

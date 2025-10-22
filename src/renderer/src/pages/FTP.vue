@@ -114,7 +114,7 @@ onMounted(async () => {
         </div>
         <textarea
           v-model="currentFileContent"
-          class="w-full h-full bg-[var(--bg-dark)] resize-none outline-none px-4 py-2"
+          class="w-full h-full bg-[var(--bg-light)] resize-none outline-none px-4 py-2"
         >
         </textarea>
       </div>
@@ -131,7 +131,7 @@ onMounted(async () => {
         @change="uploadFolder"
       />
       <div
-        class="top-0 sticky bg-[var(--bg-dark)] px-4 py-2 text-[0.9rem] flex items-center justify-between z-[10] border-dashed border-b border-[var(--border)]"
+        class="top-0 sticky bg-[var(--bg-light)] px-4 py-2 text-[0.9rem] flex items-center justify-between z-[10] border-dashed border-b border-[var(--border)]"
         :class="{ 'mb-[44px]': showSearchInput }"
       >
         <div class="flex items-center">
@@ -218,8 +218,7 @@ onMounted(async () => {
         :key="file.name"
         class="bg-[var(--bg-card)] w-full px-4 py-2 flex items-center gap-4"
         :class="{
-          'hover:bg-[var(--btn-hover)] hover:cursor-pointer':
-            file.isDirectory || isKnownFile(file.name)
+          'hover:bg-[#00000050] hover:cursor-pointer': file.isDirectory || isKnownFile(file.name)
         }"
         @click="
           file.isDirectory

@@ -357,7 +357,7 @@ onUnmounted(() => {
   border-collapse: collapse;
 }
 .logs-table th {
-  background: var(--bg-dark);
+  background: var(--bg-light);
   padding: 0.5rem 1rem;
   text-align: left;
   font-weight: 600;
@@ -373,6 +373,10 @@ onUnmounted(() => {
 
 .logs-table tr {
   background: var(--bg-card);
+}
+
+.logs-table tr:hover {
+  background: none;
 }
 
 .copy-btn {
