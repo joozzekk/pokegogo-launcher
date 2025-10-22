@@ -23,7 +23,7 @@ export const useAppUpdater = (win: BrowserWindow): AppUpdater => {
 
   ipcMain.handle(
     'update:check',
-    async (_event, channel?: string, showNotifications: boolean = true) => {
+    async (_event, channel?: string, showNotifications: boolean = true): Promise<boolean> => {
       if (channel) {
         autoUpdater.channel = channel
         Logger.log(`Ustawiono kanał aktualizacji na: ${autoUpdater.channel}`)
@@ -63,7 +63,7 @@ export const useAppUpdater = (win: BrowserWindow): AppUpdater => {
           return isUpdateAvailable
         }
 
-        return res?.updateInfo && res.updateInfo.version !== autoUpdater.currentVersion
+        return res?.updateInfo ? res.updateInfo.version !== autoUpdater.currentVersion : false
       } catch (error) {
         Logger.error('Błąd podczas sprawdzania aktualizacji:', error)
         return false

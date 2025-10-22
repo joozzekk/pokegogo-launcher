@@ -3,7 +3,7 @@ import { changeEmail, changePassword } from '@renderer/api/endpoints'
 import { applyTheme, themes } from '@renderer/assets/theme/official'
 import useGeneralStore from '@renderer/stores/general-store'
 import useUserStore from '@renderer/stores/user-store'
-import { calculateValueFromPercentage, MIN_RAM, showToast } from '@renderer/utils'
+import { calculateValueFromPercentage, checkUpdate, MIN_RAM, showToast } from '@renderer/utils'
 import useVuelidate from '@vuelidate/core'
 import { helpers, required, sameAs } from '@vuelidate/validators'
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
@@ -147,6 +147,12 @@ const handleChangeEmail = async (): Promise<void> => {
     showToast('Nie udało się zmienić email', 'error')
     return
   }
+}
+
+const handleChangeUpdateChannel = async (channel: string): Promise<void> => {
+  generalStore.settings.updateChannel = channel
+  generalStore.saveSettings()
+  await checkUpdate()
 }
 
 onUnmounted(() => {
@@ -313,10 +319,7 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div
-          v-if="userStore.user?.role === 'admin'"
-          class="my-0 mt-4 flex flex-row items-center justify-between"
-        >
+        <div class="my-0 mt-4 flex flex-row items-center justify-between">
           <div class="text-[var(--text-secondary)] w-full">Automatyczne aktualizacje</div>
 
           <div class="flex items-center gap-2">
@@ -347,14 +350,14 @@ onUnmounted(() => {
             <button
               class="toggle-option !py-[0.25rem]"
               :class="{ active: generalStore.settings.updateChannel === 'beta' }"
-              @click="generalStore.settings.updateChannel = 'beta'"
+              @click="handleChangeUpdateChannel('beta')"
             >
               Beta
             </button>
             <button
               class="toggle-option !py-[0.25rem]"
               :class="{ active: generalStore.settings.updateChannel === 'dev' }"
-              @click="generalStore.settings.updateChannel = 'dev'"
+              @click="handleChangeUpdateChannel('dev')"
             >
               Dev
             </button>
