@@ -81,7 +81,7 @@ const createMainWindow = (): BrowserWindow => {
       await writeFile(tempFilePath, Buffer.from(buffer))
       await connect()
 
-      await client.uploadFrom(tempFilePath, `${folder}/${fileName}`)
+      await client.uploadFrom(tempFilePath, `${folder}${folder.length ? '/' : ''}${fileName}`)
 
       const hashes: { [key: string]: string } = {}
       try {

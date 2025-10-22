@@ -165,6 +165,33 @@ const handleChangeEmail = async (): Promise<void> => {
         </div>
 
         <div class="setting-group">
+          <label>Rozdzielczość</label>
+          <div class="toggle-group">
+            <button
+              class="toggle-option !py-[0.25rem]"
+              :class="{ active: generalStore.settings.resolution === '1920x1080' }"
+              @click="changeResolution('1920x1080')"
+            >
+              1920x1080
+            </button>
+            <button
+              class="toggle-option !py-[0.25rem]"
+              :class="{ active: generalStore.settings.resolution === '1366x768' }"
+              @click="changeResolution('1366x768')"
+            >
+              1366x768
+            </button>
+            <button
+              class="toggle-option !py-[0.25rem]"
+              :class="{ active: generalStore.settings.resolution === '1200x720' }"
+              @click="changeResolution('1200x720')"
+            >
+              1200x720
+            </button>
+          </div>
+        </div>
+
+        <div class="setting-group">
           <label>Pamięć RAM</label>
           <div class="ram-slider-container">
             <input
@@ -189,9 +216,10 @@ const handleChangeEmail = async (): Promise<void> => {
           </div>
         </div>
 
-        <div class="setting-group">
-          <label>Tryb wyświetlania gry</label>
-          <div class="toggle-group">
+        <div class="my-0 flex flex-row items-center justify-between mb-4">
+          <div class="text-[var(--text-secondary)] w-full">Tryb wyświetlania gry</div>
+
+          <div class="flex items-center gap-2 w-full">
             <button
               class="toggle-option !py-[0.25rem]"
               :class="{ active: generalStore.settings.displayMode === 'Okno' }"
@@ -205,33 +233,6 @@ const handleChangeEmail = async (): Promise<void> => {
               @click="generalStore.settings.displayMode = 'Pełny ekran'"
             >
               Pełny ekran
-            </button>
-          </div>
-        </div>
-
-        <div class="setting-group">
-          <label>Rozdzielczość</label>
-          <div class="toggle-group">
-            <button
-              class="toggle-option !py-[0.25rem]"
-              :class="{ active: generalStore.settings.resolution === '1920x1080' }"
-              @click="changeResolution('1920x1080')"
-            >
-              1920x1080
-            </button>
-            <button
-              class="toggle-option !py-[0.25rem]"
-              :class="{ active: generalStore.settings.resolution === '1366x768' }"
-              @click="changeResolution('1366x768')"
-            >
-              1366x768
-            </button>
-            <button
-              class="toggle-option !py-[0.25rem]"
-              :class="{ active: generalStore.settings.resolution === '1200x720' }"
-              @click="changeResolution('1200x720')"
-            >
-              1200x720
             </button>
           </div>
         </div>
@@ -263,7 +264,10 @@ const handleChangeEmail = async (): Promise<void> => {
           </div>
         </div>
 
-        <div class="my-0 flex flex-row items-center justify-between">
+        <div
+          class="my-0 flex flex-row items-center justify-between"
+          :class="{ 'mt-4': userStore.user?.role !== 'admin' }"
+        >
           <div class="text-[var(--text-secondary)]">Powiadomienia</div>
 
           <div class="flex items-center gap-2">
@@ -327,9 +331,9 @@ const handleChangeEmail = async (): Promise<void> => {
 
         <div class="setting-group !w-full">
           <label>Zmiana emaila</label>
-          <div class="flex gap-2 items-center !w-full">
-            <div class="form-group">
-              <div class="input-wrapper flex">
+          <div class="flex gap-2 !w-full items-center">
+            <div class="form-group !w-full">
+              <div class="input-wrapper !w-full flex">
                 <i class="fas fa-lock input-icon"></i>
                 <input
                   id="login-email"
