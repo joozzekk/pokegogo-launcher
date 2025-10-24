@@ -17,12 +17,7 @@ const handleLogout = async (): Promise<void> => {
 }
 
 const userRole = computed(() => {
-  switch (userStore.user?.role) {
-    case 'admin':
-      return 'Admin'
-    default:
-      return 'Gracz'
-  }
+  return userStore.user?.role ?? 'Gracz'
 })
 
 const handleChangeRoute = (newRoute: string): void => {
