@@ -76,6 +76,7 @@ const handleLaunchGame = async (e: Event): Promise<void> => {
     accessToken: localStorage.getItem('token'),
     mcVersion: '1.21.1',
     javaVersion: '21',
+    isDev: generalStore.settings.updateChannel === 'dev',
     settings: {
       resolution: generalStore.settings.resolution,
       ram: generalStore.settings.ram,

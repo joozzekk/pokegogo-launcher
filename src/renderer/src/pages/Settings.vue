@@ -258,7 +258,7 @@ onUnmounted(() => {
         </div>
 
         <div
-          v-if="userStore.user?.role === 'admin'"
+          v-if="['admin', 'technik', 'mod', 'helper'].includes(userStore.user?.role ?? 'default')"
           class="my-0 flex flex-row items-center justify-between"
         >
           <div class="text-[var(--text-secondary)]">Motyw</div>
@@ -277,7 +277,11 @@ onUnmounted(() => {
 
         <div
           class="my-0 flex flex-row items-center justify-between"
-          :class="{ 'mt-4': userStore.user?.role !== 'admin' }"
+          :class="{
+            'mt-4': ['admin', 'technik', 'mod', 'helper'].includes(
+              userStore.user?.role ?? 'default'
+            )
+          }"
         >
           <div class="text-[var(--text-secondary)]">Powiadomienia</div>
 
@@ -342,7 +346,7 @@ onUnmounted(() => {
         </div>
 
         <div
-          v-if="userStore.user?.role === 'admin'"
+          v-if="['technik'].includes(userStore.user?.role ?? 'default')"
           class="my-0 mt-4 flex flex-row items-center justify-between"
         >
           <div class="text-[var(--text-secondary)] w-full">Kanał aktualizacji</div>

@@ -15,7 +15,11 @@ const router = useRouter()
 const updateInterval = ref<any>()
 const isInstallingUpdate = ref<boolean>(false)
 
-const hasAdmin = computed(() => userStore.user?.role === 'admin')
+const hasMod = computed(() =>
+  ['admin', 'technik', 'mod'].includes(userStore.user?.role || 'default')
+)
+const hasTech = computed(() => ['technik'].includes(userStore.user?.role || 'default'))
+const hasAdmin = computed(() => ['admin', 'technik'].includes(userStore.user?.role || 'default'))
 
 const handleChangeRoute = (newRoute: string): void => {
   router.push(newRoute)
@@ -86,7 +90,7 @@ onUnmounted(() => {
         <i class="fa fa-home" />
       </button>
       <button
-        v-if="hasAdmin"
+        v-if="hasMod"
         class="nav-icon"
         :class="{ active: $route.path === '/app/users' }"
         @click="handleChangeRoute('/app/users')"
@@ -102,7 +106,7 @@ onUnmounted(() => {
         <i class="fa fa-calendar-week"></i>
       </button>
       <button
-        v-if="hasAdmin"
+        v-if="hasTech"
         class="nav-icon"
         :class="{ active: $route.path === '/app/items' }"
         @click="handleChangeRoute('/app/items')"
@@ -110,7 +114,7 @@ onUnmounted(() => {
         <i class="fa fa-list"></i>
       </button>
       <button
-        v-if="hasAdmin"
+        v-if="hasTech"
         class="nav-icon"
         :class="{ active: $route.path === '/app/ftp' }"
         @click="handleChangeRoute('/app/ftp')"

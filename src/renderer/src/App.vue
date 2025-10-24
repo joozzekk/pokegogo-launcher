@@ -18,10 +18,6 @@ window.electron?.ipcRenderer?.on('change:max-ram', (_, ram: string) => {
   generalStore.changeMaxRAM(parseInt(ram))
 })
 
-window.electron?.ipcRenderer?.on('update:available', (_, isUpdate: boolean) => {
-  generalStore.setUpdateAvailable(isUpdate)
-})
-
 onMounted(() => {
   applyTheme(
     localStorage.getItem('selectedTheme')

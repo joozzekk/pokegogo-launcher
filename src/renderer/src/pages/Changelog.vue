@@ -4,7 +4,7 @@ import AddChangelog from '@renderer/components/modals/AddChangelog.vue'
 import useUserStore from '@renderer/stores/user-store'
 import { showToast } from '@renderer/utils'
 import { format } from 'date-fns'
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 
 const url = import.meta.env.RENDERER_VITE_API_URL
 const userStore = useUserStore()
@@ -55,6 +55,11 @@ const getChangeTagByType = (type: string): string => {
   }
 }
 
+const hasMod = computed(() =>
+  ['admin', 'technik', 'mod'].includes(userStore.user?.role || 'default')
+)
+const hasAdmin = computed(() => ['admin', 'technik'].includes(userStore.user?.role || 'default'))
+
 watch(searchQuery, () => {
   filteredChangelog.value = allChangelog.value
     .filter((changelog: any) => changelog.type === selectedType.value)
@@ -90,7 +95,7 @@ onMounted(async () => {
 
 <template>
   <div class="changelog-container">
-    <div v-if="userStore.user?.role === 'admin'" class="flex gap-2">
+    <div v-if="hasMod" class="flex gap-2">
       <div class="search-input-wrapper mb-2">
         <i class="fas fa-search search-icon !text-[0.9rem] ml-3"></i>
         <input
@@ -116,7 +121,11 @@ onMounted(async () => {
         >
           <i class="fa fa-computer" />
         </button>
-        <button class="nav-icon" @click="addChangelogModalRef?.openModal(null, 'add')">
+        <button
+          v-if="hasAdmin"
+          class="nav-icon"
+          @click="addChangelogModalRef?.openModal(null, 'add')"
+        >
           <i class="fa fa-plus" />
         </button>
       </div>
@@ -146,17 +155,13 @@ onMounted(async () => {
                 {{ changelog.startDate ? format(changelog.startDate, 'dd MMMM yyyy') : '' }}
               </span>
               <span
-                v-if="userStore.user?.role === 'admin'"
+                v-if="hasMod"
                 class="nav-icon"
                 @click="addChangelogModalRef?.openModal(changelog, 'edit')"
               >
                 <i class="fa fa-pencil" />
               </span>
-              <span
-                v-if="userStore.user?.role === 'admin'"
-                class="ban-btn"
-                @click="handleRemoveChangelog(changelog)"
-              >
+              <span v-if="hasAdmin" class="ban-btn" @click="handleRemoveChangelog(changelog)">
                 <i class="fa fa-trash" />
               </span>
             </div>

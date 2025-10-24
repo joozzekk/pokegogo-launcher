@@ -330,7 +330,79 @@ export const green = {
   breadcrumbsText: '#b2d8b2'
 }
 
-export const themes = [halloween, blue, green, violet, rose, grayscale]
+export const red = {
+  // Primary Red Palette
+  primary: '#FF4500', // intensywny pomarańczowo-czerwony (OrangeRed)
+  primaryDark: '#B22222', // ciemny, głęboki czerwony (FireBrick)
+  primaryLight: '#FFA07A', // jasny, pastelowy łososiowy (LightSalmon)
+
+  // Backgrounds
+  bgDark: '#330000', // bardzo ciemny czerwony, niemal czarny
+  bgCard: '#66222220', // półprzezroczysty ciemny czerwony
+  bgLight: '#662222', // ciemny czerwony
+  bgBody: '#000000ff', // Ciemne tło (czarne dla kontrastu)
+  bgPrimary: '#330000',
+  bgInput: 'rgba(102, 34, 34, 0.8)',
+  loadingOverlay: 'rgba(51, 0, 0, 0.9)',
+
+  // Text Colors
+  textPrimary: '#fff0f0', // bardzo jasny, lekko czerwonawy do tekstu
+  textSecondary: '#d1b8b8', // delikatny czerwonawo szary
+  textSecondaryAlt: '#b0a0a0',
+  textMuted: '#736b6b',
+  breadcrumbsText: '#d8b2b2',
+  errorMessage: '#ff4757', // Zostawiamy standardową czerwień na błędy
+
+  // Borders & Dividers
+  border: 'rgba(255, 69, 0, 0.15)', // półprzezroczysty OrangeRed
+  border2: '#ff450047',
+  borderPrimary: 'rgba(255, 255, 255, 0.1)',
+
+  // UI Elements
+  newsItem: 'rgba(255, 69, 0, 0.03)', // bardzo delikatny czerwony
+  newsItemHover: 'rgba(255, 69, 0, 0.1)',
+  btnHover: '#ff45003d',
+  btnGlow: 'rgba(255, 255, 255, 0.2)',
+  footerHover: 'rgba(255, 69, 0, 0.05)',
+  shopItem: `linear-gradient(180deg, var(--btn-hover) 0%, transparent 100%)`,
+
+  // Special/Accent Colors (e.g., Ban/Error)
+  banBtn: 'rgba(255, 69, 0, 0.3)', // Teraz używamy OrangeRed
+  banBtnText: '#ff4500',
+  statusPulse: 'rgba(255, 69, 0, 0.5)',
+  toastError: '#ff4757',
+  toastWarning: '#FF4500', // Warning dostaje primary red
+
+  // Navigation
+  navIcon: 'rgba(255, 69, 0, 0.05)',
+  tagDark: '#33000080',
+  navItem: 'rgba(255, 69, 0, 0.1)',
+  navItemHoverNavIcon: 'rgba(255, 69, 0, 0.2)',
+  navItemActive: 'rgba(255, 69, 0, 0.15)',
+
+  // Login/Form
+  loginTabBtnBg: 'rgba(102, 34, 34, 0.568)',
+  loginTabBtnHover: 'rgba(102, 34, 34, 0.768)',
+  loginInvalidBg: 'rgba(255, 71, 87, 0.1)',
+  loginInvalidBorder: 'rgba(255, 71, 87, 0.3)',
+  btnMicrosoft: 'linear-gradient(90deg, #ff450065, #b22222)', // Gradient z nowymi czerwieniami
+  playerLogout: 'rgb(73, 59, 62)', // Przyciemniony, by pasował
+
+  // Effects & Utilities
+  headerBg: 'linear-gradient(180deg, rgba(51, 0, 0, 0.45) 0%, rgba(51, 0, 0, 0.4) 100%)',
+  gradientPrimary: 'linear-gradient(135deg, #b22222 0%, #ff4500 100%)',
+  gradientBanned: 'linear-gradient(135deg, #c5223d 0%, #b91035 100%)', // Zostawiamy intensywną czerwień
+  shadowGlow: '0 0 15px rgba(255, 69, 0, 0.3)',
+  shadowCard: '0 20px 40px rgba(51, 0, 0, 0.3)',
+  gradientOverlay: `radial-gradient(circle at 20% 50%, rgba(255, 69, 0, 0.08) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(178, 34, 34, 0.05) 0%, transparent 50%), radial-gradient(circle at 40% 20%, rgba(255, 160, 122, 0.03) 0%, transparent 50%)`,
+
+  // Static Properties
+  borderRadius: '12px',
+  borderRadiusSmall: '8px',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+}
+
+export const themes = [halloween, red, blue, green, violet, rose, grayscale]
 
 export function applyTheme(theme: { [key: string]: string }): void {
   const root = document.documentElement

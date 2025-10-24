@@ -18,7 +18,7 @@ export const useLaunchService = (win: BrowserWindow): void => {
     await installJava(data.javaVersion)
     win.webContents.send('launch:change-state', JSON.stringify('files-verify'))
 
-    const res = await copyMCFiles(win, signal)
+    const res = await copyMCFiles(data.isDev, win, signal)
 
     currentAbortController = null
 

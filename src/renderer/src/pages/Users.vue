@@ -80,6 +80,10 @@ const getUserRole = (player: IUser): string => {
   switch (player?.role) {
     case 'admin':
       return 'Admin'
+    case 'mod':
+      return 'Moderator'
+    case 'technik':
+      return 'Technik'
     default:
       return 'Gracz'
   }
@@ -129,7 +133,11 @@ onUnmounted(() => {
         <table v-else class="logs-table select-none">
           <thead>
             <tr class="font-black text-[0.9rem]">
-              <th>Gracz ({{ allPlayers.length }})</th>
+              <th>
+                Gracz ({{ allPlayers.filter((player) => player.isOnline)?.length }}/{{
+                  allPlayers.length
+                }})
+              </th>
               <th>Rola</th>
               <th>Status</th>
               <th>UUID/MCID</th>
@@ -198,8 +206,13 @@ onUnmounted(() => {
                   </span>
                 </td>
                 <td>
-                  <div class="reverse">
-                    <template v-if="player?.role !== 'admin'">
+                  <div v-if="userStore.user" class="reverse">
+                    <template
+                      v-if="
+                        ['admin', 'technik', 'mod'].includes(userStore.user.role) &&
+                        player?.role !== 'admin'
+                      "
+                    >
                       <button
                         v-if="!player?.isBanned"
                         class="ban-btn"

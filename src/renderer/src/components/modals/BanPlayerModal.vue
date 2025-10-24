@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { banPlayer, unbanPlayer } from '@renderer/api/endpoints'
 import { IUser } from '@renderer/env'
+import useUserStore from '@renderer/stores/user-store'
 import { defaultDatePickerTime, showToast } from '@renderer/utils'
 import DatePicker from 'primevue/datepicker'
 import { ref } from 'vue'
@@ -11,6 +12,8 @@ const banType = ref('nickname')
 const banTime = ref<Date | null>(null)
 const playerData = ref<IUser>()
 const actionType = ref<string>('')
+
+const userStore = useUserStore()
 
 const emits = defineEmits<{
   (e: 'refreshData'): Promise<void> | void
@@ -90,8 +93,9 @@ defineExpose({
         </div>
         <div class="modal-content flex-col">
           <template v-if="actionType === 'ban'">
-            <div class="flex gap-2">
+            <div v-if="userStore.user" class="flex gap-2">
               <button
+                v-if="['admin', 'technik'].includes(userStore.user.role)"
                 class="toggle-option !py-[0.25rem]"
                 :class="{ active: banType === 'hwid' }"
                 @click="banType = 'hwid'"

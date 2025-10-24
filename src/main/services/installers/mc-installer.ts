@@ -5,7 +5,6 @@ import { Client } from 'basic-ftp'
 import { safeCd, useFTPService } from '../ftp-service'
 import { app, BrowserWindow } from 'electron'
 import Logger from 'electron-log'
-import { is } from '@electron-toolkit/utils'
 
 async function fileExists(filePath: string): Promise<boolean> {
   try {
@@ -189,6 +188,7 @@ async function downloadAll(
 }
 
 export async function copyMCFiles(
+  isDev: boolean,
   mainWindow: BrowserWindow,
   signal: AbortSignal
 ): Promise<string | undefined> {
@@ -204,7 +204,7 @@ export async function copyMCFiles(
     await connect()
 
     const pwd = await client.pwd()
-    const remoteURL = posix.join(pwd, is.dev ? 'dev-mc' : 'mc')
+    const remoteURL = posix.join(pwd, isDev ? 'dev-mc' : 'mc')
 
     await downloadAll(
       client,
