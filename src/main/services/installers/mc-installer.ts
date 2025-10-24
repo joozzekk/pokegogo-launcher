@@ -1,10 +1,11 @@
 import fs from 'fs'
-import path from 'path'
+import { posix } from 'path'
 import crypto from 'crypto'
 import { Client } from 'basic-ftp'
 import { safeCd, useFTPService } from '../ftp-service'
 import { app, BrowserWindow } from 'electron'
 import Logger from 'electron-log'
+import { is } from '@electron-toolkit/utils'
 
 async function fileExists(filePath: string): Promise<boolean> {
   try {
@@ -26,7 +27,7 @@ async function getFileHash(filePath: string): Promise<string> {
 }
 
 async function readHashesFile(localDir: string): Promise<Record<string, string>> {
-  const hashesFilePath = path.join(localDir, 'hashes.txt')
+  const hashesFilePath = posix.join(localDir, 'hashes.txt')
   try {
     const data = await fs.promises.readFile(hashesFilePath, 'utf8')
     const lines = data
@@ -68,10 +69,10 @@ async function downloadAll(
   const changed = await safeCd(client, remoteDir)
   if (!changed) return
 
-  const localHashesFile = path.join(localDir, 'hashes.txt')
+  const localHashesFile = posix.join(localDir, 'hashes.txt')
   let hasHashesFile = false
   try {
-    await client.downloadTo(localHashesFile, path.posix.join(remoteDir, 'hashes.txt'))
+    await client.downloadTo(localHashesFile, posix.join(remoteDir, 'hashes.txt'))
     hasHashesFile = true
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (err) {
@@ -96,8 +97,8 @@ async function downloadAll(
       return
     }
 
-    const remotePath = path.posix.join(remoteDir, file.name)
-    const localPath = path.join(localDir, file.name)
+    const remotePath = posix.join(remoteDir, file.name)
+    const localPath = posix.join(localDir, file.name)
 
     if (
       file.isFile &&
@@ -171,7 +172,7 @@ async function downloadAll(
 
     if (!localHashes[localFile]) {
       try {
-        await fs.promises.unlink(path.join(localDir, localFile))
+        await fs.promises.unlink(posix.join(localDir, localFile))
         log(`Usunięto lokalny plik ${localFile}.`)
       } catch (err) {
         Logger.log(`PokeGoGo Launcher > Błąd podczas usuwania pliku ${localFile}: ${err}`)
@@ -180,7 +181,7 @@ async function downloadAll(
   }
 
   try {
-    await fs.promises.unlink(path.join(localDir, 'hashes.txt'))
+    await fs.promises.unlink(posix.join(localDir, 'hashes.txt'))
     Logger.log('PokeGoGo Launcher > Usunięto lokalny plik hashes.txt po synchronizacji.')
   } catch {
     // Ignorujemy błąd usuwania hashes.txt jeśli plik już nie istnieje
@@ -192,8 +193,8 @@ export async function copyMCFiles(
   signal: AbortSignal
 ): Promise<string | undefined> {
   const { client, connect } = useFTPService()
-  const localRoot = path.join(app.getPath('userData'), 'mcfiles')
-  const markerFile = path.join(app.getPath('userData'), '.mcfiles_installed')
+  const localRoot = posix.join(app.getPath('userData'), 'mcfiles')
+  const markerFile = posix.join(app.getPath('userData'), '.mcfiles_installed')
   const importantFiles = ['mods', 'versions', 'resourcepacks', 'datapacks', 'config', 'fancymenu']
   const ignoreFiles = ['options']
 
@@ -203,7 +204,7 @@ export async function copyMCFiles(
     await connect()
 
     const pwd = await client.pwd()
-    const remoteURL = pwd + '/mc'
+    const remoteURL = posix.join(pwd, is.dev ? 'dev-mc' : 'mc')
 
     await downloadAll(
       client,

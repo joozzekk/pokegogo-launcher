@@ -4,9 +4,14 @@ import { initAnimations } from '@renderer/assets/scripts/animations'
 import Header from '@renderer/components/Header.vue'
 import Sidebar from '@renderer/components/Sidebar.vue'
 import useUserStore from '@renderer/stores/user-store'
-import { fetchProfile, updateMachineData, updateProfileData } from '@renderer/api/endpoints'
+import {
+  checkMachineID,
+  fetchProfile,
+  updateMachineData,
+  updateProfileData
+} from '@renderer/api/endpoints'
 import useGeneralStore from '@renderer/stores/general-store'
-import { refreshMicrosoftToken } from '@renderer/utils'
+import { refreshMicrosoftToken, showToast } from '@renderer/utils'
 import BannedModal from '@renderer/components/modals/BannedModal.vue'
 import { useSocket } from '@renderer/services/socket-service'
 import api from '@renderer/utils/client'
@@ -31,6 +36,12 @@ const loadProfile = async (): Promise<void> => {
   await fetchProfileData()
 }
 
+const isMachineIDBanned = async (): Promise<void> => {
+  const res = await checkMachineID(generalStore.settings.machineId)
+
+  userStore.hwidBanned = res
+}
+
 const refreshToken = async (): Promise<void> => {
   const refreshToken = localStorage.getItem('refresh_token')
 
@@ -46,10 +57,11 @@ const refreshToken = async (): Promise<void> => {
 }
 
 socket.on('player:banned', async (data) => {
-  const isCurrentPlayer = userStore.user?.uuid === data.uuid
-  LOGGER.log(`Banned: ${data.uuid}, ${userStore.user?.uuid === data.uuid}`)
+  await isMachineIDBanned()
+  const isCurrentPlayerBanned =
+    userStore.user?.machineId === data.uuid || userStore.user?.uuid === data.uuid
 
-  if (isCurrentPlayer) {
+  if (isCurrentPlayerBanned) {
     await refreshToken()
     await fetchProfileData()
     location.reload()
@@ -57,10 +69,11 @@ socket.on('player:banned', async (data) => {
 })
 
 socket.on('player:unbanned', async (data) => {
-  const isCurrentPlayer = userStore.user?.uuid === data.uuid
-  LOGGER.log(`Unbanned: ${data.uuid} ${userStore.user?.uuid === data.uuid}`)
+  await isMachineIDBanned()
+  const isCurrentPlayerUnbanned =
+    userStore.user?.machineId === data.uuid || userStore.user?.uuid === data.uuid
 
-  if (isCurrentPlayer) {
+  if (isCurrentPlayerUnbanned) {
     await refreshToken()
     await fetchProfileData()
     location.reload()
@@ -93,6 +106,8 @@ onMounted(async () => {
       macAddress: generalStore.settings.macAddress,
       ipAddress: generalStore.settings.ipAddress
     })
+
+    await isMachineIDBanned()
   }
 })
 

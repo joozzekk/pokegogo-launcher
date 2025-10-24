@@ -19,9 +19,6 @@ const toMCLC = (token: string): unknown => {
       demo: false,
       exp: data.exp,
       refresh: true
-    },
-    user_properties: {
-      POKE_SECRET_KEY: 'LUNCH_NA_ZAWOLANIE'
     }
   }
 }
@@ -32,10 +29,7 @@ const nonPremiumToMCLC = async (json: string): Promise<unknown> => {
 
   return {
     ...res,
-    uuid: profile.uuid,
-    user_properties: {
-      POKE_SECRET_KEY: 'LUNCH_NA_ZAWOLANIE'
-    }
+    uuid: profile.uuid
   }
 }
 

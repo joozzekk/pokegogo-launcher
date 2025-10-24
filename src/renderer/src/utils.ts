@@ -1,5 +1,6 @@
 import { LOGGER } from './services/logger-service'
 import useGeneralStore from './stores/general-store'
+import { DatePickerPassThroughOptions } from 'primevue'
 
 export const checkUpdate = async (): Promise<void> => {
   const generalStore = useGeneralStore()
@@ -108,5 +109,14 @@ export const refreshMicrosoftToken = async (token: string | null): Promise<void>
     localStorage.setItem('mcToken', mcToken)
   } catch (err) {
     LOGGER.err(err as string)
+  }
+}
+
+export const defaultDatePickerTime: DatePickerPassThroughOptions = {
+  root: ({ state, props }) => {
+    if (!props.modelValue) {
+      state.currentHour = 0
+      state.currentMinute = 0
+    }
   }
 }

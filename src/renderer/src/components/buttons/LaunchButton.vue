@@ -4,7 +4,8 @@ import { LOGGER } from '@renderer/services/logger-service'
 import useGeneralStore from '@renderer/stores/general-store'
 import useUserStore from '@renderer/stores/user-store'
 import { createParticles, refreshMicrosoftToken, showToast } from '@renderer/utils'
-import { computed, onMounted, reactive } from 'vue'
+import { differenceInMilliseconds, intervalToDuration, parseISO } from 'date-fns'
+import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 
 const generalStore = useGeneralStore()
 
@@ -21,7 +22,9 @@ const accountType = localStorage.getItem('LOGIN_TYPE')
 const userStore = useUserStore()
 
 const isBanned = computed(() => {
-  return userStore.user?.isBanned
+  return userStore.hwidBanned || userStore.user?.banEndDate
+    ? differenceInMilliseconds(parseISO(userStore.user?.banEndDate as string), new Date()) > 0
+    : userStore.user?.isBanned
 })
 
 const handleToggleGame = async (e: Event): Promise<void> => {
@@ -100,6 +103,39 @@ const handleKillVerify = async (): Promise<void> => {
   generalStore.setIsOpeningGame(false)
 }
 
+const now = ref(new Date())
+let timerInterval: number | undefined = undefined
+
+const pad = (num: number): string => String(num).padStart(2, '0')
+
+const formattedBanTime = computed(() => {
+  const banEndDateString = userStore.user?.banEndDate as string | null
+
+  if (!banEndDateString) {
+    return 'Permanentnie'
+  }
+
+  const banEndDate = parseISO(banEndDateString)
+  const remainingMs = differenceInMilliseconds(banEndDate, now.value)
+
+  if (remainingMs <= 0) {
+    clearInterval(timerInterval)
+    return 'Blokada zakończyła się'
+  }
+
+  const duration = intervalToDuration({
+    start: now.value,
+    end: banEndDate
+  })
+
+  const totalHours = (duration.days || 0) * 24 + (duration.hours || 0)
+  const hours = pad(totalHours)
+  const minutes = pad(duration.minutes || 0)
+  const seconds = pad(duration.seconds || 0)
+
+  return `Pozostało: ${hours}:${minutes}:${seconds}`
+})
+
 window.electron?.ipcRenderer?.on('launch:change-state', async (_event, state: string) => {
   const parsedState = JSON.parse(state)
   generalStore.setCurrentState(parsedState)
@@ -129,6 +165,10 @@ window.electron?.ipcRenderer?.on('launch:show-log', (_event, data: string, ended
 })
 
 onMounted(async () => {
+  timerInterval = window.setInterval(() => {
+    now.value = new Date()
+  }, 1000)
+
   try {
     const isRunning = await window.electron?.ipcRenderer?.invoke('launch:check-state')
 
@@ -139,6 +179,12 @@ onMounted(async () => {
     }
   } catch {
     LOGGER.log('Minecraft is not running.')
+  }
+})
+
+onUnmounted(() => {
+  if (timerInterval) {
+    clearInterval(timerInterval)
   }
 })
 </script>
@@ -159,8 +205,13 @@ onMounted(async () => {
       <template v-if="!generalStore.isOpeningGame">
         <div class="title">
           <template v-if="isBanned">
-            <i class="fas fa-exclamation-triangle"></i>
-            <span>Twoje konto jest zablokowane</span>
+            <i class="fas fa-exclamation-triangle text-2xl"></i>
+            <div class="flex flex-col">
+              <span class="title mb-2"> Twoje konto zostało zablokowane </span>
+              <span class="text-[0.7rem] text-black">
+                {{ formattedBanTime }}
+              </span>
+            </div>
           </template>
           <template v-else>
             <i class="fas fa-play"></i>

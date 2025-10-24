@@ -94,7 +94,9 @@ export const updateBackendUserFromMicrosoft = async (data: Partial<IUser>): Prom
   return res.data
 }
 
-export const banPlayer = async (player: Partial<IUser & { reason: string }>): Promise<any> => {
+export const banPlayer = async (
+  player: Partial<IUser & { reason: string; type: string; endDate: Date | null }>
+): Promise<any> => {
   const res = await api.post('/users/launcher-ban', {
     ...player
   })
@@ -208,6 +210,14 @@ export const removeChangelog = async (uuid: number): Promise<any> => {
 export const resetPassword = async (nickname: string): Promise<any> => {
   const res = await api.post(`/users/reset-password`, {
     nickname
+  })
+
+  return res.data
+}
+
+export const checkMachineID = async (machineId: string): Promise<any> => {
+  const res = await api.post(`/users/check-machine-id`, {
+    machineId
   })
 
   return res.data

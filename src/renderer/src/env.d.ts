@@ -21,6 +21,8 @@ export interface IUser {
   createdAt: string
   isBanned: boolean
   banReason?: string
+  banType?: string
+  banEndDate: Date | string
   isOnline: boolean
   machineId?: string
   lastLoginAt: string

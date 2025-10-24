@@ -357,14 +357,16 @@ defineExpose({
   padding-bottom: 1rem;
   display: flex;
   flex-direction: column;
-  background: var(--bg-dark);
-  box-shadow: 0 0 1rem var(--border);
+  box-shadow: 0 0 1rem var(--border-2);
+  background: var(--bg-card);
+  border-radius: 1rem;
+  border: 1px dashed var(--border-2);
+  backdrop-filter: blur(10px);
 }
 
 .modal-header {
   position: sticky;
   z-index: 700;
-  background: var(--bg-dark);
   padding: 1rem 0;
   top: 0;
   display: flex;

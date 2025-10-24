@@ -1,15 +1,17 @@
 <script lang="ts" setup>
 import useUserStore from '@renderer/stores/user-store'
+import { differenceInMilliseconds, parseISO } from 'date-fns'
 import { computed, ref } from 'vue'
 
 const modalVisible = ref(true)
 const userStore = useUserStore()
 
 const isBanned = computed(() => {
-  return userStore.user?.isBanned
+  return userStore.hwidBanned || userStore.user?.banEndDate
+    ? differenceInMilliseconds(parseISO(userStore.user?.banEndDate as string), new Date()) > 0
+    : userStore.user?.isBanned
 })
 
-// Przyjmuję, że userStore.user?.banReason przechowuje powód bana
 const banReason = computed(() => userStore.user?.banReason || 'Brak szczegółowego powodu.')
 
 const acknowledgeBan = (): void => {
@@ -71,18 +73,18 @@ const acknowledgeBan = (): void => {
 .modal-card {
   width: 90%;
   max-width: 420px;
-  min-height: 220px;
-  background: var(--bg-light);
-  box-shadow: 0 0 1rem var(--border);
-  border-radius: 1rem;
   padding: 1.5rem 2rem 1.25rem;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 0 1rem var(--border-2);
+  background: var(--bg-card);
+  border-radius: 1rem;
+  border: 1px dashed var(--border-2);
+  backdrop-filter: blur(10px);
 }
 
 .modal-header {
   display: flex;
-  background: var(--bg-light);
   align-items: center;
   margin-bottom: 1rem;
 }

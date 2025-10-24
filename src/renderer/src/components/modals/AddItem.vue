@@ -412,149 +412,149 @@ defineExpose({
               </div>
             </div>
           </div>
-        </div>
 
-        <template v-if="state.type === 'rank' || state.type === 'custom'">
-          <div class="flex gap-2">
+          <template v-if="state.type === 'rank' || state.type === 'custom'">
+            <div class="flex gap-2">
+              <div class="flex flex-col w-full">
+                <label class="input-label">Nazwa rangi</label>
+                <small class="mb-1 text-[var(--text-secondary)]"
+                  >Nazwa rangi z LuckyPerms. Przykłady: vip, mvp, ultra, legend.</small
+                >
+                <div class="form-group !mt-0 !translate-y-[2px]">
+                  <div class="input-wrapper flex">
+                    <input
+                      id="login-email"
+                      v-model="state.rank"
+                      type="text"
+                      class="form-input !pl-[1rem]"
+                      placeholder="Podaj komendę"
+                      :class="{ invalid: v$.rank?.$error }"
+                      aria-required="true"
+                      required
+                    />
+                    <div class="input-line"></div>
+                  </div>
+                  <div class="error-message" :class="{ show: v$.rank?.$error }">
+                    {{ v$.rank?.$errors[0]?.$message }}
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex flex-col w-full">
+                <label class="input-label">Długość trwania</label>
+                <small class="mb-1 text-[var(--text-secondary)]"
+                  >Podaj czas na jaki gracz otrzyma tę rangę. Domyślnie 30</small
+                >
+                <div class="form-group !mt-0 !translate-y-[2px]">
+                  <div class="input-wrapper flex">
+                    <input
+                      id="login-email"
+                      v-model="state.days"
+                      type="number"
+                      class="form-input !pl-[1rem]"
+                      placeholder="Podaj ilość dni"
+                      :class="{ invalid: v$.days?.$error }"
+                      aria-required="true"
+                      required
+                    />
+                    <div class="input-line"></div>
+                  </div>
+                  <div class="error-message" :class="{ show: v$.days?.$error }">
+                    {{ v$.days?.$errors[0]?.$message }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <div
+            v-if="state.type === 'item' || state.type === 'key_item' || state.type === 'custom'"
+            class="flex gap-2"
+          >
             <div class="flex flex-col w-full">
-              <label class="input-label">Nazwa rangi</label>
-              <small class="mb-1 text-[var(--text-secondary)]"
-                >Nazwa rangi z LuckyPerms. Przykłady: vip, mvp, ultra, legend.</small
-              >
+              <label class="input-label">{{
+                state.type === 'key_item' ? 'Nazwa klucza' : 'ID Przedmiotu'
+              }}</label>
+              <small class="mb-1 text-[var(--text-secondary)]">
+                {{
+                  state.type === 'key_item'
+                    ? 'Wpisz nazwę klucza z pluginu, np. legendary, mythic'
+                    : 'Wpisz nazwę przedmiotu, np. cobblemon:master_ball'
+                }}
+              </small>
               <div class="form-group !mt-0 !translate-y-[2px]">
                 <div class="input-wrapper flex">
                   <input
                     id="login-email"
-                    v-model="state.rank"
+                    v-model="state.item"
                     type="text"
                     class="form-input !pl-[1rem]"
                     placeholder="Podaj komendę"
-                    :class="{ invalid: v$.rank?.$error }"
+                    :class="{ invalid: v$.item?.$error }"
                     aria-required="true"
                     required
                   />
                   <div class="input-line"></div>
                 </div>
-                <div class="error-message" :class="{ show: v$.rank?.$error }">
-                  {{ v$.rank?.$errors[0]?.$message }}
+                <div class="error-message" :class="{ show: v$.item?.$error }">
+                  {{ v$.item?.$errors[0]?.$message }}
                 </div>
               </div>
             </div>
 
             <div class="flex flex-col w-full">
-              <label class="input-label">Długość trwania</label>
-              <small class="mb-1 text-[var(--text-secondary)]"
-                >Podaj czas na jaki gracz otrzyma tę rangę. Domyślnie 30</small
-              >
+              <label class="input-label">Ilość do sprzedaży</label>
+              <small class="mb-1 text-[var(--text-secondary)]">
+                Podaj ilość w jakiej będzie sprzedawany przedmiot. Domyślnie 1
+              </small>
               <div class="form-group !mt-0 !translate-y-[2px]">
                 <div class="input-wrapper flex">
                   <input
                     id="login-email"
-                    v-model="state.days"
+                    v-model="state.count"
                     type="number"
                     class="form-input !pl-[1rem]"
-                    placeholder="Podaj ilość dni"
-                    :class="{ invalid: v$.days?.$error }"
+                    placeholder="Podaj ilość"
+                    :class="{ invalid: v$.count?.$error }"
                     aria-required="true"
                     required
                   />
                   <div class="input-line"></div>
                 </div>
-                <div class="error-message" :class="{ show: v$.days?.$error }">
-                  {{ v$.days?.$errors[0]?.$message }}
+                <div class="error-message" :class="{ show: v$.count?.$error }">
+                  {{ v$.count?.$errors[0]?.$message }}
                 </div>
               </div>
             </div>
           </div>
-        </template>
 
-        <div
-          v-if="state.type === 'item' || state.type === 'key_item' || state.type === 'custom'"
-          class="flex gap-2"
-        >
-          <div class="flex flex-col w-full">
-            <label class="input-label">{{
-              state.type === 'key_item' ? 'Nazwa klucza' : 'ID Przedmiotu'
-            }}</label>
+          <template v-if="state.type === 'custom'">
+            <label class="input-label">Komenda</label>
             <small class="mb-1 text-[var(--text-secondary)]">
-              {{
-                state.type === 'key_item'
-                  ? 'Wpisz nazwę klucza z pluginu, np. legendary, mythic'
-                  : 'Wpisz nazwę przedmiotu, np. cobblemon:master_ball'
-              }}
+              Możesz wykorzystywać różne zmienne podane wyżej. {player} - nick gracza. Podane wyżej:
+              {amount} - ilość przedmiotu, {item} - nazwa przedmiotu, {rank} - nazwa rangi, {days} -
+              długość trwania.
             </small>
             <div class="form-group !mt-0 !translate-y-[2px]">
               <div class="input-wrapper flex">
                 <input
                   id="login-email"
-                  v-model="state.item"
+                  v-model="state.command"
                   type="text"
                   class="form-input !pl-[1rem]"
                   placeholder="Podaj komendę"
-                  :class="{ invalid: v$.item?.$error }"
+                  :class="{ invalid: v$.command?.$error }"
                   aria-required="true"
                   required
                 />
                 <div class="input-line"></div>
               </div>
-              <div class="error-message" :class="{ show: v$.item?.$error }">
-                {{ v$.item?.$errors[0]?.$message }}
+              <div class="error-message" :class="{ show: v$.command?.$error }">
+                {{ v$.command?.$errors[0]?.$message }}
               </div>
             </div>
-          </div>
-
-          <div class="flex flex-col w-full">
-            <label class="input-label">Ilość do sprzedaży</label>
-            <small class="mb-1 text-[var(--text-secondary)]">
-              Podaj ilość w jakiej będzie sprzedawany przedmiot. Domyślnie 1
-            </small>
-            <div class="form-group !mt-0 !translate-y-[2px]">
-              <div class="input-wrapper flex">
-                <input
-                  id="login-email"
-                  v-model="state.count"
-                  type="number"
-                  class="form-input !pl-[1rem]"
-                  placeholder="Podaj ilość"
-                  :class="{ invalid: v$.count?.$error }"
-                  aria-required="true"
-                  required
-                />
-                <div class="input-line"></div>
-              </div>
-              <div class="error-message" :class="{ show: v$.count?.$error }">
-                {{ v$.count?.$errors[0]?.$message }}
-              </div>
-            </div>
-          </div>
+          </template>
         </div>
-
-        <template v-if="state.type === 'custom'">
-          <label class="input-label">Komenda</label>
-          <small class="mb-1 text-[var(--text-secondary)]">
-            Możesz wykorzystywać różne zmienne podane wyżej. {player} - nick gracza. Podane wyżej:
-            {amount} - ilość przedmiotu, {item} - nazwa przedmiotu, {rank} - nazwa rangi, {days} -
-            długość trwania.
-          </small>
-          <div class="form-group !mt-0 !translate-y-[2px]">
-            <div class="input-wrapper flex">
-              <input
-                id="login-email"
-                v-model="state.command"
-                type="text"
-                class="form-input !pl-[1rem]"
-                placeholder="Podaj komendę"
-                :class="{ invalid: v$.command?.$error }"
-                aria-required="true"
-                required
-              />
-              <div class="input-line"></div>
-            </div>
-            <div class="error-message" :class="{ show: v$.command?.$error }">
-              {{ v$.command?.$errors[0]?.$message }}
-            </div>
-          </div>
-        </template>
 
         <div class="modal-footer flex ml-auto max-w-1/3">
           <button
@@ -597,19 +597,20 @@ defineExpose({
   padding-bottom: 1rem;
   display: flex;
   flex-direction: column;
-  background: var(--bg-dark);
-  box-shadow: 0 0 1rem var(--border);
+  box-shadow: 0 0 1rem var(--border-2);
+  background: var(--bg-card);
+  border-radius: 1rem;
+  border: 1px dashed var(--border-2);
+  backdrop-filter: blur(10px);
 }
 
 .modal-header {
   position: sticky;
   z-index: 1100;
-  background: var(--bg-dark);
   padding: 1rem 0;
   top: 0;
   display: flex;
   align-items: center;
-  margin-bottom: 1rem;
 }
 
 .launch-title {
@@ -636,6 +637,7 @@ defineExpose({
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  overflow-y: auto;
 }
 
 .input-label {

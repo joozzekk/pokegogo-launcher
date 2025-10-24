@@ -13,7 +13,7 @@ export const useAppUpdater = (win: BrowserWindow): AppUpdater => {
     async (_event, channel?: string, showNotifications: boolean = true): Promise<boolean> => {
       if (channel) {
         autoUpdater.channel = channel
-        Logger.log(`Ustawiono kanał aktualizacji na: ${autoUpdater.channel}`)
+        Logger.log(`Current update channel: ${autoUpdater.channel}`)
       } else {
         autoUpdater.channel = 'beta'
       }
@@ -54,7 +54,7 @@ export const useAppUpdater = (win: BrowserWindow): AppUpdater => {
           ? res.updateInfo.version !== autoUpdater.currentVersion.version
           : false
       } catch (error) {
-        Logger.error('Błąd podczas sprawdzania aktualizacji:', error)
+        Logger.error('Error when checking update:', error)
         return false
       }
     }

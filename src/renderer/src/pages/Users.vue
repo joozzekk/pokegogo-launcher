@@ -129,7 +129,7 @@ onUnmounted(() => {
         <table v-else class="logs-table select-none">
           <thead>
             <tr class="font-black text-[0.9rem]">
-              <th>Gracz</th>
+              <th>Gracz ({{ allPlayers.length }})</th>
               <th>Rola</th>
               <th>Status</th>
               <th>UUID/MCID</th>

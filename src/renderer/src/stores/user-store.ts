@@ -4,6 +4,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 const useUserStore = defineStore('user', () => {
+  const hwidBanned = ref<boolean>(false)
   const user = ref(null as IUser | null)
   const accountType = localStorage.getItem('LOGIN_TYPE')
   const router = useRouter()
@@ -28,6 +29,7 @@ const useUserStore = defineStore('user', () => {
 
   return {
     user,
+    hwidBanned,
     accountType,
     setUser,
     resetUser,
