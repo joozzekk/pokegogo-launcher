@@ -47,13 +47,14 @@ const unbanUser = async (): Promise<void> => {
   const res = await unbanPlayer({
     nickname: playerData.value.nickname,
     machineId: playerData.value.machineId,
-    macAddress: playerData.value.macAddress
+    macAddress: playerData.value.macAddress,
+    type: playerData.value.banType
   })
 
   if (res) {
     await emits('refreshData')
     showToast('Pomyślnie odbanowano użytkownika ')
-    modalVisible.value = false
+    handleCancel()
   }
 }
 

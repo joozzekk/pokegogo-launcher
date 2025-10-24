@@ -104,7 +104,7 @@ export const banPlayer = async (
   return res.data
 }
 
-export const unbanPlayer = async (player: Partial<IUser>): Promise<any> => {
+export const unbanPlayer = async (player: Partial<IUser> & { type?: string }): Promise<any> => {
   const res = await api.post('/users/launcher-unban', {
     ...player
   })

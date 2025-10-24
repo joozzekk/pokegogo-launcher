@@ -152,7 +152,7 @@ async function downloadAll(
       if (downloadFile) {
         await client.downloadTo(localPath, remotePath)
         downloadedFiles++
-        log(`Pobrano ${downloadedFiles}/${totalFiles} plików w ${remoteDir}`)
+        log(`Pobrano ${downloadedFiles}/${totalFiles}`)
       }
     }
   }
