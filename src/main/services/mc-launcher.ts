@@ -1,8 +1,9 @@
 import { Authenticator, Client } from 'minecraft-launcher-core'
-import path from 'path'
+import path, { join } from 'path'
 import { app, BrowserWindow, ipcMain, screen } from 'electron'
 import { getMaxRAMInGB } from '../utils'
 import os from 'os'
+import Logger from 'electron-log'
 
 const toMCLC = (token: string): unknown => {
   const data = JSON.parse(token)
@@ -18,9 +19,6 @@ const toMCLC = (token: string): unknown => {
       demo: false,
       exp: data.exp,
       refresh: true
-    },
-    user_properties: {
-      POKE_SECRET_KEY: 'LUNCH_NA_ZAWOLANIE'
     }
   }
 }
@@ -31,10 +29,7 @@ const nonPremiumToMCLC = async (json: string): Promise<unknown> => {
 
   return {
     ...res,
-    uuid: profile.uuid,
-    user_properties: {
-      POKE_SECRET_KEY: 'LUNCH_NA_ZAWOLANIE'
-    }
+    uuid: profile.uuid
   }
 }
 
@@ -42,6 +37,7 @@ export async function launchMinecraft(
   win: BrowserWindow,
   version: string,
   token: string,
+  accessToken: string,
   settings: {
     ram: number
     resolution: string
@@ -54,10 +50,8 @@ export async function launchMinecraft(
   const minecraftDir = path.join(baseDir, 'mcfiles')
   const client = new Client()
 
-  // use the java from C:/Program Files/Java if on Windows
-  // otherwise use the system java
-  const javaPath =
-    plt === 'win32' ? 'C:\\Program Files\\Java\\jdk-21\\bin\\java.exe' : '/usr/bin/java'
+  const javaPath = join(baseDir, 'java/jdk-21.0.8/bin/', plt === 'win32' ? 'java.exe' : 'java')
+
   const isFullScreen = settings.displayMode === 'Pełny ekran' ? true : false
   const { width: fullWidth, height: fullHeight } = screen.getPrimaryDisplay().bounds
   const [width, height] = isFullScreen
@@ -84,31 +78,50 @@ export async function launchMinecraft(
     memory: {
       max: `${Math.floor(0.75 * maxRAM)}G`,
       min: `${settings.ram}G`
-    }
+    },
+    customArgs: [`-DaccessToken=${accessToken}`]
   })
 
-  if (ipcMain.listenerCount('exit-launch') > 0) {
-    ipcMain.removeHandler('exit-launch')
-  }
+  let mcOpened = false
 
-  ipcMain.handle('exit-launch', () => {
+  ipcMain.removeHandler('launch:exit')
+  ipcMain.handle('launch:exit', () => {
     client.emit('close', 1)
     process?.kill('SIGTERM')
+    Logger.log('PokeGoGo Launcher > Killed minecraft.')
   })
 
-  win.webContents.send('change-launch-state', JSON.stringify('minecraft-start'))
+  ipcMain.removeHandler('launch:check-state')
+  ipcMain.handle('launch:check-state', async (): Promise<boolean> => {
+    Logger.log('PokeGoGo Launcher > Checking minecraft status..')
+    return mcOpened
+  })
 
-  client.on('debug', (...args) => console.log('DEBUG', ...args))
+  Logger.log('PokeGoGo Launcher > MC Started')
+  win.webContents.send('launch:change-state', JSON.stringify('minecraft-start'))
+
+  client.on('debug', (data) => {
+    Logger.log('PokeGoGo Launcher > MC Debug > ', data)
+  })
   client.on('data', (data) => {
+    Logger.log('PokeGoGo Launcher > MC Data > ', data)
+
     if (data.includes('Initializing Client')) {
-      win.webContents.send('change-launch-state', JSON.stringify('minecraft-started'))
+      win.webContents.send('launch:change-state', JSON.stringify('minecraft-started'))
+      mcOpened = true
+      win.hide()
     }
-    console.log('DATA', data)
   })
-  client.on('error', (...args) => console.log('ERROR', ...args))
-  client.on('progress', (...args) => console.log('PROGRESS', ...args))
+  client.on('error', (data) => {
+    Logger.log('PokeGoGo Launcher > MC Error > ', data)
+  })
+  client.on('progress', (data) => {
+    Logger.log('PokeGoGo Launcher > MC Progress > ', data)
+  })
   client.on('close', () => {
-    win.webContents.send('change-launch-state', JSON.stringify('minecraft-closed'))
-    console.log('Minecraft został zamknięty')
+    Logger.log('PokeGoGo Launcher > MC Closed')
+    win.webContents.send('launch:change-state', JSON.stringify('minecraft-closed'))
+    mcOpened = false
+    win.show()
   })
 }

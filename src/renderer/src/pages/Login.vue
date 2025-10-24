@@ -1,10 +1,12 @@
 <script lang="ts" setup>
-import Header from './Header.vue'
+import Header from '@renderer/components/Header.vue'
 import { onMounted } from 'vue'
 import { PokeGoGoLogin } from '@renderer/assets/scripts/login'
+import dynia from '@renderer/assets/img/dynia.png'
+import ghost from '@renderer/assets/img/ghost.png'
 
 const handleDiscordLink = (): void => {
-  window.open('https://discord.gg/nKgfmbCD', '_blank')
+  window.open('https://discord.com/invite/pokemongogo', '_blank')
 }
 
 const handleRulesLink = (): void => {
@@ -24,9 +26,12 @@ onMounted(() => {
   <div class="background">
     <div class="bg-gradient"></div>
     <div class="floating-blocks">
-      <div class="block block-1"></div>
-      <div class="block block-2"></div>
-      <div class="block block-3"></div>
+      <img :src="dynia" class="block-1" @dragstart.prevent="null" />
+      <img :src="dynia" class="block-2" @dragstart.prevent="null" />
+      <img :src="dynia" class="block-3" @dragstart.prevent="null" />
+      <img :src="ghost" class="ghost-1" @dragstart.prevent="null" />
+      <img :src="ghost" class="ghost-2" @dragstart.prevent="null" />
+      <img :src="ghost" class="ghost-3" @dragstart.prevent="null" />
     </div>
   </div>
 
@@ -87,7 +92,7 @@ onMounted(() => {
               <div id="login-password-error" class="error-message"></div>
             </div>
 
-            <button class="btn-login-primary">
+            <button class="btn-primary">
               <span>Zaloguj się</span>
             </button>
 
@@ -97,11 +102,6 @@ onMounted(() => {
               <i class="fab fa-microsoft"></i>
               <span>Zaloguj przez Microsoft</span>
             </button>
-            <div>
-              <p style="text-align: center; margin-top: 30px">
-                Nie pamiętasz hasła? <button type="button" class="btn">Przypomnij hasło</button>
-              </p>
-            </div>
           </form>
         </div>
 
@@ -190,7 +190,7 @@ onMounted(() => {
               </label>
             </div>
 
-            <button class="btn-login-primary">
+            <button class="btn-primary">
               <span>Utwórz konto</span>
             </button>
 
@@ -204,15 +204,15 @@ onMounted(() => {
     </div>
     <footer class="footer">
       <div class="footer-links">
-        <a href="#" class="footer-link" @click="handleDiscordLink">
+        <a href="#" class="footer-link" @click="handleDiscordLink" @dragstart.prevent="null">
           <i class="fab fa-discord"></i>
           <span>Discord</span>
         </a>
-        <a href="#" class="footer-link" @click="handleRulesLink">
+        <a href="#" class="footer-link" @click="handleRulesLink" @dragstart.prevent="null">
           <i class="fas fa-file-contract"></i>
           <span>Regulamin</span>
         </a>
-        <a href="#" class="footer-link" @click="handleHelpLink">
+        <a href="#" class="footer-link" @click="handleHelpLink" @dragstart.prevent="null">
           <i class="fas fa-question-circle"></i>
           <span>Pomoc</span>
         </a>

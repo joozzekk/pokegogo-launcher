@@ -2,10 +2,12 @@ import { is } from '@electron-toolkit/utils'
 import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import { join } from 'path'
 import icon from '../../../resources/icon.png?asset'
-import { AppUpdater } from 'electron-updater'
 import { useLoginService } from './login-service'
 import { useLaunchService } from './launch-service'
 import { getMaxRAMInGB } from '../utils'
+import { machineId } from 'node-machine-id'
+import { address } from 'address/promises'
+import Logger from 'electron-log'
 
 const createMainWindow = (): BrowserWindow => {
   const mainWindow = new BrowserWindow({
@@ -21,21 +23,32 @@ const createMainWindow = (): BrowserWindow => {
     webPreferences: {
       nodeIntegration: false,
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false
+      sandbox: false,
+      devTools: is.dev
     }
   })
 
   mainWindow.on('ready-to-show', () => {
-    mainWindow.webContents.send('change-max-ram', Math.floor(getMaxRAMInGB() * 0.75))
-    mainWindow.webContents.send('change-version', app.getVersion())
+    mainWindow.webContents.send('change:max-ram', Math.floor(getMaxRAMInGB() * 0.95))
+    mainWindow.webContents.send('change:version', app.getVersion())
   })
 
-  ipcMain.on('window-minimize', () => {
+  ipcMain.handle('data:machine', async () => {
+    const hwid = await machineId()
+    const addr = await address()
+    return {
+      machineId: hwid,
+      macAddress: addr?.mac,
+      ipAddress: addr?.ip
+    }
+  })
+
+  ipcMain.on('window:minimize', () => {
     const win = BrowserWindow.getFocusedWindow()
     if (win) win.minimize()
   })
 
-  ipcMain.on('window-maximize', () => {
+  ipcMain.on('window:maximize', () => {
     const win = BrowserWindow.getFocusedWindow()
 
     if (win) {
@@ -48,9 +61,18 @@ const createMainWindow = (): BrowserWindow => {
     }
   })
 
-  ipcMain.on('window-close', () => {
+  ipcMain.on('window:close', (_, isHideToTray: boolean = true) => {
     const win = BrowserWindow.getFocusedWindow()
-    if (win) win.close()
+    if (win) {
+      if (isHideToTray) {
+        Logger.log('PokeGoGo Launcher > Hidden in tray')
+        win.hide()
+        return
+      }
+
+      win.close()
+      if (ipcMain.listenerCount('launch:exit')) ipcMain.emit('launch:exit')
+    }
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
@@ -69,11 +91,11 @@ const createMainWindow = (): BrowserWindow => {
 
 const createLoadingWindow = (): {
   loadingWindow: BrowserWindow
-  startApp: (appUpdater: AppUpdater, maiNWindow: BrowserWindow) => Promise<void>
+  startApp: (maiNWindow: BrowserWindow) => Promise<void>
 } => {
   const loadingWindow = new BrowserWindow({
-    width: 400,
-    height: 500,
+    width: 300,
+    height: 400,
     show: false,
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
@@ -100,20 +122,14 @@ const createLoadingWindow = (): {
     loadingWindow.show()
   })
 
-  const startApp = async (appUpdater: AppUpdater, mainWindow: BrowserWindow): Promise<void> => {
+  const startApp = async (mainWindow: BrowserWindow): Promise<void> => {
     loadingWindow.show()
 
     loadingWindow.webContents.send('load:status', JSON.stringify('check-for-update'))
     try {
-      const res = await appUpdater.checkForUpdates()
-
-      if (res?.isUpdateAvailable) {
-        loadingWindow.webContents.send('load:status', JSON.stringify('updating'))
-        await appUpdater.downloadUpdate()
-        appUpdater.quitAndInstall(true, true)
-      }
+      loadingWindow.webContents.send('load:status', JSON.stringify('updating'))
     } catch (err) {
-      console.log(err)
+      Logger.log(err)
     } finally {
       setTimeout(() => {
         loadingWindow.webContents.send('load:status', JSON.stringify('starting'))
@@ -123,12 +139,11 @@ const createLoadingWindow = (): {
       }, 1500)
 
       setTimeout(() => {
-        loadingWindow.webContents.send('load:status', JSON.stringify('app-started'))
         loadingWindow.close()
         loadingWindow.webContents.close()
         mainWindow.show()
         mainWindow.focus()
-      }, 2500)
+      }, 3000)
     }
   }
 
@@ -142,7 +157,7 @@ const useWindowService = (): {
   createMainWindow: () => BrowserWindow
   createLoadingWindow: () => {
     loadingWindow: BrowserWindow
-    startApp: (appUpdater: AppUpdater, maiNWindow: BrowserWindow) => Promise<void>
+    startApp: (maiNWindow: BrowserWindow) => Promise<void>
   }
 } => {
   return {

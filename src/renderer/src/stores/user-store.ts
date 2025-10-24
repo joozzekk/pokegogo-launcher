@@ -1,13 +1,13 @@
+import { type IUser } from '@renderer/env'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-
-interface IUser {
-  uuid: string
-  nickname: string
-}
+import { useRouter } from 'vue-router'
 
 const useUserStore = defineStore('user', () => {
+  const hwidBanned = ref<boolean>(false)
   const user = ref(null as IUser | null)
+  const accountType = localStorage.getItem('LOGIN_TYPE')
+  const router = useRouter()
 
   const setUser = (newUser: IUser): void => {
     user.value = newUser
@@ -17,10 +17,23 @@ const useUserStore = defineStore('user', () => {
     user.value = null
   }
 
+  const logout = async (): Promise<void> => {
+    resetUser()
+    localStorage.removeItem('LOGIN_TYPE')
+    localStorage.removeItem('token')
+    localStorage.removeItem('msToken')
+    localStorage.removeItem('refresh_token')
+    localStorage.removeItem('mcToken')
+    router.push('/')
+  }
+
   return {
     user,
+    hwidBanned,
+    accountType,
     setUser,
-    resetUser
+    resetUser,
+    logout
   }
 })
 

@@ -1,3 +1,23 @@
+import { LOGGER } from './services/logger-service'
+import useGeneralStore from './stores/general-store'
+import { DatePickerPassThroughOptions } from 'primevue'
+
+export const checkUpdate = async (): Promise<void> => {
+  const generalStore = useGeneralStore()
+
+  LOGGER.log('Checking for update..')
+  const res = await window.electron?.ipcRenderer?.invoke(
+    'update:check',
+    generalStore.settings.updateChannel,
+    generalStore.settings.showNotifications
+  )
+
+  LOGGER.success(res ? 'Update available.' : 'App is up-to-date.')
+  generalStore.setUpdateAvailable(res)
+}
+
+export const MIN_RAM = 5
+
 export const createParticles = (element: HTMLElement): void => {
   const rect = element.getBoundingClientRect()
   const particles = 20
@@ -53,7 +73,7 @@ export const showToast = (message: string, type = 'success'): void => {
 
   const icon = type === 'success' ? 'check-circle' : 'exclamation-circle'
   toast.innerHTML = `
-        <i class="fas fa-${icon}" style="color: ${type === 'success' ? 'var(--primary)' : '#ef4444'}"></i>
+        <i class="fas fa-${icon} text-xl" style="color: ${type === 'success' ? 'var(--primary)' : '#ef4444'}"></i>
         <span>${message}</span>
     `
 
@@ -72,7 +92,31 @@ export const calculateValueFromPercentage = (
   sliderWidth: number,
   maxNumber: number = 16
 ): number => {
-  const min = 6
+  const min = MIN_RAM
   const max = maxNumber
   return Math.fround(((value - min) / (max - min)) * sliderWidth)
+}
+
+export const refreshMicrosoftToken = async (token: string | null): Promise<void> => {
+  try {
+    if (!window?.electron?.ipcRenderer || !token) return
+    const { msToken, mcToken } = await window.electron.ipcRenderer.invoke(
+      'auth:refresh-token',
+      token
+    )
+
+    localStorage.setItem('msToken', msToken)
+    localStorage.setItem('mcToken', mcToken)
+  } catch (err) {
+    LOGGER.err(err as string)
+  }
+}
+
+export const defaultDatePickerTime: DatePickerPassThroughOptions = {
+  root: ({ state, props }) => {
+    if (!props.modelValue) {
+      state.currentHour = 0
+      state.currentMinute = 0
+    }
+  }
 }

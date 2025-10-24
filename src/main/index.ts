@@ -1,31 +1,58 @@
-import { app, BrowserWindow } from 'electron'
+import { installExtension, VUEJS_DEVTOOLS } from 'electron-devtools-installer'
+import { app, BrowserWindow, ipcMain } from 'electron'
 import { electronApp, optimizer } from '@electron-toolkit/utils'
 import useWindowService from './services/window-service'
 import { useAppUpdater } from './services/app-updater'
+import { createTray } from './services/tray-service'
+import { ensureDir } from './utils'
+import { useFTPService } from './services/ftp-service'
 
-app.whenReady().then(async () => {
-  electronApp.setAppUserModelId('pl.pokemongogo')
+const gotTheLock = app.requestSingleInstanceLock()
 
-  const { createMainWindow, createLoadingWindow } = useWindowService()
-  const mainWindow = createMainWindow()
-  const { startApp } = createLoadingWindow()
-  const appUpdater = useAppUpdater(mainWindow)
+if (!gotTheLock) {
+  app.quit()
+} else {
+  let mainWindow: BrowserWindow | null = null
 
-  await startApp(appUpdater, mainWindow)
+  app.whenReady().then(async () => {
+    electronApp.setAppUserModelId('pl.pokemongogo.launcher')
+    const { createHandlers } = useFTPService()
 
-  app.on('browser-window-created', (_, window) => {
-    optimizer.watchWindowShortcuts(window)
+    ensureDir(process.cwd() + '/tmp')
+
+    const { createMainWindow, createLoadingWindow } = useWindowService()
+    mainWindow = createMainWindow()
+    const { startApp } = createLoadingWindow()
+    useAppUpdater(mainWindow)
+
+    await startApp(mainWindow)
+    createTray(mainWindow)
+    await installExtension(VUEJS_DEVTOOLS)
+    createHandlers()
+
+    app.on('browser-window-created', (_, window) => {
+      optimizer.watchWindowShortcuts(window)
+    })
   })
 
   app.on('activate', async () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      await startApp(appUpdater, mainWindow)
+      if (mainWindow) mainWindow.show()
     }
   })
-})
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit()
-  }
-})
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore()
+      mainWindow.show()
+      mainWindow.focus()
+    }
+  })
+
+  app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') {
+      if (ipcMain.listenerCount('launch:exit')) mainWindow?.webContents.emit('launch:exit')
+      app.quit()
+    }
+  })
+}

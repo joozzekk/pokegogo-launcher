@@ -1,30 +1,66 @@
 import { type AppUpdater } from 'electron-updater'
 import { getAutoUpdater } from './electron-updater'
-import { ipcMain, type BrowserWindow } from 'electron'
+import { ipcMain, Notification, type BrowserWindow } from 'electron'
+import update from '../../../resources/update.png?asset'
+import Logger from 'electron-log'
 
 export const useAppUpdater = (win: BrowserWindow): AppUpdater => {
+  let notified = false
   const autoUpdater = getAutoUpdater()
 
-  autoUpdater.on('update-available', () => {
-    win.webContents.send('update-available', true)
-  })
-  autoUpdater.on('update-not-available', () => {
-    win.webContents.send('update-available', false)
-  })
-  autoUpdater.on('error', (err) => {
-    console.log(err)
-  })
-  autoUpdater.on('update-downloaded', () => {
-    win.webContents.send('update-available', false)
-  })
+  ipcMain.handle(
+    'update:check',
+    async (_event, channel?: string, showNotifications: boolean = true): Promise<boolean> => {
+      if (channel) {
+        autoUpdater.channel = channel
+        Logger.log(`Current update channel: ${autoUpdater.channel}`)
+      } else {
+        autoUpdater.channel = 'beta'
+      }
 
-  ipcMain.handle('check-for-update', async () => {
-    const res = await autoUpdater.checkForUpdates()
+      try {
+        const res = await autoUpdater.checkForUpdates()
 
-    return autoUpdater.currentVersion !== res?.updateInfo?.version
-  })
+        if (res) Logger.log(res)
 
-  ipcMain.handle('start-update', async () => {
+        if (
+          res?.updateInfo &&
+          res.updateInfo.version !== autoUpdater.currentVersion.version &&
+          showNotifications
+        ) {
+          const isUpdateAvailable =
+            !!res.updateInfo && res.updateInfo.version !== autoUpdater.currentVersion.version
+
+          if (isUpdateAvailable) {
+            const updateNotify = new Notification({
+              icon: update,
+              title: 'Hej, nowa wersja launchera już czeka 👻',
+              body: 'Pobierz najnowszą wersję launchera i już teraz ciesz się najnowszymi funkcjami 😉'
+            })
+
+            updateNotify.on('click', () => {
+              win.show()
+            })
+
+            if (!notified) {
+              updateNotify.show()
+              notified = true
+            }
+          }
+          return isUpdateAvailable
+        }
+
+        return res?.updateInfo
+          ? res.updateInfo.version !== autoUpdater.currentVersion.version
+          : false
+      } catch (error) {
+        Logger.error('Error when checking update:', error)
+        return false
+      }
+    }
+  )
+
+  ipcMain.handle('update:start', async () => {
     await autoUpdater.downloadUpdate()
     autoUpdater.quitAndInstall()
   })

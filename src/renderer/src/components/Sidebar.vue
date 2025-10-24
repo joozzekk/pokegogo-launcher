@@ -1,65 +1,32 @@
 <script setup lang="ts">
-import { fetchProfile } from '@renderer/api/endpoints'
+import useGeneralStore from '@renderer/stores/general-store'
 import useUserStore from '@renderer/stores/user-store'
-import { onMounted, ref } from 'vue'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
-const router = useRouter()
-const playerName = ref<string>('guest')
-const accountType = localStorage.getItem('LOGIN_TYPE')
 const userStore = useUserStore()
+const generalStore = useGeneralStore()
+const router = useRouter()
+const playerName = computed(() => userStore.user?.nickname ?? 'Guest')
 
 const handleLogout = async (): Promise<void> => {
-  localStorage.removeItem('LOGIN_TYPE')
-  localStorage.removeItem('token')
-  switch (accountType) {
-    case 'backend':
-      localStorage.removeItem('refresh_token')
-      break
-    case 'microsoft':
-      localStorage.removeItem('mcToken')
-      break
-    default:
+  await userStore.logout()
+  if (generalStore.currentState === 'minecraft-started') {
+    await window.electron?.ipcRenderer?.invoke('launch:exit')
   }
-
-  router.push('/')
 }
+
+const userRole = computed(() => {
+  return userStore.user?.role ?? 'Gracz'
+})
 
 const handleChangeRoute = (newRoute: string): void => {
   router.push(newRoute)
 }
 
-const fetchProfileData = async (): Promise<void> => {
-  if (!userStore.user?.uuid) {
-    const profile = await fetchProfile()
-
-    userStore.setUser(profile)
-    console.log(new Date(profile.exp * 1000))
-  }
-
-  playerName.value = userStore.user?.nickname ?? 'guest'
+const handleSupDev = (): void => {
+  window.open('https://tipply.pl/@joozzekk', '_blank')
 }
-
-const loadProfile = async (): Promise<void> => {
-  const json = localStorage.getItem('mcToken')
-
-  switch (accountType) {
-    case 'backend':
-      await fetchProfileData()
-      break
-    case 'microsoft':
-      if (json) {
-        const data = JSON.parse(json)
-        const profile = data?.profile
-        playerName.value = profile?.name
-      }
-      break
-  }
-}
-
-onMounted(async () => {
-  await loadProfile()
-})
 </script>
 
 <template>
@@ -73,23 +40,20 @@ onMounted(async () => {
               :src="`https://mineskin.eu/helm/${playerName}/100.png`"
               class="player-skin"
               alt="Player Skin"
+              @dragstart.prevent="null"
             />
             <div class="status-dot"></div>
           </div>
           <div class="player-info">
-            <span class="player-label">Gracz</span>
-            <span id="playerName" class="player-name">
+            <span class="player-name">
               {{ playerName }}
             </span>
+            <span class="player-label">{{ userRole }}</span>
           </div>
         </div>
-        <button class="player-logout" @click="handleLogout">
-          <i class="fa-solid fa-door-open"></i>
-        </button>
       </div>
 
       <a
-        href="#"
         class="nav-item"
         :class="{
           active: $route.path === '/app/home'
@@ -103,7 +67,6 @@ onMounted(async () => {
         <div class="nav-indicator"></div>
       </a>
       <a
-        href="#"
         class="nav-item"
         :class="{
           active: $route.path === '/app/shop'
@@ -117,7 +80,19 @@ onMounted(async () => {
         <div class="nav-indicator"></div>
       </a>
       <a
-        href="#"
+        class="nav-item"
+        :class="{
+          active: $route.path === '/app/changelog'
+        }"
+        @click="handleChangeRoute('/app/changelog')"
+      >
+        <div class="nav-icon">
+          <i class="fa-solid fa-calendar-days"></i>
+        </div>
+        <span>Changelog</span>
+        <div class="nav-indicator"></div>
+      </a>
+      <a
         class="nav-item"
         :class="{
           active: $route.path === '/app/settings'
@@ -130,6 +105,7 @@ onMounted(async () => {
         <span>Ustawienia</span>
         <div class="nav-indicator"></div>
       </a>
+
       <!-- <a
         href="#"
         class="nav-item"
@@ -145,11 +121,18 @@ onMounted(async () => {
         <div class="nav-indicator"></div>
       </a> -->
     </nav>
-
-    <div class="sidebar-footer">
-      <div class="server-mini-status">
-        <div class="pulse-dot"></div>
-        <span>Wesprzyj developera 🥰</span>
+    <div class="flex flex-col px-[0.8rem] pb-1 font-light">
+      <div class="nav-item hover:cursor-pointer select-none" @click="handleSupDev">
+        <button id="support" class="nav-icon">
+          <i class="fa fa-coffee" />
+        </button>
+        <label for="support" class="hover:cursor-pointer">Wesprzyj developera 🥰</label>
+      </div>
+      <div class="nav-item hover:cursor-pointer select-none" @click="handleLogout">
+        <button id="logout" class="nav-icon">
+          <i class="fa-solid fa-door-open"></i>
+        </button>
+        <label for="logout" class="hover:cursor-pointer">Wyloguj się</label>
       </div>
     </div>
   </aside>

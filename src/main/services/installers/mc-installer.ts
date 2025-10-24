@@ -1,24 +1,16 @@
-import ftp from 'basic-ftp'
-import { app, BrowserWindow } from 'electron'
 import fs from 'fs'
-import path from 'path'
+import { posix } from 'path'
 import crypto from 'crypto'
+import { Client } from 'basic-ftp'
+import { safeCd, useFTPService } from '../ftp-service'
+import { app, BrowserWindow } from 'electron'
+import Logger from 'electron-log'
 
 async function fileExists(filePath: string): Promise<boolean> {
   try {
     await fs.promises.access(filePath)
     return true
   } catch {
-    return false
-  }
-}
-
-async function safeCd(client: ftp.Client, dir: string): Promise<boolean> {
-  try {
-    await client.cd(dir)
-    return true
-  } catch (e) {
-    console.error(`Nie można wejść do katalogu: ${dir}`, e)
     return false
   }
 }
@@ -32,35 +24,40 @@ async function getFileHash(filePath: string): Promise<string> {
     stream.on('error', reject)
   })
 }
+
 async function readHashesFile(localDir: string): Promise<Record<string, string>> {
-  const hashesFilePath = path.join(localDir, 'hashes.txt')
+  const hashesFilePath = posix.join(localDir, 'hashes.txt')
   try {
     const data = await fs.promises.readFile(hashesFilePath, 'utf8')
     const lines = data
       .split('\n')
       .map((line) => line.trim())
       .filter(Boolean)
+
     const map: Record<string, string> = {}
     for (const line of lines) {
-      const [fileName, fileHash] = line.split(' ')
+      const lastSpaceIndex = line.lastIndexOf(' ')
+      if (lastSpaceIndex === -1) continue
+      const fileName = line.substring(0, lastSpaceIndex)
+      const fileHash = line.substring(lastSpaceIndex + 1)
       if (fileName && fileHash) {
         map[fileName] = fileHash
       }
     }
     return map
   } catch {
-    // Plik nie istnieje lub błąd odczytu - traktujemy jak pusty
     return {}
   }
 }
 
 async function downloadAll(
-  client: ftp.Client,
+  client: Client,
   remoteDir: string,
   localDir: string,
   log: (data: string, isEnded?: boolean) => void,
   isFirstInstall: boolean,
-  importantFolders: string[],
+  importantFiles: string[],
+  ignoreFiles: string[],
   signal: AbortSignal
 ): Promise<void> {
   if (signal.aborted) {
@@ -71,7 +68,24 @@ async function downloadAll(
   const changed = await safeCd(client, remoteDir)
   if (!changed) return
 
-  const localHashes = await readHashesFile(localDir)
+  const localHashesFile = posix.join(localDir, 'hashes.txt')
+  let hasHashesFile = false
+  try {
+    await client.downloadTo(localHashesFile, posix.join(remoteDir, 'hashes.txt'))
+    hasHashesFile = true
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (err) {
+    Logger.log('PokeGoGo Launcher > Brak zdalnego hashes.txt, przyjmujemy pusty zestaw hashy')
+    hasHashesFile = false
+  }
+
+  let localHashes: Record<string, string> = {}
+  if (hasHashesFile) {
+    localHashes = await readHashesFile(localDir)
+  } else {
+    localHashes = {}
+  }
+
   const list = await client.list()
 
   let downloadedFiles = 0
@@ -79,20 +93,34 @@ async function downloadAll(
 
   for (const file of list) {
     if (signal.aborted) {
-      return // stop downloading if aborted
+      return
     }
 
-    const remotePath = path.posix.join(remoteDir, file.name)
-    const localPath = path.join(localDir, file.name)
+    const remotePath = posix.join(remoteDir, file.name)
+    const localPath = posix.join(localDir, file.name)
+
+    if (
+      file.isFile &&
+      !isFirstInstall &&
+      ignoreFiles.some((importantFile) => file.name.includes(importantFile))
+    )
+      continue
 
     if (file.isDirectory) {
+      if (
+        !isFirstInstall &&
+        !importantFiles.some((importantFolder) => remotePath.includes(importantFolder))
+      )
+        continue
+
       await downloadAll(
         client,
         remotePath,
         localPath,
         log,
         isFirstInstall,
-        importantFolders,
+        importantFiles,
+        ignoreFiles,
         signal
       )
     } else {
@@ -123,44 +151,71 @@ async function downloadAll(
       if (downloadFile) {
         await client.downloadTo(localPath, remotePath)
         downloadedFiles++
-        log(`Pobrano ${downloadedFiles}/${totalFiles} plików w ${remoteDir}`, true)
+        log(`Pobrano ${downloadedFiles}/${totalFiles}`)
       }
     }
   }
+
+  const dirents = await fs.promises.readdir(localDir, { withFileTypes: true })
+
+  for (const dirent of dirents) {
+    if (!dirent.isFile()) {
+      continue // pomijamy katalogi i inne nie-pliki
+    }
+
+    const localFile = dirent.name
+
+    if (localFile === 'hashes.txt' || localFile.endsWith('.sha256')) {
+      continue // pomijamy kontrolne pliki
+    }
+
+    if (!localHashes[localFile]) {
+      try {
+        await fs.promises.unlink(posix.join(localDir, localFile))
+        log(`Usunięto lokalny plik ${localFile}.`)
+      } catch (err) {
+        Logger.log(`PokeGoGo Launcher > Błąd podczas usuwania pliku ${localFile}: ${err}`)
+      }
+    }
+  }
+
+  try {
+    await fs.promises.unlink(posix.join(localDir, 'hashes.txt'))
+    Logger.log('PokeGoGo Launcher > Usunięto lokalny plik hashes.txt po synchronizacji.')
+  } catch {
+    // Ignorujemy błąd usuwania hashes.txt jeśli plik już nie istnieje
+  }
 }
 
-export async function copyMCFiles(mainWindow: BrowserWindow, signal: AbortSignal): Promise<any> {
-  const client = new ftp.Client(1000 * 120)
-  const localRoot = path.join(app.getPath('userData'), 'mcfiles')
-  const markerFile = path.join(localRoot, '.mcfiles_installed')
-  const importantFolders = ['mods', 'versions', 'resourcepacks', 'datapacks', 'config']
+export async function copyMCFiles(
+  isDev: boolean,
+  mainWindow: BrowserWindow,
+  signal: AbortSignal
+): Promise<string | undefined> {
+  const { client, connect } = useFTPService()
+  const localRoot = posix.join(app.getPath('userData'), 'mcfiles')
+  const markerFile = posix.join(app.getPath('userData'), '.mcfiles_installed')
+  const importantFiles = ['mods', 'versions', 'resourcepacks', 'datapacks', 'config', 'fancymenu']
+  const ignoreFiles = ['options']
 
   try {
     const isFirstInstall = !(await fileExists(markerFile))
 
-    await client.access({
-      host: '57.128.211.105',
-      user: 'ftpuser',
-      password: 'Ewenement2023$',
-      secure: false
-    })
-
-    client.ftp.encoding = 'utf-8'
-    client.ftp.verbose = true
-    await client.send('OPTS UTF8 ON')
+    await connect()
 
     const pwd = await client.pwd()
-    const remoteURL = pwd + '/mc'
+    const remoteURL = posix.join(pwd, isDev ? 'dev-mc' : 'mc')
 
     await downloadAll(
       client,
       remoteURL,
       localRoot,
       (data: string) => {
-        mainWindow.webContents.send('show-log', data)
+        mainWindow.webContents.send('launch:show-log', data)
       },
       isFirstInstall,
-      importantFolders,
+      importantFiles,
+      ignoreFiles,
       signal
     )
 
@@ -170,12 +225,14 @@ export async function copyMCFiles(mainWindow: BrowserWindow, signal: AbortSignal
 
     if (isFirstInstall) {
       await fs.promises.writeFile(markerFile, 'installed')
+      Logger.log('PokeGoGo Launcher > Created marker file')
     }
 
-    mainWindow.webContents.send('show-log', '', true)
+    mainWindow.webContents.send('launch:show-log', '', true)
   } catch (err) {
-    console.error(err)
+    Logger.error(err)
   } finally {
     client.close()
   }
+  return
 }

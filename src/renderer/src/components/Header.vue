@@ -1,23 +1,43 @@
 <script lang="ts" setup>
 import logo from '@renderer/assets/logo.png'
+import { LOGGER } from '@renderer/services/logger-service'
 import useGeneralStore from '@renderer/stores/general-store'
+import { checkUpdate, showToast } from '@renderer/utils'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import UpdateConfirm from './modals/UpdateConfirm.vue'
+import { useRouter } from 'vue-router'
+import useUserStore from '@renderer/stores/user-store'
 
+const userStore = useUserStore()
 const generalStore = useGeneralStore()
+const router = useRouter()
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const updateInterval = ref<any>()
 const isInstallingUpdate = ref<boolean>(false)
 
+const hasMod = computed(() =>
+  ['admin', 'technik', 'mod'].includes(userStore.user?.role || 'default')
+)
+const hasTech = computed(() => ['technik'].includes(userStore.user?.role || 'default'))
+const hasAdmin = computed(() => ['admin', 'technik'].includes(userStore.user?.role || 'default'))
+
+const handleChangeRoute = (newRoute: string): void => {
+  router.push(newRoute)
+}
+
 const maximizeWindow = (): void => {
-  window.electron.ipcRenderer.send('window-maximize', generalStore.settings.resolution)
+  window.electron?.ipcRenderer?.send('window:maximize', generalStore.settings.resolution)
 }
 
 const minimizeWindow = (): void => {
-  window.electron.ipcRenderer.send('window-minimize')
+  window.electron?.ipcRenderer?.send('window:minimize')
 }
 
 const closeWindow = (): void => {
-  window.electron.ipcRenderer.send('window-close')
-  window.electron.ipcRenderer.invoke('exit-launch')
+  window.electron?.ipcRenderer?.send('window:close', generalStore.settings.hideToTray)
+  if (generalStore.currentState === 'minecraft-started' && !generalStore.settings.hideToTray) {
+    window.electron?.ipcRenderer?.invoke('launch:exit')
+  }
 }
 
 const isUpdateAvailable = computed(() => {
@@ -26,19 +46,30 @@ const isUpdateAvailable = computed(() => {
 
 const handleInstallUpdate = async (): Promise<void> => {
   isInstallingUpdate.value = true
-  await window.electron.ipcRenderer.invoke('start-update')
-  isInstallingUpdate.value = false
+  try {
+    try {
+      await window.electron?.ipcRenderer?.invoke('launch:exit')
+    } finally {
+      await window.electron?.ipcRenderer?.invoke('update:start')
+    }
+  } catch (err) {
+    showToast('Wystąpił błąd podczas aktualizacji. Spróbuj ponownie później.', 'error')
+    LOGGER.log(err as string)
+  } finally {
+    isInstallingUpdate.value = false
+  }
 }
 
-const parsedAppVersion = computed(() => {
-  return generalStore.appVersion.split('-')[1]
-})
+const confirmModalRef = ref()
 
-onMounted(() => {
-  updateInterval.value = setInterval(() => {
-    window.electron.ipcRenderer.invoke('check-for-update')
-    console.log('Checking for update..')
-  }, 1000 * 30)
+const openConfirmModal = (): void => {
+  confirmModalRef.value?.openModal()
+}
+
+onMounted(async () => {
+  await checkUpdate()
+
+  updateInterval.value = setInterval(checkUpdate, 1000 * 60)
 })
 
 onUnmounted(() => {
@@ -50,22 +81,68 @@ onUnmounted(() => {
   <header class="header">
     <div class="applogo">
       <div class="applogo-icon">
-        <img :src="logo" width="100%" />
+        <img :src="logo" width="100%" @dragstart.prevent="null" />
       </div>
       <h1>PokeGoGo</h1>
-      <span class="applogo-badge">{{ parsedAppVersion }}</span>
     </div>
-    <div v-if="$route.path.includes('/app')" class="breadcrumbs">
-      <i class="fa fa-home" @click="$router.push('/app/home')" /> >
-      <span class="active">
-        {{ $route.name }}
-      </span>
+    <div v-if="$route.path.includes('/app')" class="breadcrumbs flex items-center gap-2">
+      <button class="nav-icon" @click="$router.push('/app/home')">
+        <i class="fa fa-home" />
+      </button>
+      <button
+        v-if="hasMod"
+        class="nav-icon"
+        :class="{ active: $route.path === '/app/users' }"
+        @click="handleChangeRoute('/app/users')"
+      >
+        <i class="fa fa-users"></i>
+      </button>
+      <button
+        v-if="hasAdmin"
+        class="nav-icon"
+        :class="{ active: $route.path === '/app/events' }"
+        @click="handleChangeRoute('/app/events')"
+      >
+        <i class="fa fa-calendar-week"></i>
+      </button>
+      <button
+        v-if="hasTech"
+        class="nav-icon"
+        :class="{ active: $route.path === '/app/items' }"
+        @click="handleChangeRoute('/app/items')"
+      >
+        <i class="fa fa-list"></i>
+      </button>
+      <button
+        v-if="hasTech"
+        class="nav-icon"
+        :class="{ active: $route.path === '/app/ftp' }"
+        @click="handleChangeRoute('/app/ftp')"
+      >
+        <i class="fa fa-folder"></i>
+      </button>
+      <div>></div>
+      <div class="active">
+        {{ $route.meta.displayName }}
+      </div>
     </div>
 
-    <button v-if="isUpdateAvailable" class="nav-icon" @click="handleInstallUpdate">
-      <i v-if="isInstallingUpdate" class="fas fa-spinner fa-spin"></i>
-      <i v-else class="fas fa-download"></i>
-    </button>
+    <div class="flex ml-auto mr-[9rem] items-center gap-2">
+      <div class="applogo-badge">{{ generalStore.settings.updateChannel }}</div>
+
+      <button
+        v-if="isUpdateAvailable"
+        class="nav-icon"
+        @click="
+          generalStore.currentState === 'minecraft-started'
+            ? openConfirmModal()
+            : handleInstallUpdate()
+        "
+      >
+        <i v-if="isInstallingUpdate" class="fas fa-spinner fa-spin"></i>
+        <i v-else class="fas fa-download"></i>
+      </button>
+    </div>
     <div class="buttons">
       <button @click="minimizeWindow">
         <i class="fa-solid fa-window-minimize"></i>
@@ -77,22 +154,21 @@ onUnmounted(() => {
         <i class="fa-solid fa-xmark fa-xl"></i>
       </button>
     </div>
+
+    <UpdateConfirm ref="confirmModalRef" @accept="handleInstallUpdate" />
   </header>
 </template>
 
 <style scoped>
 .nav-icon {
-  margin-left: auto;
-  margin-right: 11rem;
-  color: #0aefff !important;
-  cursor: pointer !important;
   border: none;
   -webkit-app-region: no-drag;
   transition: background 0.1s ease-in-out;
 }
 
-.nav-icon:hover {
-  box-shadow: 0 0 5px gray;
+.nav-icon.active {
+  background: var(--nav-item-active);
+  color: var(--primary);
 }
 
 .buttons {
@@ -128,7 +204,7 @@ onUnmounted(() => {
 
 .buttons button:hover,
 .buttons button:focus {
-  background: rgba(34, 192, 197, 0.2);
+  background: var(--btn-hover);
 }
 
 .buttons button.red:hover,
@@ -137,8 +213,8 @@ onUnmounted(() => {
 }
 
 .breadcrumbs {
-  color: #575b69;
-
+  color: var(--breadcrumbs-text);
+  margin-left: 0.5rem;
   user-select: none;
   -webkit-app-region: no-drag;
   text-transform: capitalize;
@@ -146,7 +222,7 @@ onUnmounted(() => {
 
 .breadcrumbs > i:hover {
   cursor: pointer;
-  color: white;
+  color: var(--primary);
 }
 
 .breadcrumbs > .active:hover {

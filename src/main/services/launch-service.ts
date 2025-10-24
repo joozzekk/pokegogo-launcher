@@ -6,7 +6,7 @@ import { launchMinecraft } from './mc-launcher'
 export const useLaunchService = (win: BrowserWindow): void => {
   let currentAbortController: AbortController | null = null
 
-  ipcMain.handle('launch-game', async (_, data) => {
+  ipcMain.handle('launch:game', async (_, data) => {
     if (currentAbortController) {
       currentAbortController.abort()
     }
@@ -14,22 +14,30 @@ export const useLaunchService = (win: BrowserWindow): void => {
     currentAbortController = new AbortController()
     const signal = currentAbortController.signal
 
+    win.webContents.send('launch:change-state', JSON.stringify('java-install'))
     await installJava(data.javaVersion)
-    win.webContents.send('change-launch-state', JSON.stringify('files-verify'))
+    win.webContents.send('launch:change-state', JSON.stringify('files-verify'))
 
-    const res = await copyMCFiles(win, signal)
+    const res = await copyMCFiles(data.isDev, win, signal)
 
     currentAbortController = null
 
     if (res !== 'stop') {
-      await launchMinecraft(win, data.mcVersion, data.token, data.settings, data.accountType)
+      await launchMinecraft(
+        win,
+        data.mcVersion,
+        data.token,
+        data.accessToken,
+        data.settings,
+        data.accountType
+      )
     }
   })
 
-  ipcMain.handle('exit-verify', () => {
+  ipcMain.handle('launch:exit-verify', () => {
     if (currentAbortController) {
       currentAbortController.abort()
-      win.webContents.send('show-log', '', true)
+      win.webContents.send('launch:show-log', '', true)
       return Promise.resolve()
     }
 

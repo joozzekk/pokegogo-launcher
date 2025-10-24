@@ -1,33 +1,45 @@
 <script lang="ts" setup>
 import logo from '@renderer/assets/logo.png'
 import { ref, onMounted } from 'vue'
+import dynia from '@renderer/assets/img/dynia.png'
+import ghost from '@renderer/assets/img/ghost.png'
+import { applyTheme, halloween } from '@renderer/assets/theme/official'
+import { checkUpdate } from '@renderer/utils'
+import useGeneralStore from '@renderer/stores/general-store'
 
 const status = ref<string>('Inicjalizowanie..')
 const progress = ref(0)
 
+const generalStore = useGeneralStore()
+
 const statuses = {
   'check-for-update': 'Sprawdzanie aktualizacji..',
   updating: 'Aktualizowanie..',
-  starting: 'Uruchamianie..',
-  'app-started': 'Witamy!'
+  starting: 'Witamy!'
 }
 
 onMounted(() => {
-  window.electron.ipcRenderer?.on('load:status', (_, currentStatus: string) => {
+  applyTheme(
+    localStorage.getItem('selectedTheme')
+      ? JSON.parse(localStorage.getItem('selectedTheme')!)
+      : halloween
+  )
+
+  window.electron?.ipcRenderer?.on('load:status', async (_, currentStatus: string) => {
     let val = 0
     const parsedStatus = JSON.parse(currentStatus)
 
     switch (parsedStatus) {
       case 'check-for-update':
-        val = 10
+        await checkUpdate()
+        val = 25
         break
       case 'updating':
-        val = 45
+        if (generalStore.isUpdateAvailable && generalStore.settings.autoUpdate)
+          await window.electron?.ipcRenderer?.invoke('update:start')
+        val = 60
         break
       case 'starting':
-        val = 80
-        break
-      case 'app-started':
         val = 100
         break
     }
@@ -42,9 +54,12 @@ onMounted(() => {
     <div class="background">
       <div class="bg-gradient"></div>
       <div class="floating-blocks">
-        <div class="block block-1"></div>
-        <div class="block block-2"></div>
-        <div class="block block-3"></div>
+        <img :src="dynia" class="block-1" @dragstart.prevent="null" />
+        <img :src="dynia" class="block-2" @dragstart.prevent="null" />
+        <img :src="dynia" class="block-3" @dragstart.prevent="null" />
+        <img :src="ghost" class="ghost-1" @dragstart.prevent="null" />
+        <img :src="ghost" class="ghost-2" @dragstart.prevent="null" />
+        <img :src="ghost" class="ghost-3" @dragstart.prevent="null" />
       </div>
     </div>
     <div class="loading-container">
@@ -62,18 +77,6 @@ onMounted(() => {
 </template>
 
 <style scoped>
-:root {
-  --primary1: #0aefff5b;
-  --primary2: #03a2ad;
-  --bg-primary: #000000;
-}
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
 .container {
   width: 100%;
   height: 100vh;
@@ -95,13 +98,13 @@ onMounted(() => {
 .logo-container {
   width: 80px;
   height: 80px;
-  background: linear-gradient(135deg, var(--primary1), var(--primary2));
+  background: linear-gradient(135deg, var(--primary), var(--primary));
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 32px;
-  box-shadow: 0 8px 24px #0aefff33;
+  box-shadow: 0 8px 24px var(--border);
   animation: pulse 2s ease-in-out infinite;
   overflow: hidden;
 }
@@ -125,7 +128,6 @@ onMounted(() => {
 }
 
 .progress-container {
-  width: 60vw;
   max-width: 320px;
   height: 8px;
   background-color: black;
@@ -139,9 +141,9 @@ onMounted(() => {
   width: 0%;
   transition: width 0.8s ease-out;
   height: 100%;
-  background-color: #0aefff5b;
+  background-color: var(--primary);
   border-radius: 4px;
-  box-shadow: 0 0 8px #0aefff33;
+  box-shadow: 0 0 8px var(--border);
 }
 
 @keyframes pulse {
@@ -152,7 +154,7 @@ onMounted(() => {
 
   50% {
     transform: scale(1.05);
-    box-shadow: 0 12px 32px #0aefff33;
+    box-shadow: 0 0 32px var(--border);
   }
 }
 
@@ -172,7 +174,7 @@ onMounted(() => {
   }
 
   .progress-container {
-    width: 80vw;
+    width: 70vw;
     max-width: 280px;
   }
 }
@@ -190,11 +192,7 @@ onMounted(() => {
   position: absolute;
   width: 100%;
   height: 100%;
-  background: radial-gradient(
-    ellipse at center,
-    rgba(10, 239, 255, 0.2) 0%,
-    var(--bg-primary) 100%
-  );
+  background: radial-gradient(ellipse at center, var(--border) 0%, var(--bg-primary) 100%);
   animation: gradientShift 10s ease-in-out infinite alternate;
 }
 
@@ -205,36 +203,81 @@ onMounted(() => {
   overflow: hidden;
 }
 
-.block {
-  position: absolute;
-  background: linear-gradient(45deg, var(--primary1), var(--primary2));
-  opacity: 0.03;
-  border-radius: 4px;
-  animation: float 20s linear infinite;
-}
-
 .block-1 {
-  width: 40px;
-  height: 40px;
+  position: absolute;
+  width: 90px;
+  height: 90px;
   top: 20%;
   left: 10%;
-  animation-delay: -2s;
+  animation: float 20s linear infinite;
+  opacity: 0.3;
 }
 
 .block-2 {
+  position: absolute;
   width: 60px;
   height: 60px;
   top: 60%;
   left: 80%;
+  animation: float 18s linear infinite;
   animation-delay: -8s;
+  opacity: 0.3;
 }
 
 .block-3 {
+  animation: float 22s linear infinite;
+  position: absolute;
   width: 30px;
   height: 30px;
   top: 80%;
   left: 20%;
   animation-delay: -15s;
+  opacity: 0.3;
+}
+
+.ghost-1 {
+  animation: sway 3s ease-in-out infinite;
+  width: 100px;
+  position: absolute;
+  top: 15%;
+  left: 60%;
+  opacity: 0.1;
+}
+
+.ghost-2 {
+  animation: sway 2s ease-in-out infinite;
+  width: 80px;
+  position: absolute;
+  top: 70%;
+  left: 50%;
+  opacity: 0.1;
+}
+
+.ghost-3 {
+  animation: sway 4s ease-in-out infinite;
+  width: 40px;
+  position: absolute;
+  top: 50%;
+  left: 10%;
+  opacity: 0.1;
+}
+
+@keyframes sway {
+  0% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-8px);
+  }
+  50% {
+    transform: translateX(0);
+  }
+  75% {
+    transform: translateX(8px);
+  }
+  100% {
+    transform: translateX(0);
+  }
 }
 
 @keyframes float {

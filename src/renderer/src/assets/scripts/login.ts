@@ -1,7 +1,9 @@
 /* eslint-disable */
 // @ts-nocheck
-import { fetchLogin, fetchRegister } from '@renderer/api/endpoints'
+import { fetchLogin, fetchRegister, updateBackendUserFromMicrosoft } from '@renderer/api/endpoints'
 import { router } from '@renderer/router'
+import { LOGGER } from '@renderer/services/logger-service'
+import { AxiosError } from 'axios'
 
 const CONFIG = {
   minNickLength: 3,
@@ -296,7 +298,7 @@ export class PokeGoGoLogin {
 
       this.showToast('Zalogowano pomyślnie!', 'success')
     } catch (error) {
-      this.showToast(error.message, 'error')
+      this.showToast(error?.response?.data?.message ?? error.message, 'error')
       this.showError(document.getElementById('login-email-error'), 'Sprawdź swoje dane')
     } finally {
       this.hideLoading()
@@ -334,10 +336,12 @@ export class PokeGoGoLogin {
         })
       }
     } catch (error: Error) {
+      LOGGER.err(error)
+
       if (error.message.includes('zajęty')) {
         this.showError(document.getElementById('register-nick-error'), error.message)
       }
-      this.showToast(error.message, 'error')
+      this.showToast(error?.response?.data?.message ?? error.message, 'error')
     } finally {
       this.hideLoading()
     }
@@ -373,16 +377,29 @@ export class PokeGoGoLogin {
   async handleMicrosoftLogin(): Promise<void> {
     try {
       this.showLoading('Logowanie przez Microsoft...')
-      const { refreshToken, mcToken }: { mcToken: string; refreshToken: string } =
-        await window.electron.ipcRenderer.invoke('login')
+      const { msToken, mcToken }: { mcToken: string; msToken: string } =
+        await window.electron?.ipcRenderer?.invoke('auth:login')
 
-      localStorage.setItem('token', refreshToken)
+      const data = JSON.parse(mcToken)
+      const profile = data?.profile
+
+      const user = await updateBackendUserFromMicrosoft({
+        nickname: profile?.name,
+        mcid: profile?.id
+      })
+
+      const { access_token, refresh_token } = await fetchLogin(user.nickname, user.uuid, true)
+
+      localStorage.setItem('msToken', msToken)
       localStorage.setItem('mcToken', mcToken)
+      localStorage.setItem('token', access_token)
+      localStorage.setItem('refresh_token', refresh_token)
       localStorage.setItem('LOGIN_TYPE', 'microsoft')
       router.push({
         path: '/app/home'
       })
     } catch (_error) {
+      LOGGER.log(_error)
       this.showToast('Błąd podczas przekierowania', 'error')
     } finally {
       this.hideLoading()
