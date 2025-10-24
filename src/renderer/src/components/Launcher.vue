@@ -11,7 +11,7 @@ import {
   updateProfileData
 } from '@renderer/api/endpoints'
 import useGeneralStore from '@renderer/stores/general-store'
-import { refreshMicrosoftToken, showToast } from '@renderer/utils'
+import { refreshMicrosoftToken } from '@renderer/utils'
 import BannedModal from '@renderer/components/modals/BannedModal.vue'
 import { useSocket } from '@renderer/services/socket-service'
 import api from '@renderer/utils/client'

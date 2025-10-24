@@ -22,9 +22,11 @@ const accountType = localStorage.getItem('LOGIN_TYPE')
 const userStore = useUserStore()
 
 const isBanned = computed(() => {
-  return userStore.hwidBanned || userStore.user?.banEndDate
-    ? differenceInMilliseconds(parseISO(userStore.user?.banEndDate as string), new Date()) > 0
-    : userStore.user?.isBanned
+  return userStore.hwidBanned
+    ? userStore.hwidBanned
+    : userStore.user?.banEndDate
+      ? differenceInMilliseconds(parseISO(userStore.user?.banEndDate as string), new Date()) > 0
+      : !!userStore.user?.isBanned
 })
 
 const handleToggleGame = async (e: Event): Promise<void> => {
@@ -111,7 +113,7 @@ const pad = (num: number): string => String(num).padStart(2, '0')
 const formattedBanTime = computed(() => {
   const banEndDateString = userStore.user?.banEndDate as string | null
 
-  if (!banEndDateString) {
+  if (!banEndDateString?.length) {
     return 'Permanentnie'
   }
 
@@ -207,9 +209,11 @@ onUnmounted(() => {
           <template v-if="isBanned">
             <i class="fas fa-exclamation-triangle text-2xl"></i>
             <div class="flex flex-col">
-              <span class="title mb-2"> Twoje konto zostało zablokowane </span>
+              <span class="title" :class="{ 'mb-2': userStore.user?.banEndDate }">
+                Twoje konto zostało zablokowane
+              </span>
               <span class="text-[0.7rem] text-black">
-                {{ formattedBanTime }}
+                {{ userStore.user?.banEndDate ? formattedBanTime : '' }}
               </span>
             </div>
           </template>

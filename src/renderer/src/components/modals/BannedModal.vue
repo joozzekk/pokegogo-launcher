@@ -7,9 +7,11 @@ const modalVisible = ref(true)
 const userStore = useUserStore()
 
 const isBanned = computed(() => {
-  return userStore.hwidBanned || userStore.user?.banEndDate
-    ? differenceInMilliseconds(parseISO(userStore.user?.banEndDate as string), new Date()) > 0
-    : userStore.user?.isBanned
+  return userStore.hwidBanned
+    ? userStore.hwidBanned
+    : userStore.user?.banEndDate
+      ? differenceInMilliseconds(parseISO(userStore.user?.banEndDate as string), new Date()) > 0
+      : !!userStore.user?.isBanned
 })
 
 const banReason = computed(() => userStore.user?.banReason || 'Brak szczegółowego powodu.')
