@@ -212,7 +212,7 @@ onUnmounted(() => {
                     <template
                       v-if="
                         ['admin', 'technik', 'mod'].includes(userStore.user.role) &&
-                        player?.role !== 'admin'
+                        !['admin', 'technik', 'mod'].includes(player.role)
                       "
                     >
                       <button

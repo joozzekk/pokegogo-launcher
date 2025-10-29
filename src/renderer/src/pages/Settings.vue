@@ -324,7 +324,10 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div class="my-0 mt-4 flex flex-row items-center justify-between">
+        <div
+          v-if="['technik', 'admin', 'mod'].includes(userStore.user?.role ?? 'default')"
+          class="my-0 mt-4 flex flex-row items-center justify-between"
+        >
           <div class="text-[var(--text-secondary)] w-full">Automatyczne aktualizacje</div>
 
           <div class="flex items-center gap-2">

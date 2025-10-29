@@ -95,7 +95,7 @@ defineExpose({
           <template v-if="actionType === 'ban'">
             <div v-if="userStore.user" class="flex gap-2">
               <button
-                v-if="['admin', 'technik'].includes(userStore.user.role)"
+                v-if="['admin', 'technik'].includes(userStore.user.role) && !!playerData?.machineId"
                 class="toggle-option !py-[0.25rem]"
                 :class="{ active: banType === 'hwid' }"
                 @click="banType = 'hwid'"

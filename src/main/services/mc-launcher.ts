@@ -1,7 +1,7 @@
 import { Authenticator, Client } from 'minecraft-launcher-core'
 import path, { join } from 'path'
 import { app, BrowserWindow, ipcMain, screen } from 'electron'
-import { getMaxRAMInGB } from '../utils'
+// import { getMaxRAMInGB } from '../utils'
 import os from 'os'
 import Logger from 'electron-log'
 
@@ -57,7 +57,7 @@ export async function launchMinecraft(
   const [width, height] = isFullScreen
     ? [fullWidth, fullHeight]
     : settings.resolution.split('x').map((v: string) => parseInt(v))
-  const maxRAM = getMaxRAMInGB()
+  // const maxRAM = getMaxRAMInGB()
 
   const process = await client.launch({
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -76,8 +76,8 @@ export async function launchMinecraft(
       fullscreen: settings.displayMode === 'Pełny ekran' ? true : false
     },
     memory: {
-      max: `${Math.floor(0.75 * maxRAM)}G`,
-      min: `${settings.ram}G`
+      max: `${settings.ram}G`,
+      min: `4G`
     },
     customArgs: [`-DaccessToken=${accessToken}`]
   })

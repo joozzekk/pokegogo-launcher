@@ -64,7 +64,8 @@ const handleLaunchGame = async (e: Event): Promise<void> => {
 
   if (accountType === 'microsoft' && mcToken?.includes('exp')) {
     const exp = JSON.parse(mcToken as string).exp
-    const now = Math.floor(Date.now() / 1000)
+    const now = Math.floor(Date.now())
+
     if (now >= exp) {
       await refreshMicrosoftToken(localStorage.getItem('msToken'))
       mcToken = localStorage.getItem('mcToken')
