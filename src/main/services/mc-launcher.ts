@@ -112,9 +112,6 @@ export async function launchMinecraft(
       win.hide()
     }
   })
-  client.on('error', (data) => {
-    Logger.log('PokeGoGo Launcher > MC Error > ', data)
-  })
   client.on('progress', (data) => {
     Logger.log('PokeGoGo Launcher > MC Progress > ', data)
   })

@@ -3,7 +3,7 @@ import { getChangelog, removeChangelog } from '@renderer/api/endpoints'
 import AddChangelog from '@renderer/components/modals/AddChangelog.vue'
 import useUserStore from '@renderer/stores/user-store'
 import { showToast } from '@renderer/utils'
-import { format } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 import { computed, onMounted, ref, watch } from 'vue'
 
 const url = import.meta.env.RENDERER_VITE_API_URL
@@ -26,7 +26,11 @@ async function fetchChangelog(): Promise<void> {
   if (res) {
     allChangelog.value = res
     filteredChangelog.value = [
-      ...allChangelog.value.filter((changelog: any) => changelog.type === selectedType.value)
+      ...allChangelog.value
+        .sort((a, b) =>
+          parseISO(a.startDate).getTime() < parseISO(b.startDate).getTime() ? 1 : -1
+        )
+        .filter((changelog: any) => changelog.type === selectedType.value)
     ]
     noResultsVisible.value = false
     isLoadingChangelog.value = false

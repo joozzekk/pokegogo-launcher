@@ -36,7 +36,9 @@ watch(searchQuery, () => {
   filteredPlayers.value = allPlayers.value.filter(
     (p) =>
       p.nickname.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      getPlayerID(p).includes(searchQuery.value)
+      getPlayerID(p).includes(searchQuery.value.toLowerCase()) ||
+      p.machineId?.includes(searchQuery.value.toLowerCase()) ||
+      p.macAddress?.includes(searchQuery.value.toLowerCase())
   )
 
   if (!filteredPlayers.value?.length) {
@@ -108,7 +110,7 @@ onUnmounted(() => {
         v-model="searchQuery"
         type="text"
         class="search-input !p-2 !py-1 !pl-8 !text-[0.8rem]"
-        placeholder="Wyszukaj gracza po nicku lub ID..."
+        placeholder="Wyszukaj gracza po nicku, UUID/MCID, Machine ID lub Mac adresie..."
       />
     </div>
 

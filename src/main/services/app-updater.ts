@@ -1,8 +1,10 @@
 import { type AppUpdater } from 'electron-updater'
 import { getAutoUpdater } from './electron-updater'
-import { ipcMain, Notification, type BrowserWindow } from 'electron'
+import { app, ipcMain, Notification, type BrowserWindow } from 'electron'
 import update from '../../../resources/update.png?asset'
 import Logger from 'electron-log'
+import { unlink } from 'fs/promises'
+import { posix } from 'path'
 
 export const useAppUpdater = (win: BrowserWindow): AppUpdater => {
   let notified = false
@@ -61,6 +63,7 @@ export const useAppUpdater = (win: BrowserWindow): AppUpdater => {
   )
 
   ipcMain.handle('update:start', async () => {
+    await unlink(posix.join(app.getPath('userData'), '.mcfiles_installed'))
     await autoUpdater.downloadUpdate()
     autoUpdater.quitAndInstall()
   })
