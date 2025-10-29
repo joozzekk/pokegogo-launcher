@@ -63,12 +63,27 @@ const handleLaunchGame = async (e: Event): Promise<void> => {
   let mcToken = localStorage.getItem('mcToken')
 
   if (accountType === 'microsoft' && mcToken?.includes('exp')) {
-    const exp = JSON.parse(mcToken as string).exp
-    const now = Math.floor(Date.now())
+    LOGGER.log('Weryfikacja tokenu MC..')
+    const exp = parseInt(JSON.parse(mcToken as string).exp)
+    const now = new Date().getTime()
+
+    LOGGER.log(`${now} ${exp}`)
 
     if (now >= exp) {
-      await refreshMicrosoftToken(localStorage.getItem('msToken'))
-      mcToken = localStorage.getItem('mcToken')
+      LOGGER.log('Odświeżanie tokenu MC..')
+      try {
+        await refreshMicrosoftToken(localStorage.getItem('msToken'))
+        mcToken = localStorage.getItem('mcToken')
+
+        LOGGER.success('MC Token został odświeżony.')
+      } catch (err: unknown) {
+        LOGGER.err('Błąd odświażania tokenu.', `${err}`)
+        showToast('Błąd odświeżania tokenu MC. Spróbuj ponownie za chwilę.')
+
+        generalStore.setIsOpeningGame(false)
+        generalStore.setCurrentState('start')
+        return
+      }
     }
   }
 

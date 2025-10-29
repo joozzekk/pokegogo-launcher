@@ -98,18 +98,11 @@ export const calculateValueFromPercentage = (
 }
 
 export const refreshMicrosoftToken = async (token: string | null): Promise<void> => {
-  try {
-    if (!window?.electron?.ipcRenderer || !token) return
-    const { msToken, mcToken } = await window.electron.ipcRenderer.invoke(
-      'auth:refresh-token',
-      token
-    )
+  if (!window?.electron?.ipcRenderer || !token) return
+  const { msToken, mcToken } = await window.electron.ipcRenderer.invoke('auth:refresh-token', token)
 
-    localStorage.setItem('msToken', msToken)
-    localStorage.setItem('mcToken', mcToken)
-  } catch (err) {
-    LOGGER.err(err as string)
-  }
+  localStorage.setItem('msToken', msToken)
+  localStorage.setItem('mcToken', mcToken)
 }
 
 export const defaultDatePickerTime: DatePickerPassThroughOptions = {
