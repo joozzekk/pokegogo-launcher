@@ -175,6 +175,19 @@ onUnmounted(() => {
                     >
                       Premium
                     </span>
+                    <span
+                      v-if="!player.machineId"
+                      :style="`
+                      background: var(--text-secondary);
+                      font-size: 0.6rem;
+                      color: black;
+                      padding: 2px 6px;
+                      border-radius: 4px;
+                      font-weight: 800;
+                    `"
+                    >
+                      Missing HWID
+                    </span>
                   </div>
                 </td>
                 <td>
