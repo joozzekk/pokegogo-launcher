@@ -1,8 +1,10 @@
-import { type BrowserWindow, ipcMain } from 'electron'
+import { app, type BrowserWindow, ipcMain } from 'electron'
 import { installJava } from './installers/java-installer'
 import { copyMCFiles } from './installers/mc-installer'
 import { launchMinecraft } from './mc-launcher'
 import Logger from 'electron-log'
+import { join } from 'path'
+import { unlink } from 'fs/promises'
 
 export const useLaunchService = (win: BrowserWindow): void => {
   let currentAbortController: AbortController | null = null
@@ -35,7 +37,7 @@ export const useLaunchService = (win: BrowserWindow): void => {
     }
   })
 
-  ipcMain.handle('launch:check-files', async (_, data): Promise<boolean> => {
+  ipcMain.handle('launch:check-files', async (_, data): Promise<any> => {
     if (currentAbortController) {
       currentAbortController.abort()
     }
@@ -45,10 +47,23 @@ export const useLaunchService = (win: BrowserWindow): void => {
 
     try {
       const res = await copyMCFiles(data.isDev, win, signal, data.event)
+      currentAbortController = null
 
-      if (res) {
+      if (res !== 'stop') {
         return true
       }
+
+      return false
+    } catch (err) {
+      Logger.log(err)
+
+      return false
+    }
+  })
+
+  ipcMain.handle('launch:remove-markfile', async (): Promise<boolean> => {
+    try {
+      await unlink(join(app.getPath('userData'), '.mcfiles_installed'))
     } catch (err) {
       Logger.log(err)
 
@@ -62,6 +77,7 @@ export const useLaunchService = (win: BrowserWindow): void => {
     if (currentAbortController) {
       currentAbortController.abort()
       win.webContents.send(event, '', true)
+      Logger.log('Cancel veryfing..')
       return Promise.resolve()
     }
 

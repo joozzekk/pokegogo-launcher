@@ -10,28 +10,29 @@ const generalStore = useGeneralStore()
 
 const openModal = (): void => {
   modalVisible.value = true
+  isEnd.value = false
+  currentLog.value = ''
   window.electron?.ipcRenderer?.on('verify:log', (_, data: string, ended: boolean) => {
-    currentLog.value = data
-
     if (ended) {
-      currentLog.value = 'Sprawdzanie zakończone'
-      isEnd.value = true
-      isVerifying.value = false
+      setTimeout(() => {
+        currentLog.value = 'Sprawdzanie zakończone'
+        isVerifying.value = false
+        isEnd.value = true
+      }, 250)
+      return
     }
+    currentLog.value = data
+    isVerifying.value = true
   })
 }
 
 const cancelVerifying = async (): Promise<void> => {
-  if (isVerifying.value) {
-    await window.electron?.ipcRenderer?.invoke('launch:exit-verify', 'verify:log')
-    isVerifying.value = false
-  }
+  await window.electron?.ipcRenderer?.invoke('launch:exit-verify', 'verify:log')
 }
 
 const verifyFiles = async (): Promise<void> => {
-  await cancelVerifying()
-
   isVerifying.value = true
+  await window.electron?.ipcRenderer?.invoke('launch:remove-markfile')
   await window.electron?.ipcRenderer?.invoke('launch:check-files', {
     isDev: generalStore.settings.updateChannel === 'dev',
     event: 'verify:log'
@@ -40,10 +41,8 @@ const verifyFiles = async (): Promise<void> => {
 
 const handleExit = async (): Promise<void> => {
   await cancelVerifying()
-
   modalVisible.value = false
-  isEnd.value = false
-  currentLog.value = ''
+  isVerifying.value = false
 }
 
 defineExpose({
@@ -67,7 +66,7 @@ defineExpose({
             <div class="nav-icon">
               <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
             </div>
-            <h2>Naprawianie plików...</h2>
+            <h2>Naprawianie plików</h2>
           </div>
           <div>
             <button class="nav-icon" @click="handleExit">
@@ -81,8 +80,8 @@ defineExpose({
           </p>
         </div>
         <button v-if="isEnd" class="btn-primary" @click="handleExit">Zakończ</button>
-        <button v-else class="btn-primary" @click="verifyFiles">
-          {{ currentLog.length ? 'Przerwij weryfikowanie' : 'Rozpocznij weryfikacje' }}
+        <button v-else class="btn-primary" @click="isVerifying ? cancelVerifying() : verifyFiles()">
+          {{ isVerifying ? 'Przerwij weryfikowanie' : 'Rozpocznij weryfikacje' }}
         </button>
       </div>
     </div>
@@ -146,12 +145,16 @@ defineExpose({
 }
 
 .log-description {
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   width: 100%;
+  min-height: 7vh;
   border-radius: 0.5rem;
   background-color: var(--bg-light);
   padding: 0.25rem 0.5rem;
+  display: flex;
+  align-items: center;
   text-align: center;
+  justify-content: center;
   color: var(--text-secondary);
   margin-bottom: 0.75rem;
 }
