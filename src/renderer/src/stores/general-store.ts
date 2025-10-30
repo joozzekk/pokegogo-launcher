@@ -21,7 +21,8 @@ const useGeneralStore = defineStore('general', () => {
     displayMode: 'Okno',
     theme: halloween,
     autoUpdate: true,
-    updateChannel: 'beta'
+    updateChannel: 'beta',
+    isSidebarCollapsed: false
   }
 
   const savedSettings = localStorage.getItem('launcherSettings')
@@ -83,6 +84,7 @@ const useGeneralStore = defineStore('general', () => {
       if (loaded.theme) settings.theme = loaded.theme
       if (typeof loaded.autoUpdate === 'boolean') settings.autoUpdate = loaded.autoUpdate
       if (loaded.updateChannel) settings.updateChannel = loaded.updateChannel
+      if (loaded.isSidebarCollapsed) settings.isSidebarCollapsed = loaded.isSidebarCollapsed
     } catch {
       // brak obsługi błędu
     }
@@ -103,6 +105,7 @@ const useGeneralStore = defineStore('general', () => {
     settings.theme = 'Dark'
     settings.autoUpdate = true
     settings.updateChannel = 'beta'
+    settings.isSidebarCollapsed = false
     saveSettings()
   }
 

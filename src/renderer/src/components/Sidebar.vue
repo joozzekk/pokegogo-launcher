@@ -27,10 +27,15 @@ const handleChangeRoute = (newRoute: string): void => {
 const handleSupDev = (): void => {
   window.open('https://tipply.pl/@joozzekk', '_blank')
 }
+
+const collapseSidebar = (): void => {
+  generalStore.settings.isSidebarCollapsed = !generalStore.settings.isSidebarCollapsed
+  generalStore.saveSettings()
+}
 </script>
 
 <template>
-  <aside class="sidebar">
+  <aside class="sidebar" :class="{ collapsed: generalStore.settings.isSidebarCollapsed }">
     <nav class="sidebar-nav">
       <div class="player-profile">
         <div class="player-fullinfo">
@@ -105,23 +110,21 @@ const handleSupDev = (): void => {
         <span>Ustawienia</span>
         <div class="nav-indicator"></div>
       </a>
-
-      <!-- <a
-        href="#"
-        class="nav-item"
-        :class="{
-          active: $route.path === '/app/changelog'
-        }"
-        @click="handleChangeRoute('/app/changelog')"
-      >
-        <div class="nav-icon">
-          <i class="fas fa-list"></i>
-        </div>
-        <span>Changelog</span>
-        <div class="nav-indicator"></div>
-      </a> -->
     </nav>
     <div class="flex flex-col px-[0.8rem] pb-1 font-light">
+      <div class="nav-item hover:cursor-pointer select-none" @click="collapseSidebar">
+        <button id="collapse" class="nav-icon">
+          <i
+            class="fa-solid"
+            :class="
+              generalStore.settings.isSidebarCollapsed ? 'fa-chevron-right' : 'fa-chevron-left'
+            "
+          ></i>
+        </button>
+        <label for="collapse" class="hover:cursor-pointer">
+          {{ generalStore.settings.isSidebarCollapsed ? 'Rozwiń panel' : 'Zwiń panel' }}
+        </label>
+      </div>
       <div class="nav-item hover:cursor-pointer select-none" @click="handleSupDev">
         <button id="support" class="nav-icon">
           <i class="fa fa-coffee" />

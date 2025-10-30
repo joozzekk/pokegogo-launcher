@@ -63,7 +63,7 @@ onMounted(async () => {
         v-model="searchQuery"
         type="text"
         class="search-input !p-2 !py-1 !pl-8 !text-[0.8rem]"
-        placeholder="Wyszukaj przedmiot po nazwie.."
+        placeholder="Wyszukaj wydarzenie po nazwie.."
       />
     </div>
 

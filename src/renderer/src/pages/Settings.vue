@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 import { changeEmail, changePassword } from '@renderer/api/endpoints'
 import { applyTheme, themes } from '@renderer/assets/theme/official'
-import { LOGGER } from '@renderer/services/logger-service'
 import useGeneralStore from '@renderer/stores/general-store'
 import useUserStore from '@renderer/stores/user-store'
 import { calculateValueFromPercentage, checkUpdate, MIN_RAM, showToast } from '@renderer/utils'
@@ -279,7 +278,7 @@ onUnmounted(() => {
         <div
           class="my-0 flex flex-row items-center justify-between"
           :class="{
-            'mt-4': ['admin', 'technik', 'mod', 'helper'].includes(
+            'mt-4': !['admin', 'technik', 'mod', 'helper'].includes(
               userStore.user?.role ?? 'default'
             )
           }"
@@ -384,7 +383,10 @@ onUnmounted(() => {
           </div>
 
           <div class="settings-actions">
-            <button class="nav-icon" @click="showToast('Check files..')">
+            <button
+              class="nav-icon"
+              @click="showToast('Fix minecraft files feature is not available yet.')"
+            >
               <i class="fas fa-hammer"></i>
             </button>
             <button class="nav-icon" @click="saveSettings">

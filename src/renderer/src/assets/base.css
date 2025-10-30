@@ -318,6 +318,9 @@ body {
   display: flex;
   flex-direction: column;
   animation: slideRight 0.5s ease;
+  transition:
+    width 0.3s ease,
+    min-width 0.3s ease;
 }
 
 @keyframes slideRight {
@@ -464,6 +467,32 @@ body {
     transform: translateX(0);
     opacity: 1;
   }
+}
+
+/* Style dla zwiniętego paska */
+.sidebar.collapsed {
+  width: 6rem; /* Szerokość wystarczająca na ikonę i padding */
+  min-width: 6rem;
+}
+
+/* Ukryj tekst, gdy panel jest zwinięty */
+.sidebar.collapsed .nav-item span,
+.sidebar.collapsed .nav-item label,
+.sidebar.collapsed .player-info {
+  display: none;
+}
+
+/* Wyśrodkuj elementy, gdy tekst zniknie */
+.sidebar.collapsed .nav-item,
+.sidebar.collapsed .player-fullinfo {
+  justify-content: center;
+  gap: 0;
+}
+
+/* Dostosuj padding dolnych przycisków */
+.sidebar.collapsed .flex-col {
+  padding-left: 0.8rem;
+  padding-right: 0.8rem;
 }
 
 /* -------------------------------------- Strona główna ---------------------------- */
@@ -1019,13 +1048,12 @@ body {
 
 .changelog-marker {
   position: absolute;
-  left: -2.25rem;
-  top: 5px;
-  width: 20px;
-  height: 20px;
+  left: -2.4rem;
+  top: 0;
+  width: 1.25rem;
+  height: 1.25rem;
   background: var(--gradient-primary);
   border-radius: 50%;
-  border: 3px solid var(--bg-dark);
 }
 
 .changelog-content {

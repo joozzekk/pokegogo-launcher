@@ -15,6 +15,10 @@ const router = useRouter()
 const updateInterval = ref<any>()
 const isInstallingUpdate = ref<boolean>(false)
 
+const handleOpenHelpDiscordChannel = (): void => {
+  window.open('discord://-/channels/1273592331534340147/1430594826428088430', '_blank')
+}
+
 const hasMod = computed(() =>
   ['admin', 'technik', 'mod'].includes(userStore.user?.role || 'default')
 )
@@ -129,6 +133,10 @@ onUnmounted(() => {
 
     <div class="flex ml-auto mr-[9rem] items-center gap-2">
       <div class="applogo-badge">{{ generalStore.settings.updateChannel }}</div>
+
+      <button class="nav-icon" @click="handleOpenHelpDiscordChannel">
+        <i class="fa fa-question" />
+      </button>
 
       <button
         v-if="isUpdateAvailable"
