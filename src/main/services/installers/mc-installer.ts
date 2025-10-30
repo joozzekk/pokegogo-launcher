@@ -255,7 +255,7 @@ async function downloadAll(
     if (!localHashes[localFile]) {
       try {
         await fs.promises.unlink(posix.join(localDir, localFile))
-        log(`Usunięto lokalny plik ${localFile}.`)
+        // log(`Usunięto lokalny plik ${localFile}.`)
       } catch (err) {
         Logger.log(`PokeGoGo Launcher > Błąd podczas usuwania pliku ${localFile}: ${err}`)
       }

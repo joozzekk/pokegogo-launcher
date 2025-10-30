@@ -1,3 +1,4 @@
+<!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <script lang="ts" setup>
 import { getChangelog, removeChangelog } from '@renderer/api/endpoints'
 import AddChangelog from '@renderer/components/modals/AddChangelog.vue'
@@ -45,6 +46,13 @@ const handleRemoveChangelog = async (changelog: any): Promise<void> => {
     await fetchChangelog()
   }
 }
+
+const fixes = (changelog: any): any[] =>
+  changelog.changes.filter((change: any) => change.type === 'fix')
+const news = (changelog: any): any[] =>
+  changelog.changes.filter((change: any) => change.type === 'new')
+const improves = (changelog: any): any[] =>
+  changelog.changes.filter((change: any) => change.type === 'improve')
 
 const getChangeTagByType = (type: string): string => {
   switch (type) {
@@ -171,16 +179,21 @@ onMounted(async () => {
             </div>
           </div>
           <h3>{{ changelog.name }}</h3>
-          <ul v-for="(change, i) in changelog.changes" :key="i">
-            <li>
-              <span
-                class="tag new"
-                :class="{
-                  new: change.type === 'new',
-                  fix: change.type === 'fix',
-                  improve: change.type === 'improve'
-                }"
-              >
+          <ul>
+            <li v-for="(change, i) in news(changelog)" :key="i">
+              <span class="tag new">
+                {{ getChangeTagByType(change.type) }}
+              </span>
+              {{ change.desc }}
+            </li>
+            <li v-for="(change, i) in improves(changelog)" :key="i">
+              <span class="tag improve">
+                {{ getChangeTagByType(change.type) }}
+              </span>
+              {{ change.desc }}
+            </li>
+            <li v-for="(change, i) in fixes(changelog)" :key="i">
+              <span class="tag fix">
                 {{ getChangeTagByType(change.type) }}
               </span>
               {{ change.desc }}
