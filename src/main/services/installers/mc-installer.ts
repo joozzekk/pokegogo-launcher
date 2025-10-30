@@ -50,6 +50,23 @@ async function readHashesFile(localDir: string): Promise<Record<string, string>>
   }
 }
 
+// Zmodyfikowana struktura globalProgress
+interface GlobalProgress {
+  totalFiles: number
+  downloadedFiles: number
+  totalSize: number // Całkowity rozmiar wszystkich plików w bajtach
+  downloadedSize: number // Rozmiar pobranych plików w bajtach
+  startTime: number
+}
+
+interface DownloadItem {
+  remotePath: string
+  localPath: string
+  fileName: string
+  size: number
+}
+
+// Kompletna funkcja downloadAll
 async function downloadAll(
   client: Client,
   remoteDir: string,
@@ -58,7 +75,8 @@ async function downloadAll(
   isFirstInstall: boolean,
   importantFiles: string[],
   ignoreFiles: string[],
-  signal: AbortSignal
+  signal: AbortSignal,
+  globalProgress: GlobalProgress // Nowy parametr
 ): Promise<void> {
   if (signal.aborted) {
     return
@@ -68,6 +86,7 @@ async function downloadAll(
   const changed = await safeCd(client, remoteDir)
   if (!changed) return
 
+  // Pobieranie i wczytywanie pliku hashes.txt (bez zmian)
   const localHashesFile = posix.join(localDir, 'hashes.txt')
   let hasHashesFile = false
   try {
@@ -88,23 +107,15 @@ async function downloadAll(
 
   const list = await client.list()
 
-  let downloadedFiles = 0
-  const totalFiles = list.filter((f) => !f.isDirectory).length
+  // Listy do przetworzenia
+  const itemsToProcess: DownloadItem[] = []
+  const dirsToRecurse: { remotePath: string; localPath: string }[] = []
 
+  // --- 1. ETAP: Zbieranie informacji o plikach ---
   for (const file of list) {
-    if (signal.aborted) {
-      return
-    }
-
+    if (signal.aborted) return
     const remotePath = posix.join(remoteDir, file.name)
     const localPath = posix.join(localDir, file.name)
-
-    if (
-      file.isFile &&
-      !isFirstInstall &&
-      ignoreFiles.some((importantFile) => file.name.includes(importantFile))
-    )
-      continue
 
     if (file.isDirectory) {
       if (
@@ -113,49 +124,125 @@ async function downloadAll(
       )
         continue
 
-      await downloadAll(
-        client,
-        remotePath,
-        localPath,
-        log,
-        isFirstInstall,
-        importantFiles,
-        ignoreFiles,
-        signal
-      )
-    } else {
+      dirsToRecurse.push({ remotePath, localPath })
+    } else if (file.isFile) {
       if (file.name.endsWith('.sha256') || file.name === 'hashes.txt') continue
+
+      if (!isFirstInstall && ignoreFiles.some((ignoredFile) => file.name.includes(ignoredFile)))
+        continue
 
       let downloadFile = true
 
+      // Sprawdzenie hasha lub istnienia pliku
       if (localHashes[file.name]) {
         try {
           const localHash = await getFileHash(localPath)
           if (localHash === localHashes[file.name]) {
             downloadFile = false
-            log(`Plik ${file.name} jest aktualny, pomijam pobieranie.`)
+            log(`Plik ${file.name} jest aktualny, pomijam pobieranie.`) // Opcjonalny log
           }
         } catch {
-          downloadFile = true
+          downloadFile = true // Lokalny plik nie istnieje lub jest uszkodzony
         }
       } else {
         try {
           await fs.promises.access(localPath)
+          // Plik istnieje lokalnie, ale nie ma go w hashu - zostanie usunięty na końcu
           downloadFile = false
-          log(`Plik ${file.name} istnieje lokalnie, pomijam pobieranie.`)
+          log(`Plik ${file.name} istnieje lokalnie (brak hasha), pomijam pobieranie.`) // Opcjonalny log
         } catch {
-          downloadFile = true
+          downloadFile = true // Nie istnieje lokalnie, pobieramy
         }
       }
 
       if (downloadFile) {
-        await client.downloadTo(localPath, remotePath)
-        downloadedFiles++
-        log(`Pobrano ${downloadedFiles}/${totalFiles}`)
+        itemsToProcess.push({
+          remotePath,
+          localPath,
+          fileName: file.name,
+          size: file.size
+        })
+        globalProgress.totalFiles++ // Zliczanie globalne
+        globalProgress.totalSize += file.size // Sumowanie rozmiaru globalnie
       }
     }
   }
 
+  // Jeśli to pierwsze wywołanie i mamy co pobierać, startujemy zegar
+  if (globalProgress.startTime === 0 && globalProgress.totalFiles > 0) {
+    globalProgress.startTime = Date.now()
+  }
+
+  // --- 2. ETAP: Pobieranie plików ---
+  for (const item of itemsToProcess) {
+    if (signal.aborted) return
+
+    // Ustawiamy tracker PRZED wywołaniem downloadTo
+    client.trackProgress((info) => {
+      // info.bytes -> bajty pobrane dla bieżącego pliku
+      const totalElapsedMs = Date.now() - globalProgress.startTime
+
+      // Całkowita pobrana kwota = (to co pobrano do tej pory) + (postęp bieżącego pliku)
+      const totalDownloadedNow = globalProgress.downloadedSize + info.bytes
+
+      let remainingTime = 'Oszacowywanie...'
+
+      if (totalElapsedMs > 1000 && globalProgress.totalSize > 0) {
+        const averageSpeedBps = totalDownloadedNow / (totalElapsedMs / 1000)
+
+        if (averageSpeedBps > 0) {
+          const remainingSize = globalProgress.totalSize - totalDownloadedNow
+          const remainingSeconds = remainingSize / averageSpeedBps
+
+          const hours = Math.floor(remainingSeconds / 3600)
+          const minutes = Math.floor((remainingSeconds % 3600) / 60)
+          const seconds = Math.floor(remainingSeconds % 60)
+
+          const timeParts: string[] = []
+          if (hours > 0) timeParts.push(`${hours}g`)
+          if (minutes > 0) timeParts.push(`${minutes}m`)
+          if (seconds >= 0) timeParts.push(`${seconds}s`)
+
+          remainingTime = timeParts.join(' ')
+        }
+      }
+
+      const globalProgressPercent =
+        globalProgress.totalSize > 0
+          ? ((totalDownloadedNow / globalProgress.totalSize) * 100).toFixed(0)
+          : '0'
+
+      const logMessage = `Pobieranie: (${globalProgress.downloadedFiles + 1}/${globalProgress.totalFiles}) - ${globalProgressPercent}% (Pozostało: ${remainingTime})`
+      log(logMessage)
+    })
+
+    // Uruchamiamy pobieranie
+    await client.downloadTo(item.localPath, item.remotePath)
+
+    // Wyłączamy tracker po zakończeniu pobierania pliku
+    client.trackProgress(undefined)
+
+    // Aktualizujemy globalny postęp *po* pomyślnym pobraniu pliku
+    globalProgress.downloadedFiles++
+    globalProgress.downloadedSize += item.size
+  }
+
+  // --- 3. ETAP: Rekurencja dla katalogów ---
+  for (const dir of dirsToRecurse) {
+    await downloadAll(
+      client,
+      dir.remotePath,
+      dir.localPath,
+      log,
+      isFirstInstall,
+      importantFiles,
+      ignoreFiles,
+      signal,
+      globalProgress // Przekazanie stanu globalnego
+    )
+  }
+
+  // --- 4. ETAP: Usuwanie lokalnych plików (logika z oryginalnego kodu) ---
   const dirents = await fs.promises.readdir(localDir, { withFileTypes: true })
 
   for (const dirent of dirents) {
@@ -179,6 +266,7 @@ async function downloadAll(
     }
   }
 
+  // Usuwanie lokalnego hashes.txt (logika z oryginalnego kodu)
   try {
     await fs.promises.unlink(posix.join(localDir, 'hashes.txt'))
     Logger.log('PokeGoGo Launcher > Usunięto lokalny plik hashes.txt po synchronizacji.')
@@ -206,6 +294,15 @@ export async function copyMCFiles(
     const pwd = await client.pwd()
     const remoteURL = posix.join(pwd, isDev ? 'dev-mc' : 'mc')
 
+    // Inicjalizacja stanu globalnego
+    const globalProgress: GlobalProgress = {
+      totalFiles: 0,
+      downloadedFiles: 0,
+      totalSize: 0,
+      downloadedSize: 0,
+      startTime: 0
+    }
+
     await downloadAll(
       client,
       remoteURL,
@@ -216,9 +313,11 @@ export async function copyMCFiles(
       isFirstInstall,
       importantFiles,
       ignoreFiles,
-      signal
+      signal,
+      globalProgress // Przekazanie stanu
     )
 
+    // ... (pozostała część funkcji)
     if (signal.aborted) {
       return 'stop'
     }

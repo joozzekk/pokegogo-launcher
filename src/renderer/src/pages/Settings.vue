@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { changeEmail, changePassword } from '@renderer/api/endpoints'
 import { applyTheme, themes } from '@renderer/assets/theme/official'
+import { LOGGER } from '@renderer/services/logger-service'
 import useGeneralStore from '@renderer/stores/general-store'
 import useUserStore from '@renderer/stores/user-store'
 import { calculateValueFromPercentage, checkUpdate, MIN_RAM, showToast } from '@renderer/utils'
@@ -383,10 +384,13 @@ onUnmounted(() => {
           </div>
 
           <div class="settings-actions">
-            <button id="saveSettings" class="nav-icon" @click="saveSettings">
+            <button class="nav-icon" @click="showToast('Check files..')">
+              <i class="fas fa-hammer"></i>
+            </button>
+            <button class="nav-icon" @click="saveSettings">
               <i class="fas fa-save"></i>
             </button>
-            <button id="resetSettings" class="nav-icon" @click="resetSettings">
+            <button class="nav-icon" @click="resetSettings">
               <i class="fas fa-undo"></i>
             </button>
           </div>
