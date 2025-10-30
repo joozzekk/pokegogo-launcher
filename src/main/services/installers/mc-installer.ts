@@ -247,14 +247,10 @@ async function downloadAll(
 
   for (const dirent of dirents) {
     if (!dirent.isFile()) {
-      continue // pomijamy katalogi i inne nie-pliki
+      continue
     }
 
     const localFile = dirent.name
-
-    if (localFile === 'hashes.txt' || localFile.endsWith('.sha256')) {
-      continue // pomijamy kontrolne pliki
-    }
 
     if (!localHashes[localFile]) {
       try {
@@ -265,20 +261,13 @@ async function downloadAll(
       }
     }
   }
-
-  // Usuwanie lokalnego hashes.txt (logika z oryginalnego kodu)
-  try {
-    await fs.promises.unlink(posix.join(localDir, 'hashes.txt'))
-    Logger.log('PokeGoGo Launcher > Usunięto lokalny plik hashes.txt po synchronizacji.')
-  } catch {
-    // Ignorujemy błąd usuwania hashes.txt jeśli plik już nie istnieje
-  }
 }
 
 export async function copyMCFiles(
   isDev: boolean,
   mainWindow: BrowserWindow,
-  signal: AbortSignal
+  signal: AbortSignal,
+  logHandlerName: string = 'launch:show-log'
 ): Promise<string | undefined> {
   const { client, connect } = useFTPService()
   const localRoot = posix.join(app.getPath('userData'), 'mcfiles')
@@ -308,7 +297,7 @@ export async function copyMCFiles(
       remoteURL,
       localRoot,
       (data: string) => {
-        mainWindow.webContents.send('launch:show-log', data)
+        mainWindow.webContents.send(logHandlerName, data)
       },
       isFirstInstall,
       importantFiles,
@@ -327,7 +316,7 @@ export async function copyMCFiles(
       Logger.log('PokeGoGo Launcher > Created marker file')
     }
 
-    mainWindow.webContents.send('launch:show-log', '', true)
+    mainWindow.webContents.send(logHandlerName, '', true)
   } catch (err) {
     Logger.error(err)
   } finally {

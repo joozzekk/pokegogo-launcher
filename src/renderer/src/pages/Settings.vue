@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { changeEmail, changePassword } from '@renderer/api/endpoints'
 import { applyTheme, themes } from '@renderer/assets/theme/official'
+import VerifyFilesModal from '@renderer/components/modals/VerifyFilesModal.vue'
 import useGeneralStore from '@renderer/stores/general-store'
 import useUserStore from '@renderer/stores/user-store'
 import { calculateValueFromPercentage, checkUpdate, MIN_RAM, showToast } from '@renderer/utils'
@@ -154,6 +155,11 @@ const handleChangeUpdateChannel = async (channel: string): Promise<void> => {
   generalStore.saveSettings()
   await checkUpdate()
   showToast(generalStore.isUpdateAvailable ? 'Update available.' : 'App is up-to-date.')
+}
+
+const verifyFilesModalRef = ref()
+const openVerifyFilesModal = (): void => {
+  verifyFilesModalRef.value?.openModal()
 }
 
 onUnmounted(() => {
@@ -383,10 +389,7 @@ onUnmounted(() => {
           </div>
 
           <div class="settings-actions">
-            <button
-              class="nav-icon"
-              @click="showToast('Fix minecraft files feature is not available yet.')"
-            >
+            <button class="nav-icon" @click="openVerifyFilesModal">
               <i class="fas fa-hammer"></i>
             </button>
             <button class="nav-icon" @click="saveSettings">
@@ -520,5 +523,6 @@ onUnmounted(() => {
         </div>
       </div>
     </div>
+    <VerifyFilesModal ref="verifyFilesModalRef" />
   </div>
 </template>

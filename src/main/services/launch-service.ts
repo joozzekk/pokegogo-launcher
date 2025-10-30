@@ -2,6 +2,7 @@ import { type BrowserWindow, ipcMain } from 'electron'
 import { installJava } from './installers/java-installer'
 import { copyMCFiles } from './installers/mc-installer'
 import { launchMinecraft } from './mc-launcher'
+import Logger from 'electron-log'
 
 export const useLaunchService = (win: BrowserWindow): void => {
   let currentAbortController: AbortController | null = null
@@ -34,10 +35,33 @@ export const useLaunchService = (win: BrowserWindow): void => {
     }
   })
 
-  ipcMain.handle('launch:exit-verify', () => {
+  ipcMain.handle('launch:check-files', async (_, data): Promise<boolean> => {
     if (currentAbortController) {
       currentAbortController.abort()
-      win.webContents.send('launch:show-log', '', true)
+    }
+
+    currentAbortController = new AbortController()
+    const signal = currentAbortController.signal
+
+    try {
+      const res = await copyMCFiles(data.isDev, win, signal, data.event)
+
+      if (res) {
+        return true
+      }
+    } catch (err) {
+      Logger.log(err)
+
+      return false
+    }
+
+    return false
+  })
+
+  ipcMain.handle('launch:exit-verify', (_, event = 'launch:show-log') => {
+    if (currentAbortController) {
+      currentAbortController.abort()
+      win.webContents.send(event, '', true)
       return Promise.resolve()
     }
 
