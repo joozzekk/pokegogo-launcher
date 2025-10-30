@@ -126,13 +126,17 @@ onMounted(async () => {
         <div class="quick-settings">
           <div class="quick-setting">
             <i class="fas fa-memory"></i>
-            <span
-              >RAM: <strong id="quickRam">{{ generalStore.settings.ram }}GB</strong></span
-            >
+            <span>
+              RAM: <strong id="quickRam">{{ generalStore.settings.ram }}GB</strong>
+              <span class="text-[var(--text-secondary)] opacity-60 ml-1">(Min. 4GB)</span>
+            </span>
           </div>
           <div class="quick-setting">
             <i class="fas fa-microchip"></i>
-            <span>Fabric: <strong>ON</strong></span>
+            <span>
+              Wersja: <strong>1.21.1</strong>
+              <span class="text-[var(--text-secondary)] opacity-60 ml-1">(Fabric)</span></span
+            >
           </div>
         </div>
       </div>

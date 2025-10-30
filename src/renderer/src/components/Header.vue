@@ -29,10 +29,6 @@ const handleChangeRoute = (newRoute: string): void => {
   router.push(newRoute)
 }
 
-const maximizeWindow = (): void => {
-  window.electron?.ipcRenderer?.send('window:maximize', generalStore.settings.resolution)
-}
-
 const minimizeWindow = (): void => {
   window.electron?.ipcRenderer?.send('window:minimize')
 }
@@ -131,7 +127,7 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <div class="flex ml-auto mr-[9rem] items-center gap-2">
+    <div class="flex ml-auto mr-[6rem] items-center gap-2">
       <div class="applogo-badge">{{ generalStore.settings.updateChannel }}</div>
 
       <button class="nav-icon" @click="handleOpenHelpDiscordChannel">
@@ -154,9 +150,6 @@ onUnmounted(() => {
     <div class="buttons">
       <button @click="minimizeWindow">
         <i class="fa-solid fa-window-minimize"></i>
-      </button>
-      <button @click="maximizeWindow">
-        <i class="fa-solid fa-window-maximize" />
       </button>
       <button class="red" @click="closeWindow">
         <i class="fa-solid fa-xmark fa-xl"></i>
