@@ -222,3 +222,15 @@ export const checkMachineID = async (machineId: string): Promise<any> => {
 
   return res.data
 }
+
+export const changeUpdateChannel = async (
+  nickname: string,
+  enableUpdateChannel: boolean
+): Promise<any> => {
+  const res = await api.post(`/users/update-channel`, {
+    nickname,
+    enableUpdateChannel
+  })
+
+  return res.data
+}

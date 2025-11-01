@@ -2,7 +2,6 @@
 import { computed, onMounted, ref } from 'vue'
 import LaunchButton from '@renderer/components/buttons/LaunchButton.vue'
 import useGeneralStore from '@renderer/stores/general-store'
-import poke from '@renderer/assets/img/poke.png'
 import superEvent from '@renderer/assets/img/superEvent.png'
 import { getEvents, getServerStatus } from '@renderer/api/endpoints'
 import { LOGGER } from '@renderer/services/logger-service'
@@ -60,12 +59,42 @@ onMounted(async () => {
         </div>
 
         <div class="server-showcase">
-          <div class="server-image">
+          <div class="news-featured">
+            <div class="featured-image">
+              <img
+                :src="
+                  megaEvent
+                    ? megaEvent.src.includes('https://')
+                      ? megaEvent.src
+                      : `${url}/events/image/${megaEvent.uuid}`
+                    : superEvent
+                "
+                alt="Super Event"
+                @dragstart.prevent="null"
+              />
+              <div class="featured-gradient"></div>
+            </div>
+            <template v-if="megaEvent">
+              <span class="featured-tag top-[1.5rem] left-[1.5rem]">MEGA WYDARZENIE</span>
+              <span class="featured-tag top-[1.5rem] right-[1.5rem]"
+                >{{ megaEvent?.startDate ? format(megaEvent.startDate, 'dd MMMM') : '' }} -
+                {{ megaEvent?.endDate ? format(megaEvent.endDate, 'dd MMMM') : '' }}</span
+              >
+              <div class="featured-content">
+                <h3>{{ megaEvent?.name }}</h3>
+                <p>
+                  {{ megaEvent?.desc }}
+                </p>
+              </div>
+            </template>
+            <template v-else></template>
+          </div>
+          <!-- <div class="server-image">
             <img :src="poke" alt="PokeGoGo" @dragstart.prevent="null" />
             <div class="server-overlay">
               <span class="server-ip">PokemonGoGo.pl</span>
             </div>
-          </div>
+          </div> -->
 
           <div class="server-stats">
             <div class="stat-item">
@@ -97,13 +126,17 @@ onMounted(async () => {
         <div class="quick-settings">
           <div class="quick-setting">
             <i class="fas fa-memory"></i>
-            <span
-              >RAM: <strong id="quickRam">{{ generalStore.settings.ram }}GB</strong></span
-            >
+            <span>
+              RAM: <strong id="quickRam">{{ generalStore.settings.ram }}GB</strong>
+              <span class="text-[var(--text-secondary)] opacity-60 ml-1">(Min. 4GB)</span>
+            </span>
           </div>
           <div class="quick-setting">
             <i class="fas fa-microchip"></i>
-            <span>Fabric: <strong>ON</strong></span>
+            <span>
+              Wersja: <strong>1.21.1</strong>
+              <span class="text-[var(--text-secondary)] opacity-60 ml-1">(Fabric)</span></span
+            >
           </div>
         </div>
       </div>
@@ -116,37 +149,6 @@ onMounted(async () => {
             </div>
             <h2>Aktualności</h2>
           </div>
-        </div>
-
-        <div class="news-featured">
-          <div class="featured-image">
-            <img
-              :src="
-                megaEvent
-                  ? megaEvent.src.includes('https://') || megaEvent.src.includes('blob')
-                    ? megaEvent.src
-                    : `${url}/events/image/${megaEvent.uuid}`
-                  : superEvent
-              "
-              alt="Super Event"
-              @dragstart.prevent="null"
-            />
-            <div class="featured-gradient"></div>
-          </div>
-          <template v-if="megaEvent">
-            <span class="featured-tag top-[1.5rem] left-[1.5rem]">MEGA WYDARZENIE</span>
-            <span class="featured-tag top-[1.5rem] right-[1.5rem]"
-              >{{ megaEvent?.startDate ? format(megaEvent.startDate, 'dd MMMM') : '' }} -
-              {{ megaEvent?.endDate ? format(megaEvent.endDate, 'dd MMMM') : '' }}</span
-            >
-            <div class="featured-content">
-              <h3>{{ megaEvent?.name }}</h3>
-              <p>
-                {{ megaEvent?.desc }}
-              </p>
-            </div>
-          </template>
-          <template v-else></template>
         </div>
 
         <div class="news-list">

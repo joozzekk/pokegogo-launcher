@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { changeEmail, changePassword } from '@renderer/api/endpoints'
 import { applyTheme, themes } from '@renderer/assets/theme/official'
+import VerifyFilesModal from '@renderer/components/modals/VerifyFilesModal.vue'
 import useGeneralStore from '@renderer/stores/general-store'
 import useUserStore from '@renderer/stores/user-store'
 import { calculateValueFromPercentage, checkUpdate, MIN_RAM, showToast } from '@renderer/utils'
@@ -156,6 +157,11 @@ const handleChangeUpdateChannel = async (channel: string): Promise<void> => {
   showToast(generalStore.isUpdateAvailable ? 'Update available.' : 'App is up-to-date.')
 }
 
+const verifyFilesModalRef = ref()
+const openVerifyFilesModal = (): void => {
+  verifyFilesModalRef.value?.openModal()
+}
+
 onUnmounted(() => {
   generalStore.saveSettings()
 })
@@ -278,7 +284,7 @@ onUnmounted(() => {
         <div
           class="my-0 flex flex-row items-center justify-between"
           :class="{
-            'mt-4': ['admin', 'technik', 'mod', 'helper'].includes(
+            'mt-4': !['admin', 'technik', 'mod', 'helper'].includes(
               userStore.user?.role ?? 'default'
             )
           }"
@@ -324,7 +330,10 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div class="my-0 mt-4 flex flex-row items-center justify-between">
+        <div
+          v-if="['technik', 'admin', 'mod'].includes(userStore.user?.role ?? 'default')"
+          class="my-0 mt-4 flex flex-row items-center justify-between"
+        >
           <div class="text-[var(--text-secondary)] w-full">Automatyczne aktualizacje</div>
 
           <div class="flex items-center gap-2">
@@ -346,7 +355,12 @@ onUnmounted(() => {
         </div>
 
         <div
-          v-if="['technik'].includes(userStore.user?.role ?? 'default')"
+          v-if="
+            userStore.user?.enableUpdateChannel ||
+            ['technik', 'admin', 'mod', 'headadmin', 'helper'].includes(
+              userStore.user?.role ?? 'default'
+            )
+          "
           class="my-0 mt-4 flex flex-row items-center justify-between"
         >
           <div class="text-[var(--text-secondary)] w-full">Kanał aktualizacji</div>
@@ -380,10 +394,13 @@ onUnmounted(() => {
           </div>
 
           <div class="settings-actions">
-            <button id="saveSettings" class="nav-icon" @click="saveSettings">
+            <button class="nav-icon" @click="openVerifyFilesModal">
+              <i class="fas fa-hammer"></i>
+            </button>
+            <button class="nav-icon" @click="saveSettings">
               <i class="fas fa-save"></i>
             </button>
-            <button id="resetSettings" class="nav-icon" @click="resetSettings">
+            <button class="nav-icon" @click="resetSettings">
               <i class="fas fa-undo"></i>
             </button>
           </div>
@@ -511,5 +528,6 @@ onUnmounted(() => {
         </div>
       </div>
     </div>
+    <VerifyFilesModal ref="verifyFilesModalRef" />
   </div>
 </template>

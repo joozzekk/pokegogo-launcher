@@ -27,33 +27,41 @@ const handleChangeRoute = (newRoute: string): void => {
 const handleSupDev = (): void => {
   window.open('https://tipply.pl/@joozzekk', '_blank')
 }
+
+const collapseSidebar = (): void => {
+  generalStore.settings.isSidebarCollapsed = !generalStore.settings.isSidebarCollapsed
+  generalStore.saveSettings()
+}
 </script>
 
 <template>
-  <aside class="sidebar">
-    <nav class="sidebar-nav">
-      <div class="player-profile">
-        <div class="player-fullinfo">
-          <div class="player-avatar">
-            <img
-              id="playerSkin"
-              :src="`https://mineskin.eu/helm/${playerName}/100.png`"
-              class="player-skin"
-              alt="Player Skin"
-              @dragstart.prevent="null"
-            />
-            <div class="status-dot"></div>
-          </div>
-          <div class="player-info">
-            <span class="player-name">
-              {{ playerName }}
-            </span>
-            <span class="player-label">{{ userRole }}</span>
-          </div>
+  <aside class="sidebar my-2" :class="{ collapsed: generalStore.settings.isSidebarCollapsed }">
+    <div class="player-profile mx-3">
+      <div class="player-fullinfo">
+        <div class="player-avatar">
+          <img
+            id="playerSkin"
+            :src="`https://mineskin.eu/helm/${playerName}/100.png`"
+            class="player-skin"
+            alt="Player Skin"
+            @dragstart.prevent="null"
+          />
+          <div class="status-dot"></div>
+        </div>
+        <div class="player-info">
+          <span class="player-name">
+            {{ playerName }}
+          </span>
+          <span class="player-label">{{ userRole }}</span>
         </div>
       </div>
+    </div>
 
-      <a
+    <div
+      class="flex flex-col mb-auto mx-3"
+      :class="{ 'mx-4': !generalStore.settings.isSidebarCollapsed }"
+    >
+      <button
         class="nav-item"
         :class="{
           active: $route.path === '/app/home'
@@ -65,8 +73,8 @@ const handleSupDev = (): void => {
         </div>
         <span>Home</span>
         <div class="nav-indicator"></div>
-      </a>
-      <a
+      </button>
+      <button
         class="nav-item"
         :class="{
           active: $route.path === '/app/shop'
@@ -78,8 +86,8 @@ const handleSupDev = (): void => {
         </div>
         <span>Sklep</span>
         <div class="nav-indicator"></div>
-      </a>
-      <a
+      </button>
+      <button
         class="nav-item"
         :class="{
           active: $route.path === '/app/changelog'
@@ -91,8 +99,8 @@ const handleSupDev = (): void => {
         </div>
         <span>Changelog</span>
         <div class="nav-indicator"></div>
-      </a>
-      <a
+      </button>
+      <button
         class="nav-item"
         :class="{
           active: $route.path === '/app/settings'
@@ -104,36 +112,27 @@ const handleSupDev = (): void => {
         </div>
         <span>Ustawienia</span>
         <div class="nav-indicator"></div>
-      </a>
+      </button>
+    </div>
 
-      <!-- <a
-        href="#"
-        class="nav-item"
-        :class="{
-          active: $route.path === '/app/changelog'
-        }"
-        @click="handleChangeRoute('/app/changelog')"
-      >
-        <div class="nav-icon">
-          <i class="fas fa-list"></i>
-        </div>
-        <span>Changelog</span>
-        <div class="nav-indicator"></div>
-      </a> -->
-    </nav>
-    <div class="flex flex-col px-[0.8rem] pb-1 font-light">
-      <div class="nav-item hover:cursor-pointer select-none" @click="handleSupDev">
-        <button id="support" class="nav-icon">
-          <i class="fa fa-coffee" />
-        </button>
-        <label for="support" class="hover:cursor-pointer">Wesprzyj developera 🥰</label>
-      </div>
-      <div class="nav-item hover:cursor-pointer select-none" @click="handleLogout">
-        <button id="logout" class="nav-icon">
-          <i class="fa-solid fa-door-open"></i>
-        </button>
+    <div class="flex flex-col mx-2" :class="{ 'mx-4': !generalStore.settings.isSidebarCollapsed }">
+      <button class="nav-item hover:cursor-pointer select-none" @click="collapseSidebar">
+        <i
+          class="nav-icon fa-solid"
+          :class="generalStore.settings.isSidebarCollapsed ? 'fa-chevron-right' : 'fa-chevron-left'"
+        ></i>
+        <label for="collapse" class="hover:cursor-pointer">
+          {{ generalStore.settings.isSidebarCollapsed ? 'Rozwiń panel' : 'Zwiń panel' }}
+        </label>
+      </button>
+      <button id="support" class="nav-item hover:cursor-pointer select-none" @click="handleSupDev">
+        <i class="nav-icon fa fa-coffee" />
+        <label for="support" class="hover:cursor-pointer">Kup kawusie 🥰</label>
+      </button>
+      <button id="logout" class="nav-item hover:cursor-pointer select-none" @click="handleLogout">
+        <i class="nav-icon fa-solid fa-door-open"></i>
         <label for="logout" class="hover:cursor-pointer">Wyloguj się</label>
-      </div>
+      </button>
     </div>
   </aside>
 </template>

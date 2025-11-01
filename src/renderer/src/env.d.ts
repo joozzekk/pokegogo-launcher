@@ -31,4 +31,5 @@ export interface IUser {
   macAddress: string
   ipAddress: string
   role: string
+  enableUpdateChannel: boolean
 }

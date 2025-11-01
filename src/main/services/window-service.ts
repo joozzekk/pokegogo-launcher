@@ -48,19 +48,6 @@ const createMainWindow = (): BrowserWindow => {
     if (win) win.minimize()
   })
 
-  ipcMain.on('window:maximize', () => {
-    const win = BrowserWindow.getFocusedWindow()
-
-    if (win) {
-      if (win.isMaximized()) {
-        win.unmaximize()
-        win.center()
-      } else {
-        win.maximize()
-      }
-    }
-  })
-
   ipcMain.on('window:close', (_, isHideToTray: boolean = true) => {
     const win = BrowserWindow.getFocusedWindow()
     if (win) {

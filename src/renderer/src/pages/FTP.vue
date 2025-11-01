@@ -198,7 +198,7 @@ onMounted(async () => {
                 v-model="searchQuery"
                 type="text"
                 class="search-input !p-2 !py-1 !pl-8 !text-[0.8rem]"
-                placeholder="Wyszukaj gracza po nicku lub ID..."
+                placeholder="Wyszukaj plik lub folder po jego nazwie..."
               />
             </div>
           </div>

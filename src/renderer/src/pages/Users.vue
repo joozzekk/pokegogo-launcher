@@ -1,9 +1,10 @@
 <script lang="ts" setup>
-import { fetchAllPlayers } from '@renderer/api/endpoints'
+import { changeUpdateChannel, fetchAllPlayers } from '@renderer/api/endpoints'
 import BanPlayerModal from '@renderer/components/modals/BanPlayerModal.vue'
 import PasswordResetConfirm from '@renderer/components/modals/PasswordResetConfirm.vue'
 import { IUser } from '@renderer/env'
 import useUserStore from '@renderer/stores/user-store'
+import { showToast } from '@renderer/utils'
 import { format } from 'date-fns'
 import { ref, onMounted, watch, onUnmounted } from 'vue'
 
@@ -36,7 +37,9 @@ watch(searchQuery, () => {
   filteredPlayers.value = allPlayers.value.filter(
     (p) =>
       p.nickname.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      getPlayerID(p).includes(searchQuery.value)
+      getPlayerID(p).includes(searchQuery.value.toLowerCase()) ||
+      p.machineId?.includes(searchQuery.value.toLowerCase()) ||
+      p.macAddress?.includes(searchQuery.value.toLowerCase())
   )
 
   if (!filteredPlayers.value?.length) {
@@ -68,6 +71,24 @@ const handleLauncherUnban = async (player: IUser): Promise<void> => {
 
 const handleResetPassword = async (player: IUser): Promise<void> => {
   passwordResetModalRef.value?.openModal(player)
+}
+
+const toggleUpdateChannel = async (
+  nickname: string,
+  enableUpdateChannel: boolean
+): Promise<void> => {
+  try {
+    const res = await changeUpdateChannel(nickname, enableUpdateChannel)
+
+    if (res) {
+      await loadPlayerData()
+      showToast(
+        `${enableUpdateChannel ? 'Włączono' : 'Wyłączono'} kanał aktualizacji dla gracza ${nickname}.`
+      )
+    }
+  } catch {
+    showToast('Włączenie kanału aktualizacji się nie powiodło.')
+  }
 }
 
 const getPlayerID = (player: IUser): string => {
@@ -108,7 +129,7 @@ onUnmounted(() => {
         v-model="searchQuery"
         type="text"
         class="search-input !p-2 !py-1 !pl-8 !text-[0.8rem]"
-        placeholder="Wyszukaj gracza po nicku lub ID..."
+        placeholder="Wyszukaj gracza po nicku, UUID/MCID, Machine ID lub Mac adresie..."
       />
     </div>
 
@@ -173,6 +194,19 @@ onUnmounted(() => {
                     >
                       Premium
                     </span>
+                    <span
+                      v-if="!player.machineId"
+                      :style="`
+                      background: var(--text-secondary);
+                      font-size: 0.6rem;
+                      color: black;
+                      padding: 2px 6px;
+                      border-radius: 4px;
+                      font-weight: 800;
+                    `"
+                    >
+                      Missing HWID
+                    </span>
                   </div>
                 </td>
                 <td>
@@ -210,7 +244,7 @@ onUnmounted(() => {
                     <template
                       v-if="
                         ['admin', 'technik', 'mod'].includes(userStore.user.role) &&
-                        player?.role !== 'admin'
+                        !['admin', 'technik', 'mod'].includes(player.role)
                       "
                     >
                       <button
@@ -224,6 +258,13 @@ onUnmounted(() => {
                       <button v-else class="unban-btn" @click="handleLauncherUnban(player)">
                         <i :class="'fas fa-rotate-left'"></i>
                       </button>
+                      <button
+                        class="nav-icon"
+                        @click="toggleUpdateChannel(player.nickname, !player.enableUpdateChannel)"
+                      >
+                        <i v-if="player?.enableUpdateChannel" :class="'fas fa-user-check'"></i>
+                        <i v-else :class="'fas fa-user-xmark'"></i>
+                      </button>
                     </template>
                     <button
                       v-if="player?.accountType !== 'microsoft'"
@@ -232,6 +273,7 @@ onUnmounted(() => {
                     >
                       <i :class="'fas fa-key'"></i>
                     </button>
+
                     <button class="nav-icon" @click="togglePlayerDetails(getPlayerID(player))">
                       <i
                         :class="
