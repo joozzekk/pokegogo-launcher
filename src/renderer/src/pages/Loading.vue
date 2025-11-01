@@ -19,6 +19,8 @@ const statuses = {
 }
 
 onMounted(() => {
+  generalStore.loadSettings()
+
   applyTheme(
     localStorage.getItem('selectedTheme')
       ? JSON.parse(localStorage.getItem('selectedTheme')!)

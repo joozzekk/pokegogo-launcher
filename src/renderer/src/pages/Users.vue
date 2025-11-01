@@ -1,9 +1,10 @@
 <script lang="ts" setup>
-import { fetchAllPlayers } from '@renderer/api/endpoints'
+import { changeUpdateChannel, fetchAllPlayers } from '@renderer/api/endpoints'
 import BanPlayerModal from '@renderer/components/modals/BanPlayerModal.vue'
 import PasswordResetConfirm from '@renderer/components/modals/PasswordResetConfirm.vue'
 import { IUser } from '@renderer/env'
 import useUserStore from '@renderer/stores/user-store'
+import { showToast } from '@renderer/utils'
 import { format } from 'date-fns'
 import { ref, onMounted, watch, onUnmounted } from 'vue'
 
@@ -70,6 +71,24 @@ const handleLauncherUnban = async (player: IUser): Promise<void> => {
 
 const handleResetPassword = async (player: IUser): Promise<void> => {
   passwordResetModalRef.value?.openModal(player)
+}
+
+const toggleUpdateChannel = async (
+  nickname: string,
+  enableUpdateChannel: boolean
+): Promise<void> => {
+  try {
+    const res = await changeUpdateChannel(nickname, enableUpdateChannel)
+
+    if (res) {
+      await loadPlayerData()
+      showToast(
+        `${enableUpdateChannel ? 'Włączono' : 'Wyłączono'} kanał aktualizacji dla gracza ${nickname}.`
+      )
+    }
+  } catch {
+    showToast('Włączenie kanału aktualizacji się nie powiodło.')
+  }
 }
 
 const getPlayerID = (player: IUser): string => {
@@ -239,6 +258,13 @@ onUnmounted(() => {
                       <button v-else class="unban-btn" @click="handleLauncherUnban(player)">
                         <i :class="'fas fa-rotate-left'"></i>
                       </button>
+                      <button
+                        class="nav-icon"
+                        @click="toggleUpdateChannel(player.nickname, !player.enableUpdateChannel)"
+                      >
+                        <i v-if="player?.enableUpdateChannel" :class="'fas fa-user-check'"></i>
+                        <i v-else :class="'fas fa-user-xmark'"></i>
+                      </button>
                     </template>
                     <button
                       v-if="player?.accountType !== 'microsoft'"
@@ -247,6 +273,7 @@ onUnmounted(() => {
                     >
                       <i :class="'fas fa-key'"></i>
                     </button>
+
                     <button class="nav-icon" @click="togglePlayerDetails(getPlayerID(player))">
                       <i
                         :class="

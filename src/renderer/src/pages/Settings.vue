@@ -355,7 +355,12 @@ onUnmounted(() => {
         </div>
 
         <div
-          v-if="['technik'].includes(userStore.user?.role ?? 'default')"
+          v-if="
+            userStore.user?.enableUpdateChannel ||
+            ['technik', 'admin', 'mod', 'headadmin', 'helper'].includes(
+              userStore.user?.role ?? 'default'
+            )
+          "
           class="my-0 mt-4 flex flex-row items-center justify-between"
         >
           <div class="text-[var(--text-secondary)] w-full">Kanał aktualizacji</div>

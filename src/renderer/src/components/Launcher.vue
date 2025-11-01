@@ -80,6 +80,16 @@ socket.on('player:unbanned', async (data) => {
   }
 })
 
+socket.on('player:update-profile', async (data) => {
+  const isCurrentPlayer = userStore.user?.uuid === data.uuid
+
+  if (isCurrentPlayer) {
+    await refreshToken()
+    await fetchProfileData()
+    location.reload()
+  }
+})
+
 onMounted(async () => {
   initAnimations()
 
