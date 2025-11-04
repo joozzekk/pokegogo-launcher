@@ -154,6 +154,7 @@ const handleChangeUpdateChannel = async (channel: string): Promise<void> => {
   generalStore.settings.updateChannel = channel
   generalStore.saveSettings()
   await checkUpdate()
+  await window.electron?.ipcRenderer?.invoke('launch:remove-markfile')
   showToast(generalStore.isUpdateAvailable ? 'Update available.' : 'App is up-to-date.')
 }
 
