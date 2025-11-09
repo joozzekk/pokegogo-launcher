@@ -6,6 +6,7 @@ import { useAppUpdater } from './services/app-updater'
 import { createTray } from './services/tray-service'
 import { ensureDir } from './utils'
 import { useFTPService } from './services/ftp-service'
+import { join } from 'path'
 
 const gotTheLock = app.requestSingleInstanceLock()
 

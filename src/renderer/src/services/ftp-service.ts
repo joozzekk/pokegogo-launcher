@@ -15,6 +15,7 @@ interface FTPService {
   removeFile: (name: string) => Promise<void>
   openFile: (name: string) => Promise<void>
   saveFile: () => Promise<void>
+  createFolder: (newFolder: string) => Promise<void>
 }
 
 interface FTPFile {
@@ -48,6 +49,24 @@ export const useFTP = (
 
   const changeFolder = async (name: string): Promise<void> => {
     await getFolderContent(name)
+  }
+
+  const createFolder = async (newFolder: string): Promise<void> => {
+    try {
+      const res = await window.electron.ipcRenderer?.invoke(
+        'ftp:create-folder',
+        currentFolder.value,
+        newFolder
+      )
+
+      if (res) {
+        showToast('Folder pomyślnie utworzony.')
+        await getFolderContent(currentFolder.value)
+      }
+    } catch (err) {
+      LOGGER.err(err as string)
+      showToast('Wystąpił błąd podczas tworzenia folderu.', 'error')
+    }
   }
 
   const uploadFolder = async (): Promise<void> => {
@@ -197,6 +216,7 @@ export const useFTP = (
     uploadFolder,
     removeFile,
     openFile,
+    createFolder,
     saveFile
   }
 }

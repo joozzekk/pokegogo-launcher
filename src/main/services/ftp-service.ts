@@ -34,6 +34,16 @@ export const useFTPService = (): {
   }
 
   const createHandlers = (): void => {
+    ipcMain.handle('ftp:create-folder', async (_, folder, newFolder: string) => {
+      await connect()
+      const pwd = await client.pwd()
+      const remoteURL = pwd + `/${folder}`
+
+      await client.ensureDir(remoteURL + `${remoteURL.length ? `/${newFolder}` : newFolder}`)
+      client.close()
+      return true
+    })
+
     ipcMain.handle('ftp:list-files', async (_, folder) => {
       await connect()
       const pwd = await client.pwd()

@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import CreateFolderModal from '@renderer/components/modals/CreateFolderModal.vue'
 import { useFTP } from '@renderer/services/ftp-service'
 import { format } from 'date-fns'
 import { computed, onMounted, ref } from 'vue'
@@ -7,6 +8,7 @@ const showSearchInput = ref<boolean>(false)
 const searchQuery = ref<string>('')
 const inputFile = ref<HTMLInputElement | null>(null)
 const inputFolder = ref<HTMLInputElement | null>(null)
+const createFolderModal = ref<InstanceType<typeof CreateFolderModal> | null>(null)
 
 const {
   currentFileContent,
@@ -17,6 +19,7 @@ const {
   restoreFolder,
   uploadFile,
   uploadFolder,
+  createFolder,
   removeFile,
   openFile,
   saveFile
@@ -24,6 +27,10 @@ const {
 
 const mapPathToBreadCrumbs = (path: string): string[] => {
   return path.split('/')
+}
+
+const openCreateFolderModal = (): void => {
+  createFolderModal.value?.openModal()
 }
 
 const sortedFiles = computed(() => {
@@ -176,15 +183,22 @@ onMounted(async () => {
           </button>
           <button
             class="nav-icon hover:cursor-pointer hover:text-[var(--text-secondary)]"
-            @click="handleUploadFolder"
+            @click="openCreateFolderModal"
           >
             <i class="fa fa-folder-plus" />
           </button>
           <button
             class="nav-icon hover:cursor-pointer hover:text-[var(--text-secondary)]"
-            @click="handleUploadFile"
+            @click="handleUploadFolder"
           >
             <i class="fa fa-upload" />
+          </button>
+
+          <button
+            class="nav-icon hover:cursor-pointer hover:text-[var(--text-secondary)]"
+            @click="handleUploadFile"
+          >
+            <i class="fa fa-file-import" />
           </button>
         </div>
         <transition name="slide-fade">
@@ -249,6 +263,7 @@ onMounted(async () => {
         </div>
       </div>
     </template>
+    <CreateFolderModal ref="createFolderModal" @submit="createFolder" />
   </div>
 </template>
 
