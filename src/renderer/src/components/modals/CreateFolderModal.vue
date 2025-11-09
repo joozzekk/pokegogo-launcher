@@ -61,7 +61,7 @@ const handleSubmit = async (): Promise<void> => {
         <div class="modal-header flex justify-between">
           <div class="launch-title">
             <div class="nav-icon">
-              <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+              <i class="fas fa-folder-plus" aria-hidden="true"></i>
             </div>
             <h2>Tworzenie folderu</h2>
           </div>
