@@ -76,10 +76,10 @@ onMounted(async () => {
             </div>
             <template v-if="megaEvent">
               <span class="featured-tag top-[1.5rem] left-[1.5rem]">MEGA WYDARZENIE</span>
-              <span class="featured-tag top-[1.5rem] right-[1.5rem]"
-                >{{ megaEvent?.startDate ? format(megaEvent.startDate, 'dd MMMM') : '' }} -
-                {{ megaEvent?.endDate ? format(megaEvent.endDate, 'dd MMMM') : '' }}</span
-              >
+              <span class="featured-tag top-[1.5rem] right-[1.5rem]">
+                {{ megaEvent?.startDate ? format(megaEvent.startDate, 'dd MMMM') : '' }}
+                {{ megaEvent?.endDate ? '- ' + format(megaEvent.endDate, 'dd MMMM') : '' }}
+              </span>
               <div class="featured-content">
                 <h3>{{ megaEvent?.name }}</h3>
                 <p>

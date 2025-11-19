@@ -41,9 +41,13 @@ const rules = computed(() => {
     startDate: {
       required: helpers.withMessage('Pole jest wymagane', required)
     },
-    endDate: {
-      required: helpers.withMessage('Pole jest wymagane', required)
-    }
+    ...(state.type !== 'mega'
+      ? {
+          endDate: {
+            required: helpers.withMessage('Pole jest wymagane', required)
+          }
+        }
+      : {})
   }
 })
 
@@ -304,12 +308,13 @@ defineExpose({
                   placeholder="Wybierz datę"
                   class="w-full"
                   input-class="!text-[0.8rem] w-full"
-                  :class="{ invalid: v$.endDate.$error }"
+                  :class="{ invalid: v$.endDate?.$error }"
                   required
+                  show-clear
                   aria-required="true"
                 />
-                <div class="error-message" :class="{ show: v$.endDate.$error }">
-                  {{ v$.endDate.$errors[0]?.$message }}
+                <div class="error-message" :class="{ show: v$.endDate?.$error }">
+                  {{ v$.endDate?.$errors[0]?.$message }}
                 </div>
               </div>
             </div>
