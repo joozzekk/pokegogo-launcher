@@ -1,6 +1,6 @@
 import { installExtension, VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 import { app, BrowserWindow, ipcMain } from 'electron'
-import { electronApp, optimizer } from '@electron-toolkit/utils'
+import { electronApp } from '@electron-toolkit/utils'
 import useWindowService from './services/window-service'
 import { useAppUpdater } from './services/app-updater'
 import { createTray } from './services/tray-service'
@@ -29,10 +29,6 @@ if (!gotTheLock) {
     createTray(mainWindow)
     await installExtension(VUEJS_DEVTOOLS)
     createHandlers()
-
-    app.on('browser-window-created', (_, window) => {
-      optimizer.watchWindowShortcuts(window)
-    })
   })
 
   app.on('activate', async () => {

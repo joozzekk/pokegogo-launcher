@@ -1,3 +1,4 @@
+<!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <script lang="ts" setup>
 import { computed, onMounted, ref } from 'vue'
 import LaunchButton from '@renderer/components/buttons/LaunchButton.vue'

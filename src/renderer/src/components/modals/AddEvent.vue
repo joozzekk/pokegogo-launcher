@@ -1,3 +1,4 @@
+<!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <script lang="ts" setup>
 import { createEvent, updateEvent } from '@renderer/api/endpoints'
 import { showToast } from '@renderer/utils'
