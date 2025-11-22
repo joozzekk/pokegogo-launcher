@@ -76,6 +76,10 @@ defineExpose({
           </div>
         </div>
         <div class="modal-content">
+          <p class="text-[var(--text-secondary)] mb-4">
+            Pamiętaj, aby nie zamykać launchera podczas weryfikacji plików.
+          </p>
+
           <p v-if="currentLog.length" class="log-description">
             {{ currentLog }}
           </p>
