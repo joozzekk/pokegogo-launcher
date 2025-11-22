@@ -33,6 +33,7 @@ const cancelVerifying = async (): Promise<void> => {
 const verifyFiles = async (): Promise<void> => {
   isVerifying.value = true
   await window.electron?.ipcRenderer?.invoke('launch:remove-markfile')
+  await window.electron?.ipcRenderer?.invoke('launch:remove-libraries-files')
   await window.electron?.ipcRenderer?.invoke('launch:check-files', {
     isDev: generalStore.settings.updateChannel === 'dev',
     event: 'verify:log'

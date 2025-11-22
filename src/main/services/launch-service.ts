@@ -1,10 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { app, type BrowserWindow, ipcMain } from 'electron'
 import { installJava } from './installers/java-installer'
 import { copyMCFiles } from './installers/mc-installer'
 import { launchMinecraft } from './mc-launcher'
 import Logger from 'electron-log'
 import { join } from 'path'
-import { unlink } from 'fs/promises'
+import { rm, unlink } from 'fs/promises'
 
 export const useLaunchService = (win: BrowserWindow): void => {
   let currentAbortController: AbortController | null = null
@@ -64,6 +65,19 @@ export const useLaunchService = (win: BrowserWindow): void => {
   ipcMain.handle('launch:remove-markfile', async (): Promise<boolean> => {
     try {
       await unlink(join(app.getPath('userData'), '.mcfiles_installed'))
+    } catch (err) {
+      Logger.log(err)
+
+      return false
+    }
+
+    return false
+  })
+
+  ipcMain.handle('launch:remove-libraries-files', async (): Promise<boolean> => {
+    try {
+      await rm(join(app.getPath('userData'), 'mcfiles/mods'), { recursive: true, force: true })
+      await rm(join(app.getPath('userData'), 'mcfiles/libraries'), { recursive: true, force: true })
     } catch (err) {
       Logger.log(err)
 
