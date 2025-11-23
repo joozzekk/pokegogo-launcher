@@ -13,7 +13,8 @@ interface FTPService {
   uploadFile: () => Promise<void>
   uploadFolder: () => Promise<void>
   removeFile: (name: string) => Promise<void>
-  openFile: (name: string) => Promise<void>
+  openTextFile: (name: string) => Promise<void>
+  openImageFile: (name: string) => Promise<void>
   saveFile: () => Promise<void>
   createFolder: (newFolder: string) => Promise<void>
 }
@@ -162,7 +163,7 @@ export const useFTP = (
     }
   }
 
-  const openFile = async (name: string): Promise<void> => {
+  const openTextFile = async (name: string): Promise<void> => {
     currentFileName.value = name
 
     try {
@@ -173,6 +174,30 @@ export const useFTP = (
       )
       if (res) {
         currentFileContent.value = res
+      }
+    } catch (err) {
+      LOGGER.err(err as string)
+      showToast('Wystąpił błąd podczas otwierania pliku ' + name, 'error')
+    }
+  }
+
+  const openImageFile = async (name: string): Promise<void> => {
+    currentFileName.value = name
+
+    try {
+      const base64Content: string = await window.electron.ipcRenderer?.invoke(
+        'ftp:read-image',
+        currentFolder.value,
+        name
+      )
+
+      if (base64Content) {
+        const fileExtension = name.split('.').pop()?.toLowerCase() || 'png'
+        const mimeType = `image/${fileExtension === 'jpg' ? 'jpeg' : fileExtension}` // obsługa .jpg -> image/jpeg
+
+        const imageUrl = `data:${mimeType};base64,${base64Content}`
+
+        currentFileContent.value = imageUrl
       }
     } catch (err) {
       LOGGER.err(err as string)
@@ -215,7 +240,8 @@ export const useFTP = (
     uploadFile,
     uploadFolder,
     removeFile,
-    openFile,
+    openTextFile,
+    openImageFile,
     createFolder,
     saveFile
   }

@@ -392,6 +392,32 @@ export const useFTPService = (): {
 
       return fileContent
     })
+
+    ipcMain.handle('ftp:read-image', async (_, folder: string, name: string) => {
+      const tempFilePath = join(process.cwd(), 'tmp', name)
+
+      try {
+        await connect()
+        // Pobieranie pliku na dysk tymczasowy
+        await client.downloadTo(tempFilePath, `${folder}/${name}`)
+
+        // 🟢 Poprawa: Odczyt pliku jako Buffer (dane binarne)
+        const fileBuffer = await readFile(tempFilePath)
+
+        // 🟢 Poprawa: Konwersja Buffer na ciąg Base64 do przesłania przez IPC
+        const fileBase64 = fileBuffer.toString('base64')
+
+        await unlink(tempFilePath)
+        client.close()
+
+        // 🟢 Zwrócenie ciągu Base64 do procesu renderowania
+        return fileBase64
+      } catch (error) {
+        // Pamiętaj o obsłudze błędów i zamknięciu klienta FTP w przypadku problemu
+        client.close()
+        throw error
+      }
+    })
   }
 
   return {

@@ -11,6 +11,7 @@ const inputFolder = ref<HTMLInputElement | null>(null)
 const createFolderModal = ref<InstanceType<typeof CreateFolderModal> | null>(null)
 
 const {
+  currentFileName,
   currentFileContent,
   currentFolderFiles,
   getFolderContent,
@@ -21,7 +22,8 @@ const {
   uploadFolder,
   createFolder,
   removeFile,
-  openFile,
+  openTextFile,
+  openImageFile,
   saveFile
 } = useFTP(inputFile, inputFolder)
 
@@ -72,6 +74,18 @@ const handleShowSearch = (): void => {
   searchQuery.value = ''
 }
 
+const isTextFile = (name: string): boolean => {
+  return ['.txt', '.log', '.md', '.csv', '.json', '.xml', '.yml', '.yaml', '.conf'].includes(
+    name.slice(name.lastIndexOf('.'))
+  )
+}
+
+const isImageFile = (name: string): boolean => {
+  return ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.svg', '.webp'].includes(
+    name.slice(name.lastIndexOf('.'))
+  )
+}
+
 const isKnownFile = (name: string): boolean => {
   return [
     '.properties',
@@ -103,7 +117,7 @@ onMounted(async () => {
   <div
     class="flex flex-col w-full text-[var(--text-secondary)] max-h-full overflow-y-auto rounded-xl border-dashed border-1 border-[var(--border)]"
   >
-    <template v-if="currentFileContent.length">
+    <template v-if="currentFileContent.length && isTextFile(currentFileName)">
       <div class="relative flex w-full h-full">
         <div class="flex flex-col gap-2 absolute right-4 top-2">
           <button
@@ -124,6 +138,21 @@ onMounted(async () => {
           class="w-full h-full bg-[var(--bg-light)] resize-none outline-none px-4 py-2"
         >
         </textarea>
+      </div>
+    </template>
+    <template v-else-if="currentFileContent.length && isImageFile(currentFileName)">
+      <div class="relative flex w-full h-full">
+        <div class="flex flex-col gap-2 absolute right-4 top-2">
+          <button
+            class="ban-btn hover:cursor-pointer hover:text-[var(--primary)]"
+            @click="currentFileContent = ''"
+          >
+            <i class="fa fa-close" />
+          </button>
+        </div>
+        <div class="w-full h-full flex items-center justify-center p-4">
+          <img :src="currentFileContent" :alt="currentFileName" class="max-w-full max-h-full" />
+        </div>
       </div>
     </template>
     <template v-else>
@@ -232,14 +261,17 @@ onMounted(async () => {
         :key="file.name"
         class="bg-[var(--bg-card)] w-full px-4 py-2 flex items-center gap-4"
         :class="{
-          'hover:bg-[#00000050] hover:cursor-pointer': file.isDirectory || isKnownFile(file.name)
+          'hover:bg-[#00000050] hover:cursor-pointer':
+            file.isDirectory || isKnownFile(file.name) || isImageFile(file.name)
         }"
         @click="
           file.isDirectory
             ? changeFolder(file.name)
-            : isKnownFile(file.name)
-              ? openFile(file.name)
-              : null
+            : isTextFile(file.name)
+              ? openTextFile(file.name)
+              : isImageFile(file.name)
+                ? openImageFile(file.name)
+                : null
         "
       >
         <div class="nav-icon">
