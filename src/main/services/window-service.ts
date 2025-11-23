@@ -110,28 +110,27 @@ const createLoadingWindow = (): {
   })
 
   const startApp = async (mainWindow: BrowserWindow): Promise<void> => {
-    loadingWindow.show()
-
-    loadingWindow.webContents.send('load:status', JSON.stringify('check-for-update'))
-    try {
-      loadingWindow.webContents.send('load:status', JSON.stringify('updating'))
-    } catch (err) {
-      Logger.log(err)
-    } finally {
-      setTimeout(() => {
-        loadingWindow.webContents.send('load:status', JSON.stringify('starting'))
-
+    ipcMain.handleOnce('load:start-services', async () => {
+      try {
         useLoginService()
         useLaunchService(mainWindow)
-      }, 1500)
+        return { ok: true }
+      } catch (err) {
+        Logger.error('Error starting services', err)
+        return { ok: false, error: String(err) }
+      }
+    })
 
-      setTimeout(() => {
+    ipcMain.on('load:finish', () => {
+      try {
         loadingWindow.close()
         loadingWindow.webContents.close()
         mainWindow.show()
         mainWindow.focus()
-      }, 3000)
-    }
+      } catch (err) {
+        Logger.error(err)
+      }
+    })
   }
 
   return {

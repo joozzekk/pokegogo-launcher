@@ -27,27 +27,37 @@ onMounted(() => {
       : halloween
   )
 
-  window.electron?.ipcRenderer?.on('load:status', async (_, currentStatus: string) => {
-    let val = 0
-    const parsedStatus = JSON.parse(currentStatus)
+  const runLoadingFlow = async (): Promise<void> => {
+    try {
+      status.value = statuses['check-for-update']
+      await checkUpdate()
+      progress.value = 25
 
-    switch (parsedStatus) {
-      case 'check-for-update':
-        await checkUpdate()
-        val = 25
-        break
-      case 'updating':
-        if (generalStore.isUpdateAvailable && generalStore.settings.autoUpdate)
-          await window.electron?.ipcRenderer?.invoke('update:start')
-        val = 60
-        break
-      case 'starting':
-        val = 100
-        break
+      status.value = statuses['updating']
+      if (generalStore.isUpdateAvailable && generalStore.settings.autoUpdate) {
+        await window.electron?.ipcRenderer?.invoke('update:start')
+      }
+      progress.value = 60
+
+      await window.electron?.ipcRenderer?.invoke('load:start-services')
+
+      status.value = statuses['starting']
+      progress.value = 100
+
+      setTimeout(() => {
+        window.electron?.ipcRenderer?.send('load:finish')
+      }, 600)
+    } catch (err) {
+      console.error(err)
+      status.value = 'Wystąpił błąd'
+      progress.value = 100
+      setTimeout(() => {
+        window.electron?.ipcRenderer?.send('load:finish')
+      }, 1500)
     }
-    status.value = statuses[parsedStatus]
-    progress.value = val
-  })
+  }
+
+  runLoadingFlow()
 })
 </script>
 
