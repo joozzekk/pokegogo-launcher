@@ -82,6 +82,7 @@ interface DownloadItem {
 // Kompletna funkcja downloadAll
 async function downloadAll(
   client: Client,
+  connect: () => Promise<Client>,
   remoteDir: string,
   localDir: string,
   log: (data: string, isEnded?: boolean) => void,
@@ -106,8 +107,7 @@ async function downloadAll(
   try {
     await client.downloadTo(localHashesFile, posix.join(remoteDir, 'hashes.txt'))
     hasHashesFile = true
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (err) {
+  } catch {
     Logger.log('PokeGoGo Launcher > Brak zdalnego hashes.txt, przyjmujemy pusty zestaw hashy')
     hasHashesFile = false
   }
@@ -121,7 +121,7 @@ async function downloadAll(
 
   // Build a combined map keyed by full remote path so we can resolve entries
   // defined in parent hashes.txt files (they may reference nested paths like "mods/x.jar").
-  const combinedHashes: Record<string, { hash: string; flag?: 'important' | 'ignore' }> = {}
+  let combinedHashes: Record<string, { hash: string; flag?: 'important' | 'ignore' }> = {}
   // copy ancestor entries first (they are already keyed by remote path)
   Object.assign(combinedHashes, ancestorHashes)
   // then add local entries but keyed by their full remote path
@@ -130,7 +130,28 @@ async function downloadAll(
     combinedHashes[fullRemoteKey] = v
   }
 
-  const list = await client.list()
+  // If this is the first install, ignore remote hashes and force downloading everything.
+  // Some deployments may include a hashes.txt but we still want to fetch all files
+  // on the initial installation (marker file absent).
+  if (isFirstInstall) {
+    hasHashesFile = false
+    combinedHashes = {}
+  }
+
+  let list
+  try {
+    list = await client.list()
+  } catch {
+    // Attempt reconnect on socket closed or other connection errors
+    try {
+      client = await connect()
+      await safeCd(client, remoteDir)
+      list = await client.list()
+    } catch (e: unknown) {
+      Logger.error('PokeGoGo Launcher > Failed to list directory ' + remoteDir + ': ' + String(e))
+      return
+    }
+  }
 
   // Listy do przetworzenia
   const itemsToProcess: DownloadItem[] = []
@@ -145,31 +166,84 @@ async function downloadAll(
     if (file.isDirectory) {
       // If hashes.txt is missing, default to legacy behaviour: treat folder as important
       if (!isFirstInstall && hasHashesFile) {
-        // Check if this directory (or any child inside it) is marked important.
-        // Use combinedHashes keyed by full remote paths so parent entries referencing
-        // nested files/folders are respected.
+        // We should recurse into this directory only if at least one referenced
+        // important entry under this directory actually needs updating — i.e.
+        // the remote hash differs from the local file hash OR the local file is missing.
         const dirRemotePath = posix.join(remoteDir, file.name)
-        const hasImportant = Object.keys(combinedHashes).some((k) => {
-          return (
-            (k === dirRemotePath || k.startsWith(dirRemotePath + '/')) &&
-            combinedHashes[k].flag === 'important'
-          )
+
+        let shouldRecurse = false
+
+        const keys = Object.keys(combinedHashes).filter((k) => {
+          return k === dirRemotePath || k.startsWith(dirRemotePath + '/')
         })
-        if (!hasImportant) continue
+
+        for (const k of keys) {
+          const entry = combinedHashes[k]
+          if (!entry || entry.flag !== 'important') continue
+
+          // skip directory placeholder entries (hash === 'dir')
+          if (entry.hash === 'dir') {
+            // If parent folder itself is marked important:
+            // - If there are nested hash entries under this dir, we'll evaluate them
+            //   later in this loop (they appear as keys starting with dirRemotePath + '/').
+            // - If there are NO nested entries, treat the directory itself as needing
+            //   download/recurse (force update) when it's marked important.
+            const nested = Object.keys(combinedHashes).some((kk) =>
+              kk.startsWith(dirRemotePath + '/')
+            )
+            if (!nested) {
+              // No nested entries -> force recurse (download whole dir)
+              shouldRecurse = true
+              break
+            }
+
+            // If local directory missing -> we need to recurse
+            try {
+              const localStat = await fs.promises.stat(posix.join(localDir, file.name))
+              if (!localStat.isDirectory()) {
+                shouldRecurse = true
+                break
+              }
+            } catch {
+              shouldRecurse = true
+              break
+            }
+
+            // Otherwise there are nested entries and local directory exists; continue
+            // to evaluate nested entries below.
+            continue
+          }
+
+          // For nested file entries, map the remote key to local path and compare hashes
+          const relative = k.substring(remoteDir.length + 1) // remove remoteDir + '/'
+          const candidateLocalPath = posix.join(localDir, relative)
+          try {
+            await fs.promises.access(candidateLocalPath)
+            const localHash = await getFileHash(candidateLocalPath)
+            if (localHash !== entry.hash) {
+              shouldRecurse = true
+              break
+            }
+          } catch {
+            // local file missing or unreadable -> needs download
+            shouldRecurse = true
+            break
+          }
+        }
+
+        if (!shouldRecurse) continue
       }
 
       dirsToRecurse.push({ remotePath, localPath })
     } else if (file.isFile) {
       if (file.name.endsWith('.sha256') || file.name === 'hashes.txt') continue
 
-      // If hashes.txt is present and not first install, skip files marked as ignore.
-      // Use combinedHashes keyed by full remote path to include parent references.
+      // If hashes.txt is present and not first install, skip files explicitly marked as 'ignore'.
+      // Missing flag should NOT be treated as 'ignore' — only explicit 'ignore' skips on updates.
       if (!isFirstInstall && hasHashesFile) {
         const fileRemotePath = posix.join(remoteDir, file.name)
         const entry = combinedHashes[fileRemotePath]
-        const flag = entry?.flag
-        // default when flag missing is 'ignore'
-        if (flag === 'ignore' || flag === undefined) continue
+        if (entry?.flag === 'ignore') continue
       }
 
       let downloadFile = true
@@ -178,14 +252,20 @@ async function downloadAll(
       const fileRemotePath = posix.join(remoteDir, file.name)
       const entry = combinedHashes[fileRemotePath]
       if (entry) {
+        // If entry is present, compare hashes. For 'important' files we must download
+        // only when hashes differ (or local file missing). For other entries the same
+        // comparison applies: skip when hashes match, download otherwise.
         try {
           const localHash = await getFileHash(localPath)
           if (localHash === entry.hash) {
             downloadFile = false
             log(`Plik ${file.name} jest aktualny, pomijam pobieranie.`) // Opcjonalny log
+          } else {
+            downloadFile = true
           }
         } catch {
-          downloadFile = true // Lokalny plik nie istnieje lub jest uszkodzony
+          // local missing or unreadable -> download
+          downloadFile = true
         }
       } else {
         try {
@@ -259,11 +339,37 @@ async function downloadAll(
       log(logMessage)
     })
 
-    // Uruchamiamy pobieranie
-    await client.downloadTo(item.localPath, item.remotePath)
+    // Uruchamiamy pobieranie - z retry przy zamkniętym socketcie
+    let downloaded = false
+    for (let attempt = 0; attempt < 2 && !downloaded; attempt++) {
+      try {
+        await client.downloadTo(item.localPath, item.remotePath)
+        downloaded = true
+      } catch (err: unknown) {
+        const msg = String((err as { message?: unknown })?.message ?? err)
+        Logger.warn('PokeGoGo Launcher > download error: ' + msg)
+        // If socket closed, try reconnect once
+        if (msg.toLowerCase().includes('socket is closed') && attempt === 0) {
+          try {
+            client = await connect()
+            await safeCd(client, remoteDir)
+            // continue to retry
+            continue
+          } catch (reconErr) {
+            Logger.error('PokeGoGo Launcher > Reconnect failed: ' + String(reconErr))
+            throw reconErr
+          }
+        }
+        throw err
+      }
+    }
 
     // Wyłączamy tracker po zakończeniu pobierania pliku
-    client.trackProgress(undefined)
+    try {
+      client.trackProgress(undefined)
+    } catch {
+      /* ignore */
+    }
 
     // Aktualizujemy globalny postęp *po* pomyślnym pobraniu pliku
     globalProgress.downloadedFiles++
@@ -274,6 +380,7 @@ async function downloadAll(
   for (const dir of dirsToRecurse) {
     await downloadAll(
       client,
+      connect,
       dir.remotePath,
       dir.localPath,
       log,
@@ -287,23 +394,18 @@ async function downloadAll(
   // --- 4. ETAP: Usuwanie lokalnych plików (logika z oryginalnego kodu) ---
   const dirents = await fs.promises.readdir(localDir, { withFileTypes: true })
 
-  for (const dirent of dirents) {
-    if (!dirent.isFile()) {
-      continue
-    }
+  if (hasHashesFile) {
+    for (const dirent of dirents) {
+      if (!dirent.isFile()) continue
 
-    const localFile = dirent.name
-    const remoteKey = posix.join(remoteDir, localFile)
+      const localFile = dirent.name
 
-    // Only delete local files that are not present in the combined hashes map
-    // (which includes entries from parent hashes.txt files). This prevents
-    // accidentally removing files that are referenced only from ancestor hashes.
-    if (!combinedHashes[remoteKey]) {
-      try {
-        await fs.promises.unlink(posix.join(localDir, localFile))
-        // log(`Usunięto lokalny plik ${localFile}.`)
-      } catch (err) {
-        Logger.log(`PokeGoGo Launcher > Błąd podczas usuwania pliku ${localFile}: ${err}`)
+      if (!localHashes[localFile]) {
+        try {
+          await fs.promises.unlink(posix.join(localDir, localFile))
+        } catch (err) {
+          Logger.log(`PokeGoGo Launcher > Błąd podczas usuwania pliku ${localFile}: ${err}`)
+        }
       }
     }
   }
@@ -315,16 +417,17 @@ export async function copyMCFiles(
   signal: AbortSignal,
   logHandlerName: string = 'launch:show-log'
 ): Promise<string | undefined> {
-  const { client, connect } = useFTPService()
+  const ftp = useFTPService()
   const localRoot = posix.join(app.getPath('userData'), 'mcfiles')
   const markerFile = posix.join(app.getPath('userData'), '.mcfiles_installed')
   // const importantFiles = ['mods', 'versions', 'resourcepacks', 'datapacks', 'config', 'fancymenu']
   // const ignoreFiles = ['options']
 
+  let client: Client | undefined
   try {
     const isFirstInstall = !(await fileExists(markerFile))
-
-    await connect()
+    // Establish a fresh client instance and keep its reference locally.
+    client = await ftp.connect()
 
     const pwd = await client.pwd()
     const remoteURL = posix.join(pwd, isDev ? 'dev-mc' : 'mc')
@@ -340,6 +443,7 @@ export async function copyMCFiles(
 
     await downloadAll(
       client,
+      ftp.connect,
       remoteURL,
       localRoot,
       (data: string) => {
@@ -361,10 +465,18 @@ export async function copyMCFiles(
     }
 
     mainWindow.webContents.send(logHandlerName, '', true)
+
+    return 'done'
   } catch (err) {
     Logger.error(err)
   } finally {
-    client.close()
+    try {
+      if (client) {
+        client.close()
+      }
+    } catch {
+      /* ignore */
+    }
   }
   return
 }

@@ -57,7 +57,6 @@ export async function launchMinecraft(
   const [width, height] = isFullScreen
     ? [fullWidth, fullHeight]
     : settings.resolution.split('x').map((v: string) => parseInt(v))
-  // const maxRAM = getMaxRAMInGB()
 
   const process = await client.launch({
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
