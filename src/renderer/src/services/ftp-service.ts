@@ -79,7 +79,7 @@ export const useFTP = (
     const files = Array.from(inputFolder.value.files)
 
     try {
-      const progress = showProgressToast(`Czytanie folderu...`)
+      const progress = showProgressToast(`Wczytywanie plików...`)
       const resolvedFiles = await Promise.all(
         files.map(async (file) => ({
           path: file.webkitRelativePath || file.name,
@@ -88,10 +88,10 @@ export const useFTP = (
       )
 
       // initialize progress bar to 0/N
-      progress?.updateProgress(0, resolvedFiles.length, 'Przesyłanie folderu...')
+      progress?.updateProgress(0, resolvedFiles.length, 'Przesyłanie plików...')
 
       window.electron.ipcRenderer?.on('ftp:upload-folder-progress', (_event, completed: number) => {
-        progress?.updateProgress(completed, resolvedFiles.length, 'Przesyłanie folderu...')
+        progress?.updateProgress(completed, resolvedFiles.length, 'Przesyłanie plików...')
       })
 
       try {
@@ -316,17 +316,17 @@ export const useFTP = (
         if (!all.length) return
 
         try {
-          const progress = showProgressToast(`Czytanie folderu...`)
+          const progress = showProgressToast(`Wczytywanie plików...`)
           const resolvedFiles = await Promise.all(
             all.map(async ({ path, file }) => ({ path, buffer: await file.arrayBuffer() }))
           )
 
-          progress?.updateProgress(0, resolvedFiles.length)
+          progress?.updateProgress(0, resolvedFiles.length, 'Przesyłanie plików...')
 
           window.electron.ipcRenderer?.on(
             'ftp:upload-folder-progress',
             (_event, completed: number) => {
-              progress?.updateProgress(completed, resolvedFiles.length)
+              progress?.updateProgress(completed, resolvedFiles.length, 'Przesyłanie plików...')
             }
           )
 
@@ -341,7 +341,11 @@ export const useFTP = (
             if (res) {
               window.electron.ipcRenderer.removeAllListeners('ftp:upload-folder-progress')
               await getFolderContent(currentFolder.value)
-              progress?.updateProgress(resolvedFiles.length, resolvedFiles.length)
+              progress?.updateProgress(
+                resolvedFiles.length,
+                resolvedFiles.length,
+                'Przesyłanie plików...'
+              )
               progress?.close(
                 `Folder został przesłany: ${resolvedFiles.length}/${resolvedFiles.length}`,
                 'success'
