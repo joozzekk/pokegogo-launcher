@@ -43,6 +43,29 @@ const refreshFolderStatuses = async (): Promise<void> => {
   try {
     for (const d of dirs) {
       try {
+        // If parent hashes already contain a direct flag for this folder, prefer that
+        const directParentFlag = currentHashes.value[d.name]?.flag === 'important'
+        if (directParentFlag) {
+          folderImportantStatus.value[d.name] = true
+          continue
+        }
+
+        // Also consider parent hashes that reference files under this folder
+        // e.g. entries like "1.21.1-fabric/1.21.1-fabric.json"
+        const parentEntries = Object.entries(currentHashes.value).filter(
+          ([k]) => k === d.name || k.startsWith(d.name + '/')
+        )
+
+        if (parentEntries.length) {
+          // if all referenced entries under parent are marked important, treat folder as important
+          const allImportant = parentEntries.every(([, v]) => v.flag === 'important')
+          if (allImportant) {
+            folderImportantStatus.value[d.name] = true
+            continue
+          }
+        }
+
+        // fallback: perform recursive check inside the folder
         const res = await isFolderAllImportant?.(d.name, false)
         folderImportantStatus.value[d.name] = !!res
       } catch {
