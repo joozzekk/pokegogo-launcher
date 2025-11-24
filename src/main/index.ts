@@ -28,7 +28,7 @@ if (!gotTheLock) {
     await startApp(mainWindow)
     createTray(mainWindow)
     await installExtension(VUEJS_DEVTOOLS)
-    createHandlers()
+    createHandlers(mainWindow)
   })
 
   app.on('activate', async () => {

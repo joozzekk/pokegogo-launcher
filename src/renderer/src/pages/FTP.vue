@@ -2,7 +2,7 @@
 <script lang="ts" setup>
 import CreateFolderModal from '@renderer/components/modals/CreateFolderModal.vue'
 import { useFTP } from '@renderer/services/ftp-service'
-import { showToast } from '@renderer/utils'
+import { showToast, showProgressToast } from '@renderer/utils'
 import { format } from 'date-fns'
 import { computed, onMounted, ref } from 'vue'
 
@@ -144,15 +144,36 @@ const handleDrop = async (ev: DragEvent): Promise<void> => {
           all.map(async ({ path, file }) => ({ path, buffer: await file.arrayBuffer() }))
         )
 
-        const res = await window.electron.ipcRenderer?.invoke(
-          'ftp:upload-folder',
-          currentFolder.value,
-          resolvedFiles
+        const progress = showProgressToast(`Wysyłanie folderu: 0/${resolvedFiles.length}`)
+
+        window.electron.ipcRenderer?.on(
+          'ftp:upload-folder-progress',
+          (_event, completed: number) => {
+            progress?.update(`Wysyłanie folderu: ${completed}/${resolvedFiles.length}`)
+          }
         )
 
-        if (res) {
-          await getFolderContent()
-          showToast(`Folder został przesłany pomyślnie.`)
+        try {
+          const res = await window.electron.ipcRenderer?.invoke(
+            'ftp:upload-folder',
+            currentFolder.value,
+            resolvedFiles,
+            0
+          )
+
+          if (res) {
+            window.electron.ipcRenderer.removeAllListeners('ftp:upload-folder-progress')
+            await getFolderContent()
+            progress?.close(
+              `Folder został przesłany: ${resolvedFiles.length}/${resolvedFiles.length}`,
+              'success'
+            )
+          } else {
+            progress?.close('Wystąpił błąd podczas przesyłania folderu.', 'error')
+          }
+        } catch (err) {
+          progress?.close('Wystąpił błąd podczas przesyłania folderu.', 'error')
+          console.error(err)
         }
       } catch (err) {
         console.error(err)
@@ -164,10 +185,12 @@ const handleDrop = async (ev: DragEvent): Promise<void> => {
 
   if (dt.files && dt.files.length) {
     const files = Array.from(dt.files)
+    const progress = showProgressToast(`Wysyłanie plików: 0/${files.length}`)
 
     try {
-      await Promise.all(
-        files.map(async (file) => {
+      let succeeded = 0
+      for (const file of files) {
+        try {
           const res = await window.electron.ipcRenderer?.invoke(
             'ftp:upload-file',
             currentFolder.value,
@@ -176,16 +199,23 @@ const handleDrop = async (ev: DragEvent): Promise<void> => {
           )
 
           if (res) {
+            succeeded++
+            progress?.update(`Wysyłanie plików: ${succeeded}/${files.length}`)
             showToast(`Plik ${file.name} został przesłany pomyślnie.`)
           }
+        } catch (err) {
+          console.error(err)
+          progress?.update(
+            `Wysyłanie plików: ${succeeded}/${files.length} (błąd przy ${file.name})`
+          )
+        }
+      }
 
-          return res
-        })
-      )
-
-      await getFolderContent()
+      if (succeeded > 0) await getFolderContent()
+      progress?.close(`Wysłano pliki: ${succeeded}/${files.length}`, 'success')
     } catch (err) {
       console.error(err)
+      progress?.close('Wystąpił błąd podczas przesyłania plików.', 'error')
     }
   }
 }

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import ftp, { type Client } from 'basic-ftp'
 import { createHash } from 'crypto'
-import { ipcMain } from 'electron'
+import { BrowserWindow, ipcMain } from 'electron'
 import { readFile, unlink, writeFile } from 'fs/promises'
 import { basename, dirname, join, posix } from 'path'
 
@@ -18,7 +18,7 @@ export const safeCd = async (client: Client, dir: string): Promise<boolean> => {
 export const useFTPService = (): {
   client: Client
   connect: () => Promise<void>
-  createHandlers: () => void
+  createHandlers: (mainWindow: BrowserWindow) => void
 } => {
   const client = new ftp.Client(1000 * 120)
 
@@ -33,7 +33,7 @@ export const useFTPService = (): {
     client.ftp.verbose = true
   }
 
-  const createHandlers = (): void => {
+  const createHandlers = (mainWindow: BrowserWindow): void => {
     ipcMain.handle('ftp:create-folder', async (_, folder, newFolder: string) => {
       await connect()
       const pwd = await client.pwd()
@@ -182,91 +182,97 @@ export const useFTPService = (): {
       return hashes
     }
 
-    ipcMain.handle('ftp:upload-folder', async (_, folder: string, files: any[]) => {
-      const tmpDir = join(process.cwd(), 'tmp')
-      const localHashesPath = join(tmpDir, 'hashes.temp.txt')
-      const localUploadTempPath = join(tmpDir, 'upload.temp.bin')
+    ipcMain.handle(
+      'ftp:upload-folder',
+      async (_, folder: string, files: any[], currentFile: number) => {
+        const tmpDir = join(process.cwd(), 'tmp')
+        const localHashesPath = join(tmpDir, 'hashes.temp.txt')
+        const localUploadTempPath = join(tmpDir, 'upload.temp.bin')
 
-      try {
-        await connect()
+        try {
+          await connect()
 
-        const pwd = await client.pwd()
-        const baseRemoteDir = join(pwd, folder).replace(/\\/g, '/')
+          const pwd = await client.pwd()
+          const baseRemoteDir = join(pwd, folder).replace(/\\/g, '/')
 
-        const filesByDir = groupFilesByDirectory(files)
+          const filesByDir = groupFilesByDirectory(files)
 
-        for (const [relativeDir, filesInDir] of filesByDir.entries()) {
-          const currentRemoteDir =
-            relativeDir === '.'
-              ? baseRemoteDir
-              : join(baseRemoteDir, relativeDir).replace(/\\/g, '/')
+          let fileIndex = currentFile
 
-          try {
-            await client.ensureDir(currentRemoteDir)
-            await client.cd(currentRemoteDir)
-          } catch (e: any) {
-            throw new Error(`Failed to cd/ensureDir ${currentRemoteDir}. Details: ${e.message}`)
-          }
-
-          const hashes = await loadRemoteHashes(currentRemoteDir, localHashesPath)
-
-          let hashesChanged = false
-
-          for (const file of filesInDir) {
-            const { path: normalizedPath, buffer } = file
-            const fileName = basename(normalizedPath)
-
-            const fileHash = await computeHash(buffer)
-
-            await writeFile(localUploadTempPath, Buffer.from(buffer))
+          for (const [relativeDir, filesInDir] of filesByDir.entries()) {
+            const currentRemoteDir =
+              relativeDir === '.'
+                ? baseRemoteDir
+                : join(baseRemoteDir, relativeDir).replace(/\\/g, '/')
 
             try {
-              await client.uploadFrom(localUploadTempPath, fileName)
-            } catch (e) {
-              await unlink(localUploadTempPath)
-              throw e
+              await client.ensureDir(currentRemoteDir)
+              await client.cd(currentRemoteDir)
+            } catch (e: any) {
+              throw new Error(`Failed to cd/ensureDir ${currentRemoteDir}. Details: ${e.message}`)
             }
 
-            hashes[fileName] = fileHash
-            hashesChanged = true
+            const hashes = await loadRemoteHashes(currentRemoteDir, localHashesPath)
 
-            await unlink(localUploadTempPath)
+            let hashesChanged = false
+
+            for (const file of filesInDir) {
+              const { path: normalizedPath, buffer } = file
+              const fileName = basename(normalizedPath)
+
+              const fileHash = await computeHash(buffer)
+
+              await writeFile(localUploadTempPath, Buffer.from(buffer))
+
+              try {
+                await client.uploadFrom(localUploadTempPath, fileName)
+                mainWindow.webContents.send('ftp:upload-folder-progress', ++fileIndex)
+              } catch (e) {
+                await unlink(localUploadTempPath)
+                throw e
+              }
+
+              hashes[fileName] = fileHash
+              hashesChanged = true
+
+              await unlink(localUploadTempPath)
+            }
+
+            if (hashesChanged) {
+              const hashesContent = Object.entries(hashes)
+                .map(([name, hash]) => `${name} ${hash}`)
+                .join('\n')
+
+              await writeFile(localHashesPath, hashesContent)
+              await client.uploadFrom(localHashesPath, 'hashes.txt')
+              await unlink(localHashesPath)
+            }
           }
 
-          if (hashesChanged) {
-            const hashesContent = Object.entries(hashes)
-              .map(([name, hash]) => `${name} ${hash}`)
-              .join('\n')
-
-            await writeFile(localHashesPath, hashesContent)
-            await client.uploadFrom(localHashesPath, 'hashes.txt')
-            await unlink(localHashesPath)
-          }
-        }
-
-        client.close()
-        return true
-      } catch (error) {
-        try {
           client.close()
-        } catch {
-          /* Ignoruj */
-        }
+          return true
+        } catch (error) {
+          try {
+            client.close()
+          } catch {
+            /* Ignoruj */
+          }
 
-        try {
-          await unlink(localHashesPath)
-        } catch {
-          /* Ignoruj */
-        }
-        try {
-          await unlink(localUploadTempPath)
-        } catch {
-          /* Ignoruj */
-        }
+          try {
+            await unlink(localHashesPath)
+          } catch {
+            /* Ignoruj */
+          }
+          try {
+            await unlink(localUploadTempPath)
+          } catch {
+            /* Ignoruj */
+          }
 
-        throw error
+          throw error
+        }
       }
-    })
+    )
 
     async function removeFTPPath(client: Client, ftpPath: string): Promise<void> {
       try {

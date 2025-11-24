@@ -1,4 +1,4 @@
-import { showToast } from '@renderer/utils'
+import { showProgressToast, showToast } from '@renderer/utils'
 import { Ref, ref } from 'vue'
 import { LOGGER } from './logger-service'
 
@@ -72,25 +72,42 @@ export const useFTP = (
 
   const uploadFolder = async (): Promise<void> => {
     if (!inputFolder?.value?.files?.length) return
-
-    const files = Array.from(inputFolder.value.files).map(async (file) => ({
-      path: file.webkitRelativePath || file.name,
-      buffer: await file.arrayBuffer()
-    }))
+    const files = Array.from(inputFolder.value.files)
 
     try {
-      // Resolve all file buffers before sending
-      const resolvedFiles = await Promise.all(files)
-
-      const res = await window.electron.ipcRenderer?.invoke(
-        'ftp:upload-folder',
-        currentFolder.value, // FTP remote folder
-        resolvedFiles // array of {path, buffer}
+      const resolvedFiles = await Promise.all(
+        files.map(async (file) => ({
+          path: file.webkitRelativePath || file.name,
+          buffer: await file.arrayBuffer()
+        }))
       )
 
-      if (res) {
-        showToast('Folder pomyślnie przesłano.')
-        await getFolderContent(currentFolder.value)
+      const progress = showProgressToast(`Wysyłanie folderu... Status: 0/${resolvedFiles.length}`)
+
+      window.electron.ipcRenderer?.on('ftp:upload-folder-progress', (_event, completed: number) => {
+        progress?.update(`Wysyłanie folderu... Status: ${completed}/${resolvedFiles.length}`)
+      })
+
+      try {
+        const res = await window.electron.ipcRenderer?.invoke(
+          'ftp:upload-folder',
+          currentFolder.value,
+          resolvedFiles,
+          0
+        )
+
+        window.electron.ipcRenderer.removeAllListeners('ftp:upload-folder-progress')
+
+        if (res) {
+          progress?.close(`Pomyślnie przesłano folder.`, 'success')
+          await getFolderContent(currentFolder.value)
+        } else {
+          progress?.close('Wystąpił błąd podczas przesyłania folderu.', 'error')
+          showToast('Wystąpił błąd podczas przesyłania folderu.', 'error')
+        }
+      } catch (err) {
+        progress?.close('Wystąpił błąd podczas przesyłania folderu.', 'error')
+        throw err
       }
     } catch (err) {
       LOGGER.err(err as string)
@@ -112,12 +129,15 @@ export const useFTP = (
 
   const uploadFile = async (): Promise<void> => {
     if (!inputFile?.value?.files?.length) return
-
     const files = Array.from(inputFile.value.files)
 
+    const progress = showProgressToast(`Wysyłanie plików: 0/${files.length}`)
+
     try {
-      const res = await Promise.all(
-        files.map(async (file) => {
+      let succeeded = 0
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        try {
           const res = await window.electron.ipcRenderer?.invoke(
             'ftp:upload-file',
             currentFolder.value,
@@ -126,18 +146,25 @@ export const useFTP = (
           )
 
           if (res) {
+            succeeded++
+            progress?.update(`Wysyłanie plików: ${succeeded}/${files.length}`)
             showToast('Pomyślnie przesłano plik ' + file.name)
           }
-
-          return res
-        })
-      )
-
-      if (res) {
-        await getFolderContent(currentFolder.value)
+        } catch (err) {
+          LOGGER.err(err as string)
+          // continue with next file
+          progress?.update(
+            `Wysyłanie plików: ${succeeded}/${files.length} (błąd przy ${file.name})`
+          )
+        }
       }
+
+      if (succeeded > 0) await getFolderContent(currentFolder.value)
+
+      progress?.close(`Wysłano pliki: ${succeeded}/${files.length}`, 'success')
     } catch (err) {
       LOGGER.err(err as string)
+      progress?.close('Wystąpił błąd podczas przesyłania plików.', 'error')
       showToast('Wystąpił błąd podczas przesyłania plików.', 'error')
     } finally {
       inputFile.value.value = ''
@@ -210,6 +237,8 @@ export const useFTP = (
       const fileBlob = new Blob([currentFileContent.value])
       const fileBuffer = await fileBlob.arrayBuffer()
 
+      const progress = showProgressToast(`Zapisuję plik ${currentFileName.value}...`)
+
       const res = await window.electron.ipcRenderer?.invoke(
         'ftp:upload-file',
         currentFolder.value,
@@ -218,10 +247,13 @@ export const useFTP = (
       )
 
       if (res) {
+        progress?.close(`Pomyślnie zapisano plik ${currentFileName.value}`, 'success')
         currentFileContent.value = ''
         currentFileName.value = ''
         await getFolderContent(currentFolder.value)
-        showToast('Pomyślnie zapisano plik ' + currentFileName.value)
+      } else {
+        progress?.close('Wystąpił błąd podczas zapisywania pliku.', 'error')
+        showToast('Wystąpił błąd podczas zapisywania pliku ' + currentFileName.value, 'error')
       }
     } catch (err) {
       LOGGER.err(err as string)
