@@ -25,7 +25,9 @@ async function getFileHash(filePath: string): Promise<string> {
   })
 }
 
-async function readHashesFile(localDir: string): Promise<Record<string, string>> {
+async function readHashesFile(
+  localDir: string
+): Promise<Record<string, { hash: string; flag?: 'important' | 'ignore' }>> {
   const hashesFilePath = posix.join(localDir, 'hashes.txt')
   try {
     const data = await fs.promises.readFile(hashesFilePath, 'utf8')
@@ -34,15 +36,26 @@ async function readHashesFile(localDir: string): Promise<Record<string, string>>
       .map((line) => line.trim())
       .filter(Boolean)
 
-    const map: Record<string, string> = {}
+    const map: Record<string, { hash: string; flag?: 'important' | 'ignore' }> = {}
     for (const line of lines) {
-      const lastSpaceIndex = line.lastIndexOf(' ')
-      if (lastSpaceIndex === -1) continue
-      const fileName = line.substring(0, lastSpaceIndex)
-      const fileHash = line.substring(lastSpaceIndex + 1)
-      if (fileName && fileHash) {
-        map[fileName] = fileHash
+      // Split by space but allow name to contain spaces. Format: <name> <hash> [flag]
+      const parts = line.split(' ')
+      if (parts.length < 2) continue
+
+      let flag: 'important' | 'ignore' | undefined
+      let hash = parts[parts.length - 1]
+      let nameParts = parts.slice(0, parts.length - 1)
+
+      const last = parts[parts.length - 1]
+      if (last === 'important' || last === 'ignore') {
+        flag = last as 'important' | 'ignore'
+        if (parts.length < 3) continue
+        hash = parts[parts.length - 2]
+        nameParts = parts.slice(0, parts.length - 2)
       }
+
+      const fileName = nameParts.join(' ').trim()
+      if (fileName && hash) map[fileName] = { hash, flag }
     }
     return map
   } catch {
@@ -73,8 +86,6 @@ async function downloadAll(
   localDir: string,
   log: (data: string, isEnded?: boolean) => void,
   isFirstInstall: boolean,
-  importantFiles: string[],
-  ignoreFiles: string[],
   signal: AbortSignal,
   globalProgress: GlobalProgress // Nowy parametr
 ): Promise<void> {
@@ -98,7 +109,7 @@ async function downloadAll(
     hasHashesFile = false
   }
 
-  let localHashes: Record<string, string> = {}
+  let localHashes: Record<string, { hash: string; flag?: 'important' | 'ignore' }> = {}
   if (hasHashesFile) {
     localHashes = await readHashesFile(localDir)
   } else {
@@ -118,18 +129,30 @@ async function downloadAll(
     const localPath = posix.join(localDir, file.name)
 
     if (file.isDirectory) {
-      if (
-        !isFirstInstall &&
-        !importantFiles.some((importantFolder) => remotePath.includes(importantFolder))
-      )
-        continue
+      // If hashes.txt is missing, default to legacy behaviour: treat folder as important
+      if (!isFirstInstall && hasHashesFile) {
+        // Check if this directory (or any child inside it) is marked important
+        const dirName = file.name
+        const hasImportant = Object.keys(localHashes).some((k) => {
+          return (
+            (k === dirName || k.startsWith(dirName + '/') || k.startsWith(dirName + '\\')) &&
+            localHashes[k].flag === 'important'
+          )
+        })
+        if (!hasImportant) continue
+      }
 
       dirsToRecurse.push({ remotePath, localPath })
     } else if (file.isFile) {
       if (file.name.endsWith('.sha256') || file.name === 'hashes.txt') continue
 
-      if (!isFirstInstall && ignoreFiles.some((ignoredFile) => file.name.includes(ignoredFile)))
-        continue
+      // If hashes.txt is present and not first install, skip files marked as ignore
+      if (!isFirstInstall && hasHashesFile) {
+        const entry = localHashes[file.name]
+        const flag = entry?.flag
+        // default when flag missing is 'ignore'
+        if (flag === 'ignore' || flag === undefined) continue
+      }
 
       let downloadFile = true
 
@@ -137,7 +160,7 @@ async function downloadAll(
       if (localHashes[file.name]) {
         try {
           const localHash = await getFileHash(localPath)
-          if (localHash === localHashes[file.name]) {
+          if (localHash === localHashes[file.name].hash) {
             downloadFile = false
             log(`Plik ${file.name} jest aktualny, pomijam pobieranie.`) // Opcjonalny log
           }
@@ -235,8 +258,6 @@ async function downloadAll(
       dir.localPath,
       log,
       isFirstInstall,
-      importantFiles,
-      ignoreFiles,
       signal,
       globalProgress // Przekazanie stanu globalnego
     )
@@ -272,8 +293,8 @@ export async function copyMCFiles(
   const { client, connect } = useFTPService()
   const localRoot = posix.join(app.getPath('userData'), 'mcfiles')
   const markerFile = posix.join(app.getPath('userData'), '.mcfiles_installed')
-  const importantFiles = ['mods', 'versions', 'resourcepacks', 'datapacks', 'config', 'fancymenu']
-  const ignoreFiles = ['options']
+  // const importantFiles = ['mods', 'versions', 'resourcepacks', 'datapacks', 'config', 'fancymenu']
+  // const ignoreFiles = ['options']
 
   try {
     const isFirstInstall = !(await fileExists(markerFile))
@@ -300,8 +321,6 @@ export async function copyMCFiles(
         mainWindow.webContents.send(logHandlerName, data)
       },
       isFirstInstall,
-      importantFiles,
-      ignoreFiles,
       signal,
       globalProgress // Przekazanie stanu
     )

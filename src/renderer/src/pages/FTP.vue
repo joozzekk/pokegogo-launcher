@@ -15,6 +15,8 @@ const {
   currentFileName,
   currentFileContent,
   currentFolderFiles,
+  currentHashes,
+  getHashesForFolder,
   getFolderContent,
   changeFolder,
   currentFolder,
@@ -29,6 +31,22 @@ const {
   dragActive,
   handleDrop
 } = useFTP(inputFile, inputFolder)
+
+const toggleImportant = async (file: any): Promise<void> => {
+  const current = currentHashes.value[file.name]?.flag
+  const newFlag = current === 'important' ? 'ignore' : 'important'
+  try {
+    await window.electron.ipcRenderer?.invoke(
+      'ftp:set-hash-flag',
+      currentFolder.value,
+      file.name,
+      newFlag
+    )
+    await getHashesForFolder()
+  } catch (e) {
+    console.error(e)
+  }
+}
 
 const mapPathToBreadCrumbs = (path: string): string[] => {
   return path.split('/')
@@ -313,11 +331,34 @@ onMounted(async () => {
         <div class="flex justify-between w-full items-center">
           <p class="w-1/3">
             {{ file.name }}
+            <span
+              v-if="currentFolder !== ''"
+              class="bg-[var(--primary)] ml-2 text-[0.6rem] text-white py-[2px] px-[6px] rounded-[4px] font-bold"
+            >
+              {{
+                currentHashes[file.name] && currentHashes[file.name].flag === 'important'
+                  ? 'Pobierane zawsze'
+                  : 'Pobierane przy 1 instalacji'
+              }}
+            </span>
           </p>
           <div class="flex gap-2 items-center">
             {{ file.modifiedAt ? format(file.modifiedAt, 'MMM dd, yyyy HH:mm:ss') : '' }}
 
             <div class="flex gap-2 items-center justify-evenly ml-2">
+              <button
+                v-if="currentFolder !== ''"
+                class="nav-icon hover:cursor-pointer"
+                @click.stop="toggleImportant(file)"
+              >
+                <i
+                  :class="
+                    currentHashes[file.name] && currentHashes[file.name].flag === 'important'
+                      ? 'fa fa-star'
+                      : 'fa-regular fa-star'
+                  "
+                />
+              </button>
               <button class="ban-btn hover:cursor-pointer" @click.stop="removeFile(file.name)">
                 <i class="fa fa-trash" />
               </button>

@@ -9,6 +9,8 @@ interface FTPService {
   currentFolderFiles: Ref<FTPFile[]>
   currentFolder: Ref<string>
   getFolderContent: () => Promise<void>
+  getHashesForFolder: () => Promise<Record<string, { hash: string; flag?: 'important' | 'ignore' }>>
+  currentHashes: Ref<Record<string, { hash: string; flag?: 'important' | 'ignore' }>>
   changeFolder: (name: string) => Promise<void>
   restoreFolder: (name: string) => Promise<void>
   uploadFile: () => Promise<void>
@@ -40,6 +42,7 @@ export const useFTP = (
   const currentFileContent = ref<string>('')
   const currentFolder = ref<string>('')
   const currentFolderFiles = ref<FTPFile[]>([])
+  const currentHashes = ref<Record<string, { hash: string; flag?: 'important' | 'ignore' }>>({})
 
   const getFolderContent = async (folder: string = ''): Promise<void> => {
     const folderPath =
@@ -50,6 +53,33 @@ export const useFTP = (
 
     currentFolder.value = folderPath
     currentFolderFiles.value = res
+    try {
+      const hashesRes = await window.electron.ipcRenderer?.invoke(
+        'ftp:get-hash-entries',
+        folderPath
+      )
+      if (hashesRes) currentHashes.value = hashesRes.entries ?? {}
+    } catch {
+      currentHashes.value = {}
+    }
+  }
+
+  const getHashesForFolder = async (): Promise<
+    Record<string, { hash: string; flag?: 'important' | 'ignore' }>
+  > => {
+    try {
+      const hashesRes = await window.electron.ipcRenderer?.invoke(
+        'ftp:get-hash-entries',
+        currentFolder.value
+      )
+      if (hashesRes) {
+        currentHashes.value = hashesRes.entries ?? {}
+        return currentHashes.value
+      }
+    } catch {
+      // ignore
+    }
+    return {}
   }
 
   const changeFolder = async (name: string): Promise<void> => {
@@ -405,7 +435,9 @@ export const useFTP = (
     currentFileName,
     currentFileContent,
     currentFolderFiles,
+    currentHashes,
     getFolderContent,
+    getHashesForFolder,
     currentFolder,
     changeFolder,
     restoreFolder,

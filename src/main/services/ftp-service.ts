@@ -83,6 +83,41 @@ export const useFTPService = (): {
       return hash.digest('hex')
     }
 
+    function parseHashesContent(data: string) {
+      const map: Record<string, { hash: string; flag?: 'important' | 'ignore' }> = {}
+      data
+        .split('\n')
+        .map((l) => l.trim())
+        .filter(Boolean)
+        .forEach((line) => {
+          // name can contain spaces. Format: <name> <hash> [flag]
+          const parts = line.split(' ')
+          if (parts.length < 2) return
+          const last = parts[parts.length - 1]
+          let flag: 'important' | 'ignore' | undefined
+          let hash = parts[parts.length - 1]
+          let nameParts = parts.slice(0, parts.length - 1)
+
+          if (last === 'important' || last === 'ignore') {
+            flag = last as 'important' | 'ignore'
+            if (parts.length < 3) return
+            hash = parts[parts.length - 2]
+            nameParts = parts.slice(0, parts.length - 2)
+          }
+
+          const name = nameParts.join(' ').trim()
+          if (name && hash) map[name] = { hash, flag }
+        })
+
+      return map
+    }
+
+    function serializeHashes(map: Record<string, { hash: string; flag?: 'important' | 'ignore' }>) {
+      return Object.entries(map)
+        .map(([name, v]) => `${name} ${v.hash}${v.flag ? ' ' + v.flag : ''}`)
+        .join('\n')
+    }
+
     ipcMain.handle(
       'ftp:upload-file',
       async (_, folder: string, buffer: ArrayBuffer, fileName: string) => {
@@ -92,43 +127,37 @@ export const useFTPService = (): {
 
         await client.uploadFrom(tempFilePath, `${folder}${folder.length ? '/' : ''}${fileName}`)
 
-        const hashes: { [key: string]: string } = {}
+        const tmpHashesPath = join(process.cwd(), 'tmp', 'hashes.txt')
+        let remoteMissing = false
+        const hashesMap: Record<string, { hash: string; flag?: 'important' | 'ignore' }> = {}
+
         try {
-          await client.downloadTo(
-            join(process.cwd(), 'tmp', 'hashes.txt'),
-            `${folder}${folder.length ? '/' : ''}hashes.txt`
-          )
-          const data = await readFile(join(process.cwd(), 'tmp', 'hashes.txt'), 'utf-8')
-          data.split('\n').forEach((line) => {
-            line = line.trim()
-            if (!line) return
-
-            const lastSpaceIndex = line.lastIndexOf(' ')
-            if (lastSpaceIndex === -1) return
-
-            const name = line.substring(0, lastSpaceIndex)
-            const hash = line.substring(lastSpaceIndex + 1)
-            if (name && hash) hashes[name] = hash
-          })
+          await client.downloadTo(tmpHashesPath, `${folder}${folder.length ? '/' : ''}hashes.txt`)
+          const data = await readFile(tmpHashesPath, 'utf-8')
+          Object.assign(hashesMap, parseHashesContent(data))
         } catch {
-          // Plik może nie istnieć, to nie jest błąd
+          // hashes.txt may not exist
+          remoteMissing = true
         }
 
         const fileHash = await computeHash(buffer)
-        hashes[fileName] = fileHash
 
-        const hashesContent = Object.entries(hashes)
-          .map(([name, hash]) => `${name} ${hash}`)
-          .join('\n')
-        await writeFile(join(process.cwd(), 'tmp', 'hashes.txt'), hashesContent)
+        // when remote hashes file doesn't exist, new entries should be marked important by default
+        const defaultFlag: 'important' | 'ignore' = remoteMissing ? 'important' : 'ignore'
 
-        await client.uploadFrom(
-          join(process.cwd(), 'tmp', 'hashes.txt'),
-          `${folder}${folder.length ? '/' : ''}hashes.txt`
-        )
+        hashesMap[fileName] = { hash: fileHash, flag: hashesMap[fileName]?.flag ?? defaultFlag }
+
+        const hashesContent = serializeHashes(hashesMap)
+        await writeFile(tmpHashesPath, hashesContent)
+
+        await client.uploadFrom(tmpHashesPath, `${folder}${folder.length ? '/' : ''}hashes.txt`)
 
         await unlink(tempFilePath)
-        await unlink(join(process.cwd(), 'tmp', 'hashes.txt'))
+        try {
+          await unlink(tmpHashesPath)
+        } catch {
+          /* ignore */
+        }
         client.close()
 
         return true
@@ -153,24 +182,15 @@ export const useFTPService = (): {
     async function loadRemoteHashes(
       remoteDir: string,
       localTempPath: string
-    ): Promise<{ [key: string]: string }> {
-      const hashes: { [key: string]: string } = {}
+    ): Promise<Record<string, { hash: string; flag?: 'important' | 'ignore' }>> {
+      const hashes: Record<string, { hash: string; flag?: 'important' | 'ignore' }> = {}
       const remoteHashesPath = join(remoteDir, 'hashes.txt').replace(/\\/g, '/')
 
       try {
         await client.downloadTo(localTempPath, remoteHashesPath)
 
         const data = await readFile(localTempPath, 'utf-8')
-        data.split('\n').forEach((line) => {
-          line = line.trim()
-          if (!line) return
-          const lastSpaceIndex = line.lastIndexOf(' ')
-          if (lastSpaceIndex === -1) return
-
-          const name = line.substring(0, lastSpaceIndex)
-          const hash = line.substring(lastSpaceIndex + 1)
-          if (name && hash) hashes[name] = hash
-        })
+        Object.assign(hashes, parseHashesContent(data))
         await unlink(localTempPath)
       } catch {
         try {
@@ -232,16 +252,15 @@ export const useFTPService = (): {
                 throw e
               }
 
-              hashes[fileName] = fileHash
+              // preserve existing flag or default to ignore
+              hashes[fileName] = { hash: fileHash, flag: hashes[fileName]?.flag ?? 'ignore' }
               hashesChanged = true
 
               await unlink(localUploadTempPath)
             }
 
             if (hashesChanged) {
-              const hashesContent = Object.entries(hashes)
-                .map(([name, hash]) => `${name} ${hash}`)
-                .join('\n')
+              const hashesContent = serializeHashes(hashes)
 
               await writeFile(localHashesPath, hashesContent)
               await client.uploadFrom(localHashesPath, 'hashes.txt')
@@ -411,30 +430,19 @@ export const useFTPService = (): {
         try {
           await removeFTPPathWithProgress(client, fullPath)
 
-          const hashes: { [key: string]: string } = {}
           try {
             const tmpHashesPath = join(process.cwd(), 'tmp', 'hashes.txt')
             await client.downloadTo(tmpHashesPath, `${folder}${folder.length ? '/' : ''}hashes.txt`)
             const data = await readFile(tmpHashesPath, 'utf-8')
-            data.split('\n').forEach((line) => {
-              const trimmed = line.trim()
-              if (!trimmed) return
-              const lastSpaceIndex = trimmed.lastIndexOf(' ')
-              if (lastSpaceIndex === -1) return
-              const name = trimmed.substring(0, lastSpaceIndex)
-              const hash = trimmed.substring(lastSpaceIndex + 1)
-              hashes[name] = hash
-            })
+            const map = parseHashesContent(data)
 
-            for (const key of Object.keys(hashes)) {
+            for (const key of Object.keys(map)) {
               if (key === fileName || key.startsWith(fileName + '/')) {
-                delete hashes[key]
+                delete map[key]
               }
             }
 
-            const hashesContent = Object.entries(hashes)
-              .map(([name, hash]) => `${name} ${hash}`)
-              .join('\n')
+            const hashesContent = serializeHashes(map)
 
             await writeFile(tmpHashesPath, hashesContent)
 
@@ -479,6 +487,80 @@ export const useFTPService = (): {
 
       return fileContent
     })
+
+    ipcMain.handle('ftp:get-hash-entries', async (_, folder: string) => {
+      await connect()
+      const tmpHashesPath = join(process.cwd(), 'tmp', 'hashes.txt')
+      let remoteMissing = false
+      const map: Record<string, { hash: string; flag?: 'important' | 'ignore' }> = {}
+      try {
+        await client.downloadTo(tmpHashesPath, `${folder}${folder.length ? '/' : ''}hashes.txt`)
+        const data = await readFile(tmpHashesPath, 'utf-8')
+        Object.assign(map, parseHashesContent(data))
+        await unlink(tmpHashesPath)
+      } catch {
+        remoteMissing = true
+        try {
+          await unlink(tmpHashesPath)
+        } catch {
+          /* ignore */
+        }
+      }
+      client.close()
+      return { entries: map, missing: remoteMissing }
+    })
+
+    ipcMain.handle(
+      'ftp:set-hash-flag',
+      async (_, folder: string, name: string, flag?: 'important' | 'ignore' | null) => {
+        await connect()
+        const tmpHashesPath = join(process.cwd(), 'tmp', 'hashes.txt')
+        const tmpFilePath = join(process.cwd(), 'tmp', 'file.temp')
+        const map: Record<string, { hash: string; flag?: 'important' | 'ignore' }> = {}
+
+        try {
+          await client.downloadTo(tmpHashesPath, `${folder}${folder.length ? '/' : ''}hashes.txt`)
+          const data = await readFile(tmpHashesPath, 'utf-8')
+          Object.assign(map, parseHashesContent(data))
+        } catch {
+          // hashes.txt missing - proceed with empty map
+        }
+
+        // If entry doesn't exist, try to download file to compute its hash
+        if (!map[name]) {
+          try {
+            await client.downloadTo(tmpFilePath, `${folder}${folder.length ? '/' : ''}${name}`)
+            const content = await readFile(tmpFilePath)
+            const h = createHash('sha256')
+            h.update(content)
+            map[name] = { hash: h.digest('hex') }
+            await unlink(tmpFilePath)
+          } catch {
+            try {
+              await unlink(tmpFilePath)
+            } catch {}
+          }
+        }
+
+        if (map[name]) {
+          if (flag === null || flag === undefined) {
+            delete map[name].flag
+          } else {
+            map[name].flag = flag
+          }
+        }
+
+        const content = serializeHashes(map)
+        await writeFile(tmpHashesPath, content)
+        await client.uploadFrom(tmpHashesPath, `${folder}${folder.length ? '/' : ''}hashes.txt`)
+        try {
+          await unlink(tmpHashesPath)
+        } catch {}
+
+        client.close()
+        return true
+      }
+    )
 
     ipcMain.handle('ftp:read-image', async (_, folder: string, name: string) => {
       const tempFilePath = join(process.cwd(), 'tmp', name)
