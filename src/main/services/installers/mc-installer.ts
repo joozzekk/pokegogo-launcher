@@ -87,7 +87,10 @@ async function downloadAll(
   log: (data: string, isEnded?: boolean) => void,
   isFirstInstall: boolean,
   signal: AbortSignal,
-  globalProgress: GlobalProgress // Nowy parametr
+  globalProgress: GlobalProgress, // Nowy parametr
+  // ancestorHashes - map keyed by full remote path (posix) to allow
+  // honoring flags set in parent folders (e.g. parent hashes.txt containing "folder/file ...")
+  ancestorHashes: Record<string, { hash: string; flag?: 'important' | 'ignore' }> = {}
 ): Promise<void> {
   if (signal.aborted) {
     return
@@ -116,6 +119,17 @@ async function downloadAll(
     localHashes = {}
   }
 
+  // Build a combined map keyed by full remote path so we can resolve entries
+  // defined in parent hashes.txt files (they may reference nested paths like "mods/x.jar").
+  const combinedHashes: Record<string, { hash: string; flag?: 'important' | 'ignore' }> = {}
+  // copy ancestor entries first (they are already keyed by remote path)
+  Object.assign(combinedHashes, ancestorHashes)
+  // then add local entries but keyed by their full remote path
+  for (const [name, v] of Object.entries(localHashes)) {
+    const fullRemoteKey = posix.join(remoteDir, name)
+    combinedHashes[fullRemoteKey] = v
+  }
+
   const list = await client.list()
 
   // Listy do przetworzenia
@@ -131,12 +145,14 @@ async function downloadAll(
     if (file.isDirectory) {
       // If hashes.txt is missing, default to legacy behaviour: treat folder as important
       if (!isFirstInstall && hasHashesFile) {
-        // Check if this directory (or any child inside it) is marked important
-        const dirName = file.name
-        const hasImportant = Object.keys(localHashes).some((k) => {
+        // Check if this directory (or any child inside it) is marked important.
+        // Use combinedHashes keyed by full remote paths so parent entries referencing
+        // nested files/folders are respected.
+        const dirRemotePath = posix.join(remoteDir, file.name)
+        const hasImportant = Object.keys(combinedHashes).some((k) => {
           return (
-            (k === dirName || k.startsWith(dirName + '/') || k.startsWith(dirName + '\\')) &&
-            localHashes[k].flag === 'important'
+            (k === dirRemotePath || k.startsWith(dirRemotePath + '/')) &&
+            combinedHashes[k].flag === 'important'
           )
         })
         if (!hasImportant) continue
@@ -146,9 +162,11 @@ async function downloadAll(
     } else if (file.isFile) {
       if (file.name.endsWith('.sha256') || file.name === 'hashes.txt') continue
 
-      // If hashes.txt is present and not first install, skip files marked as ignore
+      // If hashes.txt is present and not first install, skip files marked as ignore.
+      // Use combinedHashes keyed by full remote path to include parent references.
       if (!isFirstInstall && hasHashesFile) {
-        const entry = localHashes[file.name]
+        const fileRemotePath = posix.join(remoteDir, file.name)
+        const entry = combinedHashes[fileRemotePath]
         const flag = entry?.flag
         // default when flag missing is 'ignore'
         if (flag === 'ignore' || flag === undefined) continue
@@ -157,10 +175,12 @@ async function downloadAll(
       let downloadFile = true
 
       // Sprawdzenie hasha lub istnienia pliku
-      if (localHashes[file.name]) {
+      const fileRemotePath = posix.join(remoteDir, file.name)
+      const entry = combinedHashes[fileRemotePath]
+      if (entry) {
         try {
           const localHash = await getFileHash(localPath)
-          if (localHash === localHashes[file.name].hash) {
+          if (localHash === entry.hash) {
             downloadFile = false
             log(`Plik ${file.name} jest aktualny, pomijam pobieranie.`) // Opcjonalny log
           }
@@ -259,7 +279,8 @@ async function downloadAll(
       log,
       isFirstInstall,
       signal,
-      globalProgress // Przekazanie stanu globalnego
+      globalProgress, // Przekazanie stanu globalnego
+      combinedHashes // Przekazanie mapy ancestorów (zawierającej pełne remote-path klucze)
     )
   }
 
@@ -272,8 +293,12 @@ async function downloadAll(
     }
 
     const localFile = dirent.name
+    const remoteKey = posix.join(remoteDir, localFile)
 
-    if (!localHashes[localFile]) {
+    // Only delete local files that are not present in the combined hashes map
+    // (which includes entries from parent hashes.txt files). This prevents
+    // accidentally removing files that are referenced only from ancestor hashes.
+    if (!combinedHashes[remoteKey]) {
       try {
         await fs.promises.unlink(posix.join(localDir, localFile))
         // log(`Usunięto lokalny plik ${localFile}.`)
