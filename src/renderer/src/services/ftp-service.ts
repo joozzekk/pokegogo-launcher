@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { showProgressToast, showToast } from '@renderer/utils'
+import { showProgressToast, showToast, traverseFileTree } from '@renderer/utils'
 import { Ref, ref } from 'vue'
 import { LOGGER } from './logger-service'
 
@@ -18,6 +18,8 @@ interface FTPService {
   openImageFile: (name: string) => Promise<void>
   saveFile: () => Promise<void>
   createFolder: (newFolder: string) => Promise<void>
+  handleDrop: (ev: DragEvent) => Promise<void>
+  dragActive: Ref<boolean>
 }
 
 interface FTPFile {
@@ -33,6 +35,7 @@ export const useFTP = (
   inputFile?: Ref<HTMLInputElement | null>,
   inputFolder?: Ref<HTMLInputElement | null>
 ): FTPService => {
+  const dragActive = ref<boolean>(false)
   const currentFileName = ref<string>('')
   const currentFileContent = ref<string>('')
   const currentFolder = ref<string>('')
@@ -288,6 +291,108 @@ export const useFTP = (
     }
   }
 
+  const handleDrop = async (ev: DragEvent): Promise<void> => {
+    ev.preventDefault()
+    dragActive.value = false
+
+    const dt = ev.dataTransfer
+    if (!dt) return
+
+    if (dt.items && dt.items.length) {
+      const items = Array.from(dt.items)
+      const hasDirectory = items.some((it) => (it as any).webkitGetAsEntry?.()?.isDirectory)
+
+      if (hasDirectory) {
+        const entries = items.map((it) => (it as any).webkitGetAsEntry())
+        const fileEntriesArr = await Promise.all(
+          entries.map((e) => (e ? traverseFileTree(e, '') : Promise.resolve([])))
+        )
+        const all = fileEntriesArr.flat()
+
+        if (!all.length) return
+
+        try {
+          const progress = showProgressToast(`Czytanie folderu...`)
+          const resolvedFiles = await Promise.all(
+            all.map(async ({ path, file }) => ({ path, buffer: await file.arrayBuffer() }))
+          )
+
+          progress?.update(`Wysyłanie folderu... Status: 0/${resolvedFiles.length}`)
+
+          window.electron.ipcRenderer?.on(
+            'ftp:upload-folder-progress',
+            (_event, completed: number) => {
+              progress?.update(`Wysyłanie folderu... Status: ${completed}/${resolvedFiles.length}`)
+            }
+          )
+
+          try {
+            const res = await window.electron.ipcRenderer?.invoke(
+              'ftp:upload-folder',
+              currentFolder.value,
+              resolvedFiles,
+              0
+            )
+
+            if (res) {
+              window.electron.ipcRenderer.removeAllListeners('ftp:upload-folder-progress')
+              await getFolderContent()
+              progress?.close(
+                `Folder został przesłany: ${resolvedFiles.length}/${resolvedFiles.length}`,
+                'success'
+              )
+            } else {
+              progress?.close('Wystąpił błąd podczas przesyłania folderu.', 'error')
+            }
+          } catch (err) {
+            progress?.close('Wystąpił błąd podczas przesyłania folderu.', 'error')
+            console.error(err)
+          }
+        } catch (err) {
+          console.error(err)
+        }
+
+        return
+      }
+    }
+
+    if (dt.files && dt.files.length) {
+      const files = Array.from(dt.files)
+      const progress = showProgressToast(`Wysyłanie plików: 0/${files.length}`)
+
+      try {
+        let succeeded = 0
+        for (const file of files) {
+          try {
+            const res = await window.electron.ipcRenderer?.invoke(
+              'ftp:upload-file',
+              currentFolder.value,
+              await file.arrayBuffer(),
+              file.name
+            )
+
+            if (res) {
+              succeeded++
+              progress?.update(`Wysyłanie plików: ${succeeded}/${files.length}`)
+              showToast(`Plik ${file.name} został przesłany pomyślnie.`)
+            }
+          } catch (err) {
+            console.error(err)
+            progress?.update(
+              `Wysyłanie plików: ${succeeded}/${files.length} (błąd przy ${file.name})`
+            )
+          }
+        }
+
+        if (succeeded > 0) await getFolderContent()
+        progress?.close(`Wysłano pliki: ${succeeded}/${files.length}`, 'success')
+      } catch (err) {
+        console.error(err)
+        progress?.close('Wystąpił błąd podczas przesyłania plików.', 'error')
+      }
+    }
+  }
+
   return {
     currentFileName,
     currentFileContent,
@@ -302,6 +407,8 @@ export const useFTP = (
     openTextFile,
     openImageFile,
     createFolder,
-    saveFile
+    saveFile,
+    dragActive,
+    handleDrop
   }
 }

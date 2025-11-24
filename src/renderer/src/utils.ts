@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { LOGGER } from './services/logger-service'
 import useGeneralStore from './stores/general-store'
 import { DatePickerPassThroughOptions } from 'primevue'
@@ -160,4 +161,36 @@ export const defaultDatePickerTime: DatePickerPassThroughOptions = {
       state.currentMinute = 0
     }
   }
+}
+
+export const traverseFileTree = (
+  entry: any,
+  path = ''
+): Promise<Array<{ path: string; file: File }>> => {
+  return new Promise((resolve) => {
+    if (entry.isFile) {
+      entry.file((file: File) => resolve([{ path: path + file.name, file }]))
+    } else if (entry.isDirectory) {
+      const dirReader = entry.createReader()
+      const results: Array<{ path: string; file: File }> = []
+
+      const readEntries = (): void => {
+        dirReader.readEntries(async (entries: any[]) => {
+          if (!entries.length) {
+            resolve(results)
+            return
+          }
+
+          const promises = entries.map((ent) => traverseFileTree(ent, path + entry.name + '/'))
+          const nested = await Promise.all(promises)
+          nested.forEach((arr) => results.push(...arr))
+          readEntries()
+        })
+      }
+
+      readEntries()
+    } else {
+      resolve([])
+    }
+  })
 }
