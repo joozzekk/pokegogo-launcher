@@ -95,6 +95,7 @@ export const showProgressToast = (
   type: 'success' | 'info' | 'error' = 'info'
 ): {
   update: (msg: string) => void
+  updateProgress: (current: number, total: number, message?: string) => void
   close: (finalMessage?: string, finalType?: 'success' | 'error') => void
 } | null => {
   const toastContainer = document.getElementById('toastContainer')
@@ -110,8 +111,15 @@ export const showProgressToast = (
     type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'
 
   toast.innerHTML = `
-    <i class="fas fa-${icon} text-xl" style="color: ${type === 'success' ? 'var(--primary)' : type === 'error' ? '#ef4444' : 'var(--primary)'}"></i>
-    <span class="toast-message">${initialMessage}</span>
+    <i class="fas fa-${icon} text-xl toast-icon" style="color: ${
+      type === 'success' ? 'var(--primary)' : type === 'error' ? '#ef4444' : 'var(--primary)'
+    }"></i>
+    <div class="toast-body">
+      <span class="toast-message">${initialMessage}</span>
+    </div>
+    <div class="toast-progress" aria-hidden="true">
+      <div class="toast-progress-fill" style="width: 0%"></div>
+    </div>
   `
 
   toastContainer.appendChild(toast)
@@ -119,6 +127,15 @@ export const showProgressToast = (
   const update = (msg: string): void => {
     const span = toast.querySelector('.toast-message')
     if (span) span.textContent = msg
+  }
+
+  const updateProgress = (current: number, total: number, message?: string): void => {
+    const fill = toast.querySelector('.toast-progress-fill') as HTMLElement | null
+    const span = toast.querySelector('.toast-message')
+    if (!fill) return
+    const percent = total > 0 ? Math.max(0, Math.min(100, Math.round((current / total) * 100))) : 0
+    fill.style.width = `${percent}%`
+    if (span) span.textContent = `${message?.length ? message + ' ' : ''}${current}/${total}`
   }
 
   const close = (finalMessage?: string): void => {
@@ -133,7 +150,7 @@ export const showProgressToast = (
     }, TOAST_DURATION)
   }
 
-  return { update, close }
+  return { update, updateProgress, close }
 }
 
 export const calculateValueFromPercentage = (

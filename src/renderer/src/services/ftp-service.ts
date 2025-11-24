@@ -87,10 +87,11 @@ export const useFTP = (
         }))
       )
 
-      progress?.update(`Wysyłanie folderu... Status: 0/${resolvedFiles.length}`)
+      // initialize progress bar to 0/N
+      progress?.updateProgress(0, resolvedFiles.length, 'Przesyłanie folderu...')
 
       window.electron.ipcRenderer?.on('ftp:upload-folder-progress', (_event, completed: number) => {
-        progress?.update(`Wysyłanie folderu... Status: ${completed}/${resolvedFiles.length}`)
+        progress?.updateProgress(completed, resolvedFiles.length, 'Przesyłanie folderu...')
       })
 
       try {
@@ -104,6 +105,11 @@ export const useFTP = (
         window.electron.ipcRenderer.removeAllListeners('ftp:upload-folder-progress')
 
         if (res) {
+          progress?.updateProgress(
+            resolvedFiles.length,
+            resolvedFiles.length,
+            'Pomyślnie przesłano folder. Status:'
+          )
           progress?.close(`Pomyślnie przesłano folder.`, 'success')
           await getFolderContent(currentFolder.value)
         } else {
@@ -136,7 +142,7 @@ export const useFTP = (
     if (!inputFile?.value?.files?.length) return
     const files = Array.from(inputFile.value.files)
 
-    const progress = showProgressToast(`Wysyłanie plików: 0/${files.length}`)
+    const progress = showProgressToast(`Wysyłanie plików...`)
 
     try {
       let succeeded = 0
@@ -152,20 +158,19 @@ export const useFTP = (
 
           if (res) {
             succeeded++
-            progress?.update(`Wysyłanie plików: ${succeeded}/${files.length}`)
+            progress?.updateProgress(succeeded, files.length, 'Wysyłanie plików...')
             showToast('Pomyślnie przesłano plik ' + file.name)
           }
         } catch (err) {
           LOGGER.err(err as string)
           // continue with next file
-          progress?.update(
-            `Wysyłanie plików: ${succeeded}/${files.length} (błąd przy ${file.name})`
-          )
+          progress?.updateProgress(succeeded, files.length, 'Wysyłanie plików...')
         }
       }
 
       if (succeeded > 0) await getFolderContent(currentFolder.value)
 
+      progress?.updateProgress(succeeded, files.length, 'Wysyłanie plików...')
       progress?.close(`Wysłano pliki: ${succeeded}/${files.length}`, 'success')
     } catch (err) {
       LOGGER.err(err as string)
@@ -178,7 +183,7 @@ export const useFTP = (
 
   const removeFile = async (name: string): Promise<void> => {
     const operationId = `remove-${Date.now()}-${Math.floor(Math.random() * 10000)}`
-    const progress = showProgressToast(`Usuwanie: 0/?`)
+    const progress = showProgressToast(`Usuwanie...`)
 
     const handler = (
       _event: any,
@@ -187,7 +192,7 @@ export const useFTP = (
       if (!data || data.id !== operationId) return
       const total = data.total ?? 0
       const deleted = data.deleted ?? 0
-      progress?.update(`Usuwanie: ${deleted}/${total || '?'}`)
+      progress?.updateProgress(deleted, total, 'Usuwanie plików...')
       if (total && deleted >= total) {
         progress?.close(`Usunięto: ${deleted}/${total}`, 'success')
         window.electron.ipcRenderer.removeAllListeners('ftp:remove-progress')
@@ -207,7 +212,6 @@ export const useFTP = (
       window.electron.ipcRenderer.removeAllListeners('ftp:remove-progress')
 
       if (res) {
-        // If main did not send detailed progress, close the progress toast
         progress?.close(`Pomyślnie usunięto ${name}`, 'success')
         currentFileContent.value = res
         await getFolderContent(currentFolder.value)
@@ -317,12 +321,12 @@ export const useFTP = (
             all.map(async ({ path, file }) => ({ path, buffer: await file.arrayBuffer() }))
           )
 
-          progress?.update(`Wysyłanie folderu... Status: 0/${resolvedFiles.length}`)
+          progress?.updateProgress(0, resolvedFiles.length)
 
           window.electron.ipcRenderer?.on(
             'ftp:upload-folder-progress',
             (_event, completed: number) => {
-              progress?.update(`Wysyłanie folderu... Status: ${completed}/${resolvedFiles.length}`)
+              progress?.updateProgress(completed, resolvedFiles.length)
             }
           )
 
@@ -336,7 +340,8 @@ export const useFTP = (
 
             if (res) {
               window.electron.ipcRenderer.removeAllListeners('ftp:upload-folder-progress')
-              await getFolderContent()
+              await getFolderContent(currentFolder.value)
+              progress?.updateProgress(resolvedFiles.length, resolvedFiles.length)
               progress?.close(
                 `Folder został przesłany: ${resolvedFiles.length}/${resolvedFiles.length}`,
                 'success'
@@ -358,7 +363,7 @@ export const useFTP = (
 
     if (dt.files && dt.files.length) {
       const files = Array.from(dt.files)
-      const progress = showProgressToast(`Wysyłanie plików: 0/${files.length}`)
+      const progress = showProgressToast(`Wysyłanie plików...`)
 
       try {
         let succeeded = 0
@@ -373,18 +378,17 @@ export const useFTP = (
 
             if (res) {
               succeeded++
-              progress?.update(`Wysyłanie plików: ${succeeded}/${files.length}`)
+              progress?.updateProgress(succeeded, files.length)
               showToast(`Plik ${file.name} został przesłany pomyślnie.`)
             }
           } catch (err) {
             console.error(err)
-            progress?.update(
-              `Wysyłanie plików: ${succeeded}/${files.length} (błąd przy ${file.name})`
-            )
+            progress?.updateProgress(succeeded, files.length)
           }
         }
 
         if (succeeded > 0) await getFolderContent()
+        progress?.updateProgress(succeeded, files.length)
         progress?.close(`Wysłano pliki: ${succeeded}/${files.length}`, 'success')
       } catch (err) {
         console.error(err)
