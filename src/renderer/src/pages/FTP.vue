@@ -65,7 +65,7 @@ const sortedFiles = computed(() => {
         // eslint-disable-next-line no-useless-escape
         return !/^[^\\\/:\*\?"<>\|]+(\.[^\\\/:\*\?"<>\|]+)+$/.test(a.name) ? -1 : 1
       })
-      .filter((file) => !file.name.startsWith('.'))
+      ?.sort((a) => (a.isDirectory ? -1 : 1))
       .filter((file) => !['hashes.txt'].includes(file.name)) ?? []
   )
 })
@@ -329,7 +329,7 @@ onMounted(async () => {
           <i v-else class="fa fa-file"></i>
         </div>
         <div class="flex justify-between w-full items-center">
-          <p class="w-1/3">
+          <p class="w-1/2">
             {{ file.name }}
             <span
               v-if="currentFolder !== ''"
@@ -343,7 +343,9 @@ onMounted(async () => {
             </span>
           </p>
           <div class="flex gap-2 items-center">
-            {{ file.modifiedAt ? format(file.modifiedAt, 'MMM dd, yyyy HH:mm:ss') : '' }}
+            <span>
+              {{ file.modifiedAt ? format(file.modifiedAt, 'MMM dd, yyyy HH:mm:ss') : '' }}
+            </span>
 
             <div class="flex gap-2 items-center justify-evenly ml-2">
               <button
