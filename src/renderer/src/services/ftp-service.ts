@@ -21,6 +21,8 @@ interface FTPService {
   saveFile: () => Promise<void>
   createFolder: (newFolder: string) => Promise<void>
   handleDrop: (ev: DragEvent) => Promise<void>
+  isFolderAllImportant?: (folderName: string, manageLoading?: boolean) => Promise<boolean>
+  loadingStatuses: Ref<boolean>
   dragActive: Ref<boolean>
 }
 
@@ -43,6 +45,7 @@ export const useFTP = (
   const currentFolder = ref<string>('')
   const currentFolderFiles = ref<FTPFile[]>([])
   const currentHashes = ref<Record<string, { hash: string; flag?: 'important' | 'ignore' }>>({})
+  const loadingStatuses = ref<boolean>(false)
 
   const getFolderContent = async (folder: string = ''): Promise<void> => {
     const folderPath =
@@ -84,6 +87,72 @@ export const useFTP = (
 
   const changeFolder = async (name: string): Promise<void> => {
     await getFolderContent(name)
+  }
+
+  const listFilesRecursive = async (folderPath: string): Promise<any[]> => {
+    const results: any[] = []
+    try {
+      const list = await window.electron.ipcRenderer?.invoke('ftp:list-files', folderPath)
+      if (!list) return results
+
+      for (const item of list) {
+        const childPath = folderPath.length ? `${folderPath}/${item.name}` : item.name
+        if (item.isDirectory) {
+          results.push({ path: childPath, isDirectory: true })
+          const nested = await listFilesRecursive(childPath)
+          results.push(...nested)
+        } else {
+          results.push({ path: childPath, isDirectory: false, name: item.name })
+        }
+      }
+    } catch (err) {
+      // ignore
+    }
+    return results
+  }
+
+  const isFolderAllImportant = async (
+    folderName: string,
+    manageLoading = true
+  ): Promise<boolean> => {
+    if (manageLoading) loadingStatuses.value = true
+    try {
+      const baseFolder = currentFolder.value.length
+        ? `${currentFolder.value}/${folderName}`
+        : folderName
+
+      const checkDir = async (dirPath: string): Promise<boolean> => {
+        try {
+          const list = await window.electron.ipcRenderer?.invoke('ftp:list-files', dirPath)
+          const hashesRes = await window.electron.ipcRenderer?.invoke(
+            'ftp:get-hash-entries',
+            dirPath
+          )
+          const hashes = hashesRes?.entries ?? {}
+
+          for (const item of list) {
+            const childPath = dirPath.length ? `${dirPath}/${item.name}` : item.name
+            if (item.isDirectory) {
+              const ok = await checkDir(childPath)
+              if (!ok) return false
+            } else {
+              const entry = hashes[item.name]
+              if (!entry || entry.flag !== 'important') return false
+            }
+          }
+          return true
+        } catch {
+          return false
+        }
+      }
+
+      const res = await checkDir(baseFolder)
+      if (manageLoading) loadingStatuses.value = false
+      return res
+    } catch {
+      if (manageLoading) loadingStatuses.value = false
+      return false
+    }
   }
 
   const createFolder = async (newFolder: string): Promise<void> => {
@@ -449,6 +518,8 @@ export const useFTP = (
     createFolder,
     saveFile,
     dragActive,
-    handleDrop
+    handleDrop,
+    isFolderAllImportant,
+    loadingStatuses
   }
 }

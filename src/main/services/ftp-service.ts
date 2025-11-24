@@ -83,7 +83,9 @@ export const useFTPService = (): {
       return hash.digest('hex')
     }
 
-    function parseHashesContent(data: string) {
+    function parseHashesContent(
+      data: string
+    ): Record<string, { hash: string; flag?: 'important' | 'ignore' }> {
       const map: Record<string, { hash: string; flag?: 'important' | 'ignore' }> = {}
       data
         .split('\n')
@@ -112,7 +114,9 @@ export const useFTPService = (): {
       return map
     }
 
-    function serializeHashes(map: Record<string, { hash: string; flag?: 'important' | 'ignore' }>) {
+    function serializeHashes(
+      map: Record<string, { hash: string; flag?: 'important' | 'ignore' }>
+    ): string {
       return Object.entries(map)
         .map(([name, v]) => `${name} ${v.hash}${v.flag ? ' ' + v.flag : ''}`)
         .join('\n')
@@ -538,7 +542,9 @@ export const useFTPService = (): {
           } catch {
             try {
               await unlink(tmpFilePath)
-            } catch {}
+            } catch {
+              /* ignore */
+            }
           }
         }
 
@@ -555,10 +561,168 @@ export const useFTPService = (): {
         await client.uploadFrom(tmpHashesPath, `${folder}${folder.length ? '/' : ''}hashes.txt`)
         try {
           await unlink(tmpHashesPath)
-        } catch {}
+        } catch {
+          /* ignore */
+        }
 
         client.close()
         return true
+      }
+    )
+
+    ipcMain.handle(
+      'ftp:set-hash-flag-folder',
+      async (
+        _: any,
+        folder: string,
+        folderName: string,
+        flag?: 'important' | 'ignore' | null,
+        operationId?: string
+      ) => {
+        await connect()
+
+        const targetPath = `${folder}${folder.length ? '/' : ''}${folderName}`
+
+        // Count total files under targetPath
+        const countFiles = async (ftpPath: string): Promise<number> => {
+          let total = 0
+          try {
+            const list = await client.list(ftpPath)
+            for (const item of list) {
+              const childPath = ftpPath + '/' + item.name
+              if (item.isDirectory) {
+                total += await countFiles(childPath)
+              } else {
+                total += 1
+              }
+            }
+          } catch {
+            // ignore listing errors
+          }
+          return total
+        }
+
+        const tmpHashesPath = join(process.cwd(), 'tmp', 'hashes.txt')
+        const tmpFilePath = join(process.cwd(), 'tmp', 'file.temp')
+
+        let totalFiles = 0
+        try {
+          totalFiles = await countFiles(targetPath)
+        } catch {
+          totalFiles = 0
+        }
+
+        let processed = 0
+
+        // Traverse and update hashes per-directory
+        const traverseAndUpdate = async (ftpPath: string): Promise<void> => {
+          try {
+            const list = await client.list(ftpPath)
+
+            // load hashes for this directory
+            const hashes: Record<string, { hash: string; flag?: 'important' | 'ignore' }> = {}
+            try {
+              await client.downloadTo(tmpHashesPath, `${ftpPath.replace(/\\/g, '/')}/hashes.txt`)
+              const data = await readFile(tmpHashesPath, 'utf-8')
+              Object.assign(hashes, parseHashesContent(data))
+              try {
+                await unlink(tmpHashesPath)
+              } catch {
+                // ignore
+              }
+            } catch {
+              // no hashes.txt - proceed with empty map
+            }
+
+            let hashesChanged = false
+
+            for (const item of list) {
+              const childPath = ftpPath + '/' + item.name
+              if (item.isDirectory) {
+                await traverseAndUpdate(childPath)
+              } else {
+                // For files, ensure hash exists (download to compute if missing)
+                if (!hashes[item.name]) {
+                  try {
+                    await client.downloadTo(tmpFilePath, childPath)
+                    const content = await readFile(tmpFilePath)
+                    const h = createHash('sha256')
+                    h.update(content)
+                    hashes[item.name] = { hash: h.digest('hex') }
+                    try {
+                      await unlink(tmpFilePath)
+                    } catch {
+                      /* ignore */
+                    }
+                  } catch {
+                    try {
+                      await unlink(tmpFilePath)
+                    } catch {
+                      /* ignore */
+                    }
+                  }
+                }
+
+                if (hashes[item.name]) {
+                  if (flag === null || flag === undefined) {
+                    if (hashes[item.name].flag !== undefined) {
+                      delete hashes[item.name].flag
+                      hashesChanged = true
+                    }
+                  } else {
+                    if (hashes[item.name].flag !== flag) {
+                      hashes[item.name].flag = flag
+                      hashesChanged = true
+                    }
+                  }
+
+                  processed++
+                  // send progress
+                  try {
+                    mainWindow.webContents.send('ftp:set-flag-folder-progress', {
+                      id: operationId,
+                      total: totalFiles,
+                      completed: processed,
+                      current: childPath
+                    })
+                  } catch {
+                    // ignore
+                  }
+                }
+              }
+            }
+
+            if (hashesChanged) {
+              const content = serializeHashes(hashes)
+              await writeFile(tmpHashesPath, content)
+              try {
+                await client.uploadFrom(tmpHashesPath, `${ftpPath.replace(/\\/g, '/')}/hashes.txt`)
+              } catch {
+                // ignore upload errors
+              }
+              try {
+                await unlink(tmpHashesPath)
+              } catch {
+                // ignore
+              }
+            }
+          } catch {
+            // ignore directory errors
+          }
+        }
+
+        try {
+          await traverseAndUpdate(targetPath)
+          client.close()
+          return true
+        } catch (err) {
+          try {
+            client.close()
+          } catch {
+            /* ignore */
+          }
+          throw err
+        }
       }
     )
 

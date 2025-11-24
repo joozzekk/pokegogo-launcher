@@ -3,7 +3,8 @@
 import CreateFolderModal from '@renderer/components/modals/CreateFolderModal.vue'
 import { useFTP } from '@renderer/services/ftp-service'
 import { format } from 'date-fns'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { showProgressToast } from '@renderer/utils'
 
 const showSearchInput = ref<boolean>(false)
 const searchQuery = ref<string>('')
@@ -29,12 +30,83 @@ const {
   openImageFile,
   saveFile,
   dragActive,
-  handleDrop
+  handleDrop,
+  isFolderAllImportant,
+  loadingStatuses
 } = useFTP(inputFile, inputFolder)
+
+const folderImportantStatus = ref<Record<string, boolean>>({})
+
+const refreshFolderStatuses = async (): Promise<void> => {
+  const dirs = currentFolderFiles.value?.filter((f: any) => f.isDirectory) ?? []
+  loadingStatuses.value = true
+  try {
+    for (const d of dirs) {
+      try {
+        const res = await isFolderAllImportant?.(d.name, false)
+        folderImportantStatus.value[d.name] = !!res
+      } catch {
+        folderImportantStatus.value[d.name] = false
+      }
+    }
+  } finally {
+    loadingStatuses.value = false
+  }
+}
+
+watch(currentFolderFiles, () => {
+  refreshFolderStatuses()
+})
+
+const fileIsImportant = (file: any): boolean => {
+  if (file.isDirectory) return !!folderImportantStatus.value[file.name]
+  return currentHashes.value[file.name] && currentHashes.value[file.name].flag === 'important'
+}
 
 const toggleImportant = async (file: any): Promise<void> => {
   const current = currentHashes.value[file.name]?.flag
   const newFlag = current === 'important' ? 'ignore' : 'important'
+
+  // If directory - use folder handler
+  if (file.isDirectory) {
+    const operationId = `set-flag-folder-${Date.now()}-${Math.floor(Math.random() * 10000)}`
+    const progress = showProgressToast(`Aktualizuję ustawienie folderu...`)
+
+    const handler = (
+      _event: any,
+      data: { id?: string; total?: number; completed?: number; current?: string }
+    ): void => {
+      if (!data || data.id !== operationId) return
+      progress?.updateProgress(data.completed ?? 0, data.total ?? 0, 'Aktualizuję pliki...')
+      if ((data.total ?? 0) && (data.completed ?? 0) >= (data.total ?? 0)) {
+        progress?.close(`Pomyślnie zaktualizowano folder.`, 'success')
+        window.electron.ipcRenderer.removeAllListeners('ftp:set-flag-folder-progress')
+      }
+    }
+
+    try {
+      window.electron.ipcRenderer?.on('ftp:set-flag-folder-progress', handler)
+      await window.electron.ipcRenderer?.invoke(
+        'ftp:set-hash-flag-folder',
+        currentFolder.value,
+        file.name,
+        newFlag,
+        operationId
+      )
+      await getHashesForFolder()
+      await refreshFolderStatuses()
+    } catch (e) {
+      console.error(e)
+      progress?.close('Wystąpił błąd podczas aktualizacji folderu.', 'error')
+      window.electron.ipcRenderer.removeAllListeners('ftp:set-flag-folder-progress')
+    }
+
+    return
+  }
+
+  // Single file
+  const progress = showProgressToast(`Aktualizuję ustawienie pobierania...`)
+
   try {
     await window.electron.ipcRenderer?.invoke(
       'ftp:set-hash-flag',
@@ -43,8 +115,10 @@ const toggleImportant = async (file: any): Promise<void> => {
       newFlag
     )
     await getHashesForFolder()
+    progress?.close('Pomyślnie zaktualizowano ustawienie.', 'success')
   } catch (e) {
     console.error(e)
+    progress?.close('Wystąpił błąd podczas aktualizacji.', 'error')
   }
 }
 
@@ -152,13 +226,19 @@ onMounted(async () => {
 
 <template>
   <div
-    class="flex flex-col w-full text-[var(--text-secondary)] max-h-full overflow-y-auto rounded-xl border-dashed border-1 border-[var(--border)]"
+    class="relative flex flex-col w-full text-[var(--text-secondary)] max-h-full overflow-y-auto rounded-xl border-dashed border-1 border-[var(--border)]"
     :class="{ 'border bg-[var(--bg-light)]/30': dragActive }"
     @dragenter.prevent="onDragEnter"
     @dragover.prevent="onDragOver"
     @dragleave.prevent="onDragLeave"
     @drop.prevent="handleDrop"
   >
+    <div
+      v-if="loadingStatuses"
+      class="absolute inset-0 z-50 flex items-center justify-center bg-black/40"
+    >
+      <i class="fa fa-spinner fa-spin text-3xl text-white"></i>
+    </div>
     <template v-if="dragActive">
       <div class="drop-hint flex flex-col gap-2">
         <i class="fa fa-upload text-3xl"></i>
@@ -335,11 +415,7 @@ onMounted(async () => {
               v-if="currentFolder !== ''"
               class="bg-[var(--primary)] ml-2 text-[0.6rem] text-white py-[2px] px-[6px] rounded-[4px] font-bold"
             >
-              {{
-                currentHashes[file.name] && currentHashes[file.name].flag === 'important'
-                  ? 'Pobierane zawsze'
-                  : 'Pobierane przy 1 instalacji'
-              }}
+              {{ fileIsImportant(file) ? 'Pobierane zawsze' : 'Pobierane przy 1 instalacji' }}
             </span>
           </p>
           <div class="flex gap-2 items-center">
@@ -351,15 +427,11 @@ onMounted(async () => {
               <button
                 v-if="currentFolder !== ''"
                 class="nav-icon hover:cursor-pointer"
+                :disabled="loadingStatuses"
+                :class="{ 'opacity-50 pointer-events-none': loadingStatuses }"
                 @click.stop="toggleImportant(file)"
               >
-                <i
-                  :class="
-                    currentHashes[file.name] && currentHashes[file.name].flag === 'important'
-                      ? 'fa fa-star'
-                      : 'fa-regular fa-star'
-                  "
-                />
+                <i :class="fileIsImportant(file) ? 'fa fa-star' : 'fa-regular fa-star'" />
               </button>
               <button class="ban-btn hover:cursor-pointer" @click.stop="removeFile(file.name)">
                 <i class="fa fa-trash" />
