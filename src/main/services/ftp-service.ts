@@ -274,81 +274,197 @@ export const useFTPService = (): {
       }
     )
 
-    async function removeFTPPath(client: Client, ftpPath: string): Promise<void> {
-      try {
-        const list = await client.list(ftpPath)
+    ipcMain.handle(
+      'ftp:remove-file',
+      async (event, folder: string, fileName: string, operationId?: string) => {
+        await connect()
 
-        if (list.length === 0) {
-          await client.removeDir(ftpPath)
-        } else {
-          for (const item of list) {
-            const fullPath = ftpPath + '/' + item.name
-            if (item.isDirectory) {
-              await removeFTPPath(client, fullPath)
+        const fullPath = posix.join(folder, fileName)
+
+        // Count total items to delete (files + directories)
+        const countItems = async (ftpPath: string): Promise<number> => {
+          let total = 0
+          try {
+            const list = await client.list(ftpPath)
+            for (const item of list) {
+              const childPath = ftpPath + '/' + item.name
+              total += 1
+              if (item.isDirectory) {
+                total += await countItems(childPath)
+              }
+            }
+          } catch {
+            // ignore listing errors
+          }
+          return total
+        }
+
+        let totalToDelete = 1
+        try {
+          totalToDelete = await countItems(fullPath)
+        } catch {
+          totalToDelete = 1
+        }
+
+        let deletedCount = 0
+
+        // recursive removal that reports progress
+        async function removeFTPPathWithProgress(client: Client, ftpPath: string): Promise<void> {
+          try {
+            const list = await client.list(ftpPath)
+
+            if (list.length === 0) {
+              try {
+                await client.removeDir(ftpPath)
+              } catch (e: any) {
+                if (e.code === 550) {
+                  await client.remove(ftpPath)
+                } else {
+                  throw e
+                }
+              }
+              deletedCount++
+              event.sender.send('ftp:remove-progress', {
+                id: operationId,
+                total: totalToDelete,
+                deleted: deletedCount,
+                current: ftpPath
+              })
             } else {
-              await client.remove(fullPath)
+              for (const item of list) {
+                const fullPathItem = ftpPath + '/' + item.name
+                if (item.isDirectory) {
+                  await removeFTPPathWithProgress(client, fullPathItem)
+                } else {
+                  try {
+                    await client.remove(fullPathItem)
+                  } catch (e: any) {
+                    if (e.code !== 550) throw e
+                  }
+                  deletedCount++
+                  event.sender.send('ftp:remove-progress', {
+                    id: operationId,
+                    total: totalToDelete,
+                    deleted: deletedCount,
+                    current: fullPathItem
+                  })
+                }
+              }
+
+              try {
+                await client.removeDir(ftpPath)
+                deletedCount++
+                event.sender.send('ftp:remove-progress', {
+                  id: operationId,
+                  total: totalToDelete,
+                  deleted: deletedCount,
+                  current: ftpPath
+                })
+              } catch (e: any) {
+                if (e.code === 550) {
+                  await client.remove(ftpPath)
+                  deletedCount++
+                  event.sender.send('ftp:remove-progress', {
+                    id: operationId,
+                    total: totalToDelete,
+                    deleted: deletedCount,
+                    current: ftpPath
+                  })
+                } else {
+                  throw e
+                }
+              }
+            }
+          } catch (err: any) {
+            // If path is a file
+            try {
+              await client.remove(ftpPath)
+              deletedCount++
+              event.sender.send('ftp:remove-progress', {
+                id: operationId,
+                total: totalToDelete,
+                deleted: deletedCount,
+                current: ftpPath
+              })
+            } catch (e: any) {
+              if (e.code === 550) {
+                // try remove as file
+                try {
+                  await client.remove(ftpPath)
+                  deletedCount++
+                  event.sender.send('ftp:remove-progress', {
+                    id: operationId,
+                    total: totalToDelete,
+                    deleted: deletedCount,
+                    current: ftpPath
+                  })
+                } catch {
+                  // ignore
+                }
+              } else {
+                throw err
+              }
             }
           }
-          await client.removeDir(ftpPath)
         }
-      } catch (err: any) {
-        if (err.code === 550) {
-          await client.remove(ftpPath)
-        } else {
-          throw err
-        }
-      }
-    }
 
-    ipcMain.handle('ftp:remove-file', async (_, folder: string, fileName: string) => {
-      await connect()
+        try {
+          await removeFTPPathWithProgress(client, fullPath)
 
-      const fullPath = posix.join(folder, fileName)
+          const hashes: { [key: string]: string } = {}
+          try {
+            const tmpHashesPath = join(process.cwd(), 'tmp', 'hashes.txt')
+            await client.downloadTo(tmpHashesPath, `${folder}${folder.length ? '/' : ''}hashes.txt`)
+            const data = await readFile(tmpHashesPath, 'utf-8')
+            data.split('\n').forEach((line) => {
+              const trimmed = line.trim()
+              if (!trimmed) return
+              const lastSpaceIndex = trimmed.lastIndexOf(' ')
+              if (lastSpaceIndex === -1) return
+              const name = trimmed.substring(0, lastSpaceIndex)
+              const hash = trimmed.substring(lastSpaceIndex + 1)
+              hashes[name] = hash
+            })
 
-      await removeFTPPath(client, fullPath)
+            for (const key of Object.keys(hashes)) {
+              if (key === fileName || key.startsWith(fileName + '/')) {
+                delete hashes[key]
+              }
+            }
 
-      const hashes: { [key: string]: string } = {}
-      try {
-        const tmpHashesPath = join(process.cwd(), 'tmp', 'hashes.txt')
-        await client.downloadTo(tmpHashesPath, `${folder}${folder.length ? '/' : ''}hashes.txt`)
-        const data = await readFile(tmpHashesPath, 'utf-8')
-        data.split('\n').forEach((line) => {
-          const trimmed = line.trim()
-          if (!trimmed) return
-          const lastSpaceIndex = trimmed.lastIndexOf(' ')
-          if (lastSpaceIndex === -1) return
-          const name = trimmed.substring(0, lastSpaceIndex)
-          const hash = trimmed.substring(lastSpaceIndex + 1)
-          hashes[name] = hash
-        })
+            const hashesContent = Object.entries(hashes)
+              .map(([name, hash]) => `${name} ${hash}`)
+              .join('\n')
 
-        for (const key of Object.keys(hashes)) {
-          if (key === fileName || key.startsWith(fileName + '/')) {
-            delete hashes[key]
+            await writeFile(tmpHashesPath, hashesContent)
+
+            if (hashesContent.length === 0) {
+              await client.remove(`${folder}${folder.length ? '/' : ''}hashes.txt`)
+            } else {
+              await client.uploadFrom(
+                tmpHashesPath,
+                `${folder}${folder.length ? '/' : ''}hashes.txt`
+              )
+            }
+
+            await unlink(tmpHashesPath)
+          } catch {
+            /* Ignoruj */
           }
+
+          client.close()
+
+          return true
+        } catch (error) {
+          try {
+            client.close()
+          } catch {
+            /* Ignoruj */
+          }
+          throw error
         }
-
-        const hashesContent = Object.entries(hashes)
-          .map(([name, hash]) => `${name} ${hash}`)
-          .join('\n')
-
-        await writeFile(tmpHashesPath, hashesContent)
-
-        if (hashesContent.length === 0) {
-          await client.remove(`${folder}${folder.length ? '/' : ''}hashes.txt`)
-        } else {
-          await client.uploadFrom(tmpHashesPath, `${folder}${folder.length ? '/' : ''}hashes.txt`)
-        }
-
-        await unlink(tmpHashesPath)
-      } catch {
-        /* Ignoruj */
       }
-
-      client.close()
-
-      return true
-    })
+    )
 
     ipcMain.handle('ftp:read-file', async (_, folder: string, name: string) => {
       const tempFilePath = join(process.cwd(), 'tmp', name)

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { showProgressToast, showToast } from '@renderer/utils'
 import { Ref, ref } from 'vue'
 import { LOGGER } from './logger-service'
@@ -75,6 +76,7 @@ export const useFTP = (
     const files = Array.from(inputFolder.value.files)
 
     try {
+      const progress = showProgressToast(`Czytanie folderu...`)
       const resolvedFiles = await Promise.all(
         files.map(async (file) => ({
           path: file.webkitRelativePath || file.name,
@@ -82,7 +84,7 @@ export const useFTP = (
         }))
       )
 
-      const progress = showProgressToast(`Wysyłanie folderu... Status: 0/${resolvedFiles.length}`)
+      progress?.update(`Wysyłanie folderu... Status: 0/${resolvedFiles.length}`)
 
       window.electron.ipcRenderer?.on('ftp:upload-folder-progress', (_event, completed: number) => {
         progress?.update(`Wysyłanie folderu... Status: ${completed}/${resolvedFiles.length}`)
@@ -172,20 +174,45 @@ export const useFTP = (
   }
 
   const removeFile = async (name: string): Promise<void> => {
+    const operationId = `remove-${Date.now()}-${Math.floor(Math.random() * 10000)}`
+    const progress = showProgressToast(`Usuwanie: 0/?`)
+
+    const handler = (
+      _event: any,
+      data: { id?: string; total?: number; deleted?: number; current?: string }
+    ): void => {
+      if (!data || data.id !== operationId) return
+      const total = data.total ?? 0
+      const deleted = data.deleted ?? 0
+      progress?.update(`Usuwanie: ${deleted}/${total || '?'}`)
+      if (total && deleted >= total) {
+        progress?.close(`Usunięto: ${deleted}/${total}`, 'success')
+        window.electron.ipcRenderer.removeAllListeners('ftp:remove-progress')
+      }
+    }
+
     try {
+      window.electron.ipcRenderer?.on('ftp:remove-progress', handler)
+
       const res = await window.electron.ipcRenderer?.invoke(
         'ftp:remove-file',
         currentFolder.value,
-        name
+        name,
+        operationId
       )
 
+      window.electron.ipcRenderer.removeAllListeners('ftp:remove-progress')
+
       if (res) {
-        showToast('Pomyślnie usunięto ' + name)
+        // If main did not send detailed progress, close the progress toast
+        progress?.close(`Pomyślnie usunięto ${name}`, 'success')
         currentFileContent.value = res
         await getFolderContent(currentFolder.value)
       }
     } catch (err) {
       LOGGER.err(err as string)
+      window.electron.ipcRenderer.removeAllListeners('ftp:remove-progress')
+      progress?.close('Wystąpił błąd podczas usuwania.', 'error')
       showToast('Wystąpił błąd podczas usuwania pliku ' + name, 'error')
     }
   }
