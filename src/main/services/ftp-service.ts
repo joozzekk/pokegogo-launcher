@@ -139,22 +139,17 @@ export const useFTPService = (): {
       const directoryMap = new Map<string, any[]>()
 
       for (const file of files) {
-        // Używamy normalizedPath (z ukośnikami /) dla spójności
         const normalizedPath = file.path.replace(/\\/g, '/')
         const dir = dirname(normalizedPath)
 
         if (!directoryMap.has(dir)) {
           directoryMap.set(dir, [])
         }
-        // Dodajemy plik z już znormalizowaną ścieżką
         directoryMap.get(dir)!.push({ ...file, path: normalizedPath })
       }
       return directoryMap
     }
 
-    /**
-     * Funkcja pomocnicza do wczytania i sparsowania pliku hashes.txt
-     */
     async function loadRemoteHashes(
       remoteDir: string,
       localTempPath: string
@@ -163,7 +158,6 @@ export const useFTPService = (): {
       const remoteHashesPath = join(remoteDir, 'hashes.txt').replace(/\\/g, '/')
 
       try {
-        // Pobierz plik hashes.txt z konkretnego katalogu
         await client.downloadTo(localTempPath, remoteHashesPath)
 
         const data = await readFile(localTempPath, 'utf-8')
@@ -173,16 +167,14 @@ export const useFTPService = (): {
           const lastSpaceIndex = line.lastIndexOf(' ')
           if (lastSpaceIndex === -1) return
 
-          // Ważne: w hashes.txt przechowujemy tylko NAZWY PLIKÓW (basename)
           const name = line.substring(0, lastSpaceIndex)
           const hash = line.substring(lastSpaceIndex + 1)
           if (name && hash) hashes[name] = hash
         })
         await unlink(localTempPath)
       } catch {
-        // Błąd (np. brak pliku) jest OK, oznacza to, że nie ma starych hashy
         try {
-          await unlink(localTempPath) // Posprzątaj, jeśli pobieranie się udało, a czytanie nie
+          await unlink(localTempPath)
         } catch {
           /* Ignoruj błąd usuwania */
         }
@@ -190,35 +182,25 @@ export const useFTPService = (): {
       return hashes
     }
 
-    // --- Główna funkcja IPC ---
-
     ipcMain.handle('ftp:upload-folder', async (_, folder: string, files: any[]) => {
       const tmpDir = join(process.cwd(), 'tmp')
-      // Użyjemy jednej tymczasowej ścieżki dla wszystkich plików hashes.txt
       const localHashesPath = join(tmpDir, 'hashes.temp.txt')
-      // Użyjemy jednej tymczasowej ścieżki dla wysyłanych plików
       const localUploadTempPath = join(tmpDir, 'upload.temp.bin')
 
       try {
         await connect()
 
         const pwd = await client.pwd()
-        // Główny folder projektu na serwerze, np. /home/user/my-project
         const baseRemoteDir = join(pwd, folder).replace(/\\/g, '/')
 
-        // 1. Pogrupuj pliki według ich katalogów
         const filesByDir = groupFilesByDirectory(files)
 
-        // 2. Przejdź pętlą po każdym katalogu, który zawiera pliki
         for (const [relativeDir, filesInDir] of filesByDir.entries()) {
-          // Katalog na serwerze, do którego będziemy wysyłać, np. /home/user/my-project/src/components
-          // Jeśli relativeDir to '.', baseRemoteDir pozostanie niezmieniony
           const currentRemoteDir =
             relativeDir === '.'
               ? baseRemoteDir
               : join(baseRemoteDir, relativeDir).replace(/\\/g, '/')
 
-          // Upewnij się, że katalog istnieje i do niego przejdź
           try {
             await client.ensureDir(currentRemoteDir)
             await client.cd(currentRemoteDir)
@@ -226,57 +208,41 @@ export const useFTPService = (): {
             throw new Error(`Failed to cd/ensureDir ${currentRemoteDir}. Details: ${e.message}`)
           }
 
-          // 3. Wczytaj istniejący plik hashes.txt z TEGO katalogu
-          // hashes przechowuje teraz wpisy typu { 'Button.js': 'hash123' }
           const hashes = await loadRemoteHashes(currentRemoteDir, localHashesPath)
 
-          let hashesChanged = false // Flaga, czy trzeba będzie wgrać nowy hashes.txt
+          let hashesChanged = false
 
-          // 4. Przejdź pętlą po plikach w tym katalogu
           for (const file of filesInDir) {
             const { path: normalizedPath, buffer } = file
-            const fileName = basename(normalizedPath) // Np. 'Button.js'
+            const fileName = basename(normalizedPath)
 
-            // Oblicz hash dla pliku z bufora
             const fileHash = await computeHash(buffer)
 
-            // TODO: Tutaj powinieneś dodać logikę porównywania hashy
-            // if (hashes[fileName] === fileHash) {
-            //   console.log(`Skipping ${normalizedPath} (hash matches)`);
-            //   continue; // Pomiń wysyłanie, jeśli hash się zgadza
-            // }
-
-            // Przygotuj plik lokalnie
             await writeFile(localUploadTempPath, Buffer.from(buffer))
 
             try {
-              // Wysyłamy plik używając TYLKO jego nazwy (fileName),
-              // ponieważ jesteśmy już w odpowiednim katalogu (client.cd)
               await client.uploadFrom(localUploadTempPath, fileName)
             } catch (e) {
-              await unlink(localUploadTempPath) // Sprzątanie po błędzie
+              await unlink(localUploadTempPath)
               throw e
             }
 
-            // Zaktualizuj hash dla tego pliku i oznacz, że plik hashes.txt wymaga aktualizacji
             hashes[fileName] = fileHash
             hashesChanged = true
 
-            await unlink(localUploadTempPath) // Sprzątanie po sukcesie
-          } // Koniec pętli po plikach
+            await unlink(localUploadTempPath)
+          }
 
-          // 5. Jeśli cokolwiek się zmieniło, zapisz i wyślij nowy plik hashes.txt
           if (hashesChanged) {
             const hashesContent = Object.entries(hashes)
-              .map(([name, hash]) => `${name} ${hash}`) // name to już jest basename
+              .map(([name, hash]) => `${name} ${hash}`)
               .join('\n')
 
-            // Jesteśmy już w `currentRemoteDir`
             await writeFile(localHashesPath, hashesContent)
             await client.uploadFrom(localHashesPath, 'hashes.txt')
             await unlink(localHashesPath)
           }
-        } // Koniec pętli po katalogach
+        }
 
         client.close()
         return true
@@ -287,7 +253,6 @@ export const useFTPService = (): {
           /* Ignoruj */
         }
 
-        // Posprzątaj pliki tymczasowe na wszelki wypadek
         try {
           await unlink(localHashesPath)
         } catch {
@@ -371,7 +336,7 @@ export const useFTPService = (): {
 
         await unlink(tmpHashesPath)
       } catch {
-        // jeśli plik hashes.txt nie istnieje, nic nie robimy
+        /* Ignoruj */
       }
 
       client.close()
@@ -398,22 +363,16 @@ export const useFTPService = (): {
 
       try {
         await connect()
-        // Pobieranie pliku na dysk tymczasowy
         await client.downloadTo(tempFilePath, `${folder}/${name}`)
 
-        // 🟢 Poprawa: Odczyt pliku jako Buffer (dane binarne)
         const fileBuffer = await readFile(tempFilePath)
-
-        // 🟢 Poprawa: Konwersja Buffer na ciąg Base64 do przesłania przez IPC
         const fileBase64 = fileBuffer.toString('base64')
 
         await unlink(tempFilePath)
         client.close()
 
-        // 🟢 Zwrócenie ciągu Base64 do procesu renderowania
         return fileBase64
       } catch (error) {
-        // Pamiętaj o obsłudze błędów i zamknięciu klienta FTP w przypadku problemu
         client.close()
         throw error
       }

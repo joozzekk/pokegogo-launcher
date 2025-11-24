@@ -1,6 +1,8 @@
+<!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <script lang="ts" setup>
 import CreateFolderModal from '@renderer/components/modals/CreateFolderModal.vue'
 import { useFTP } from '@renderer/services/ftp-service'
+import { showToast } from '@renderer/utils'
 import { format } from 'date-fns'
 import { computed, onMounted, ref } from 'vue'
 
@@ -69,6 +71,125 @@ const handleUploadFolder = (): void => {
   inputFolder.value?.click()
 }
 
+const dragActive = ref<boolean>(false)
+
+const onDragEnter = (ev: DragEvent): void => {
+  ev.preventDefault()
+  dragActive.value = true
+}
+
+const onDragOver = (ev: DragEvent): void => {
+  ev.preventDefault()
+  dragActive.value = true
+}
+
+const onDragLeave = (ev: DragEvent): void => {
+  ev.preventDefault()
+  // Only deactivate when leaving the root element
+  dragActive.value = false
+}
+
+// Traverse directories dropped (webkitGetAsEntry) and collect files with paths
+const traverseFileTree = (entry: any, path = ''): Promise<Array<{ path: string; file: File }>> => {
+  return new Promise((resolve) => {
+    if (entry.isFile) {
+      entry.file((file: File) => resolve([{ path: path + file.name, file }]))
+    } else if (entry.isDirectory) {
+      const dirReader = entry.createReader()
+      const results: Array<{ path: string; file: File }> = []
+
+      const readEntries = (): void => {
+        dirReader.readEntries(async (entries: any[]) => {
+          if (!entries.length) {
+            resolve(results)
+            return
+          }
+
+          const promises = entries.map((ent) => traverseFileTree(ent, path + entry.name + '/'))
+          const nested = await Promise.all(promises)
+          nested.forEach((arr) => results.push(...arr))
+          readEntries()
+        })
+      }
+
+      readEntries()
+    } else {
+      resolve([])
+    }
+  })
+}
+
+const handleDrop = async (ev: DragEvent): Promise<void> => {
+  ev.preventDefault()
+  dragActive.value = false
+
+  const dt = ev.dataTransfer
+  if (!dt) return
+
+  if (dt.items && dt.items.length) {
+    const items = Array.from(dt.items)
+    const hasDirectory = items.some((it) => (it as any).webkitGetAsEntry?.()?.isDirectory)
+
+    if (hasDirectory) {
+      const entries = items.map((it) => (it as any).webkitGetAsEntry())
+      const fileEntriesArr = await Promise.all(
+        entries.map((e) => (e ? traverseFileTree(e, '') : Promise.resolve([])))
+      )
+      const all = fileEntriesArr.flat()
+
+      if (!all.length) return
+
+      try {
+        const resolvedFiles = await Promise.all(
+          all.map(async ({ path, file }) => ({ path, buffer: await file.arrayBuffer() }))
+        )
+
+        const res = await window.electron.ipcRenderer?.invoke(
+          'ftp:upload-folder',
+          currentFolder.value,
+          resolvedFiles
+        )
+
+        if (res) {
+          await getFolderContent()
+          showToast(`Folder został przesłany pomyślnie.`)
+        }
+      } catch (err) {
+        console.error(err)
+      }
+
+      return
+    }
+  }
+
+  if (dt.files && dt.files.length) {
+    const files = Array.from(dt.files)
+
+    try {
+      await Promise.all(
+        files.map(async (file) => {
+          const res = await window.electron.ipcRenderer?.invoke(
+            'ftp:upload-file',
+            currentFolder.value,
+            await file.arrayBuffer(),
+            file.name
+          )
+
+          if (res) {
+            showToast(`Plik ${file.name} został przesłany pomyślnie.`)
+          }
+
+          return res
+        })
+      )
+
+      await getFolderContent()
+    } catch (err) {
+      console.error(err)
+    }
+  }
+}
+
 const handleShowSearch = (): void => {
   showSearchInput.value = !showSearchInput.value
   searchQuery.value = ''
@@ -115,9 +236,22 @@ onMounted(async () => {
 
 <template>
   <div
+    :draggable="true"
     class="flex flex-col w-full text-[var(--text-secondary)] max-h-full overflow-y-auto rounded-xl border-dashed border-1 border-[var(--border)]"
+    :class="{ 'border bg-[var(--bg-light)]/30': dragActive }"
+    @dragenter.prevent="onDragEnter"
+    @dragover.prevent="onDragOver"
+    @dragleave.prevent="onDragLeave"
+    @drop.prevent="handleDrop"
   >
-    <template v-if="currentFileContent.length && isTextFile(currentFileName)">
+    <template v-if="dragActive">
+      <div class="drop-hint flex flex-col gap-2">
+        <i class="fa fa-upload text-3xl"></i>
+        Upuść pliki tutaj, aby je przesłać
+      </div>
+    </template>
+
+    <template v-else-if="currentFileContent.length && isTextFile(currentFileName)">
       <div class="relative flex w-full h-full">
         <div class="flex flex-col gap-2 absolute right-4 top-2">
           <button
@@ -309,5 +443,16 @@ onMounted(async () => {
 .slide-fade-leave-to {
   transform: translateY(-100%);
   opacity: 0;
+}
+
+.drop-hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  color: var(--primary);
+  font-weight: 700;
 }
 </style>
