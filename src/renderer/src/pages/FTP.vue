@@ -236,7 +236,6 @@ onMounted(async () => {
 
 <template>
   <div
-    :draggable="true"
     class="flex flex-col w-full text-[var(--text-secondary)] max-h-full overflow-y-auto rounded-xl border-dashed border-1 border-[var(--border)]"
     :class="{ 'border bg-[var(--bg-light)]/30': dragActive }"
     @dragenter.prevent="onDragEnter"
