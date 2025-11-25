@@ -44,6 +44,7 @@
     "node-machine-id": "^1.1.12",
     "pinia": "^3.0.3",
     "primevue": "^4.4.1",
+    "skin3d": "^0.0.12",
     "socket.io-client": "^4.8.1",
     "tailwindcss": "^4.1.14",
     "vue-router": "4"

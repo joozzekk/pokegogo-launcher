@@ -7,11 +7,20 @@ import superEvent from '@renderer/assets/img/superEvent.png'
 import { getEvents, getServerStatus } from '@renderer/api/endpoints'
 import { LOGGER } from '@renderer/services/logger-service'
 import { format, parseISO } from 'date-fns'
+import useUserStore from '@renderer/stores/user-store'
 
 const url = import.meta.env.RENDERER_VITE_API_URL
+const userStore = useUserStore()
 const generalStore = useGeneralStore()
 const time = ref<number>(0)
 const serverStatus = ref<{ players: { online: number } } | null>(null)
+
+const playerName = computed(() => {
+  return userStore.user?.nickname ?? 'Guest'
+})
+const userRole = computed(() => {
+  return userStore.user?.role ?? 'Gracz'
+})
 
 const events = ref<any[]>([])
 
@@ -57,6 +66,12 @@ onMounted(async () => {
             </div>
             <h2>Graj Teraz</h2>
           </div>
+          <div class="flex flex-col items-end justify-center">
+            <span class="player-name">
+              {{ playerName }}
+            </span>
+            <span class="player-label">{{ userRole }}</span>
+          </div>
         </div>
 
         <div class="server-showcase">
@@ -90,12 +105,6 @@ onMounted(async () => {
             </template>
             <template v-else></template>
           </div>
-          <!-- <div class="server-image">
-            <img :src="poke" alt="PokeGoGo" @dragstart.prevent="null" />
-            <div class="server-overlay">
-              <span class="server-ip">PokemonGoGo.pl</span>
-            </div>
-          </div> -->
 
           <div class="server-stats">
             <div class="stat-item">

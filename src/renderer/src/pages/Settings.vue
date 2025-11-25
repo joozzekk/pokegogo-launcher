@@ -1,7 +1,9 @@
 <script lang="ts" setup>
 import { changeEmail, changePassword } from '@renderer/api/endpoints'
 import { applyTheme, themes } from '@renderer/assets/theme/official'
+import ChangeSkinModal from '@renderer/components/modals/ChangeSkinModal.vue'
 import VerifyFilesModal from '@renderer/components/modals/VerifyFilesModal.vue'
+import SkinViewer from '@renderer/components/SkinViewer.vue'
 import useGeneralStore from '@renderer/stores/general-store'
 import useUserStore from '@renderer/stores/user-store'
 import { calculateValueFromPercentage, checkUpdate, MIN_RAM, showToast } from '@renderer/utils'
@@ -117,12 +119,15 @@ const handleChangePassword = async (): Promise<void> => {
       state.repeatNew = ''
       v$.value.$reset()
     }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (_) {
+  } catch {
     showToast('Nie udało się zmienić hasła', 'error')
     return
   }
 }
+
+const skinUrl = computed(() => {
+  return `http://localhost:4000/skins/image/${userStore.user?.nickname}`
+})
 
 watch(
   () => userStore.user,
@@ -143,8 +148,7 @@ const handleChangeEmail = async (): Promise<void> => {
       emailV$.value.$reset()
       await userStore.logout()
     }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (_) {
+  } catch {
     showToast('Nie udało się zmienić email', 'error')
     return
   }
@@ -161,6 +165,11 @@ const handleChangeUpdateChannel = async (channel: string): Promise<void> => {
 const verifyFilesModalRef = ref()
 const openVerifyFilesModal = (): void => {
   verifyFilesModalRef.value?.openModal()
+}
+
+const changeSkinModalRef = ref()
+const openChangeSkinModal = (): void => {
+  changeSkinModalRef.value?.openModal()
 }
 
 onUnmounted(() => {
@@ -407,6 +416,19 @@ onUnmounted(() => {
           </div>
         </div>
 
+        <div class="setting-group mb-2!">
+          <label>Customowy skin</label>
+          <p class="text-[var(--text-secondary)] mb-2 text-[0.7rem]">
+            Zmiana skina jest możliwa tylko dla użytkwników non-premium!
+          </p>
+          <div
+            class="flex w-[100px] h-[100px] player-profile rounded-2xl! hover:bg-[var(--bg-light)]/40! hover:cursor-pointer"
+            @click="userStore.user?.mcid ? null : openChangeSkinModal()"
+          >
+            <SkinViewer v-if="userStore.user" :skin="skinUrl" />
+          </div>
+        </div>
+
         <div class="setting-group !w-full">
           <label>Zmiana emaila</label>
           <div class="flex gap-2 !w-full items-center">
@@ -530,5 +552,6 @@ onUnmounted(() => {
       </div>
     </div>
     <VerifyFilesModal ref="verifyFilesModalRef" />
+    <ChangeSkinModal ref="changeSkinModalRef" />
   </div>
 </template>
