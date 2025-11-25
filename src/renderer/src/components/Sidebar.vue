@@ -11,6 +11,8 @@ const router = useRouter()
 const playerName = computed(() => userStore.user?.nickname ?? 'Guest')
 const skinHeadUrl = ref<string | undefined>(undefined)
 
+const apiURL = import.meta.env.RENDERER_VITE_API_URL
+
 const handleLogout = async (): Promise<void> => {
   await userStore.logout()
   if (generalStore.currentState === 'minecraft-started') {
@@ -64,7 +66,7 @@ const fallbackHeadUrl = computed(() => `https://mineskin.eu/helm/${playerName.va
 
 async function loadCustomOrFallbackHead(): Promise<void> {
   const currentName = playerName.value
-  const customSkinSource = `https://api.pokemongogo.pl/v1/skins/image/${currentName}`
+  const customSkinSource = `${apiURL}/skins/image/${currentName}`
 
   try {
     LOGGER.log(`Próbuję wyciąć głowę z niestandardowego API dla gracza: ${currentName}`)

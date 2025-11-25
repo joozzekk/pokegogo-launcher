@@ -17,9 +17,11 @@ const state = reactive({
   type: 'classic'
 })
 
+const apiURL = import.meta.env.RENDERER_VITE_API_URL
+
 const skinUrl = computed({
   get: () => {
-    return state.skinUrl || `http://localhost:4000/skins/image/${userStore.user?.nickname}`
+    return state.skinUrl || `${apiURL}/skins/image/${userStore.user?.nickname}`
   },
   set: (value: string) => {
     state.skinUrl = value

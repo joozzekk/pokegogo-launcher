@@ -125,8 +125,9 @@ const handleChangePassword = async (): Promise<void> => {
   }
 }
 
+const apiURL = import.meta.env.RENDERER_VITE_API_URL
 const skinUrl = computed(() => {
-  return `http://localhost:4000/skins/image/${userStore.user?.nickname}`
+  return `${apiURL}/skins/image/${userStore.user?.nickname}`
 })
 
 watch(
