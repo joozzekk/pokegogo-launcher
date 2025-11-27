@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import fs from 'fs'
 import { posix } from 'path'
 import crypto from 'crypto'
@@ -5,6 +6,48 @@ import { Client } from 'basic-ftp'
 import { safeCd, useFTPService } from '../ftp-service'
 import { app, BrowserWindow } from 'electron'
 import Logger from 'electron-log'
+
+// --- TYPY I INTERFEJSY ---
+
+interface HashEntry {
+  hash: string
+  flag?: 'important' | 'ignore'
+}
+
+type HashMap = Record<string, HashEntry>
+
+interface SyncTask {
+  type: 'download'
+  remotePath: string
+  localPath: string
+  size: number
+  fileName: string
+}
+
+interface DeleteTask {
+  localPath: string
+}
+
+interface SyncPlan {
+  downloads: SyncTask[]
+  deletes: DeleteTask[]
+  totalSize: number
+}
+
+// Wrapper dla klienta FTP, aby obsługiwać reconnect przez referencję
+interface FtpState {
+  client: Client
+}
+
+interface GlobalProgress {
+  totalFiles: number
+  downloadedFiles: number
+  totalSize: number
+  downloadedSize: number
+  startTime: number
+}
+
+// --- FUNKCJE POMOCNICZE ---
 
 async function fileExists(filePath: string): Promise<boolean> {
   try {
@@ -25,391 +68,316 @@ async function getFileHash(filePath: string): Promise<string> {
   })
 }
 
-async function readHashesFile(
-  localDir: string
-): Promise<Record<string, { hash: string; flag?: 'important' | 'ignore' }>> {
-  const hashesFilePath = posix.join(localDir, 'hashes.txt')
-  try {
-    const data = await fs.promises.readFile(hashesFilePath, 'utf8')
-    const lines = data
-      .split('\n')
-      .map((line) => line.trim())
-      .filter(Boolean)
+/**
+ * Parsuje plik hashes.txt
+ */
+async function parseHashes(content: string): Promise<HashMap> {
+  const map: HashMap = {}
+  const lines = content.split('\n').filter((l) => l.trim())
 
-    const map: Record<string, { hash: string; flag?: 'important' | 'ignore' }> = {}
-    for (const line of lines) {
-      // Split by space but allow name to contain spaces. Format: <name> <hash> [flag]
-      const parts = line.split(' ')
-      if (parts.length < 2) continue
+  // POPRAWKA: Regex akceptuje 64 znaki hasha LUB słowo kluczowe 'dir' jako "hash".
+  // Grupa 2 ([a-fA-F0-9]{64}|dir) jest kluczową zmianą.
+  const regex = /^(.*?)\s+([a-fA-F0-9]{64}|dir)(?:\s+(important|ignore))?$/
 
-      let flag: 'important' | 'ignore' | undefined
-      let hash = parts[parts.length - 1]
-      let nameParts = parts.slice(0, parts.length - 1)
-
-      const last = parts[parts.length - 1]
-      if (last === 'important' || last === 'ignore') {
-        flag = last as 'important' | 'ignore'
-        if (parts.length < 3) continue
-        hash = parts[parts.length - 2]
-        nameParts = parts.slice(0, parts.length - 2)
+  for (const line of lines) {
+    const match = line.trim().match(regex)
+    if (match) {
+      const [, name, hash, flag] = match
+      map[name.trim()] = {
+        hash,
+        flag: flag as 'important' | 'ignore' | undefined
       }
-
-      const fileName = nameParts.join(' ').trim()
-      if (fileName && hash) map[fileName] = { hash, flag }
     }
-    return map
-  } catch {
-    return {}
   }
+  return map
 }
 
-// Zmodyfikowana struktura globalProgress
-interface GlobalProgress {
-  totalFiles: number
-  downloadedFiles: number
-  totalSize: number // Całkowity rozmiar wszystkich plików w bajtach
-  downloadedSize: number // Rozmiar pobranych plików w bajtach
-  startTime: number
-}
+// --- LOGIKA GŁÓWNA (FAZA 1: ANALIZA) ---
 
-interface DownloadItem {
-  remotePath: string
-  localPath: string
-  fileName: string
-  size: number
-}
-
-// Kompletna funkcja downloadAll
-async function downloadAll(
-  client: Client,
+/**
+ * FAZA 1: Skanowanie i budowanie planu
+ */
+async function analyzeDirectory(
+  state: FtpState,
   connect: () => Promise<Client>,
   remoteDir: string,
   localDir: string,
-  log: (data: string, isEnded?: boolean) => void,
   isFirstInstall: boolean,
   signal: AbortSignal,
-  globalProgress: GlobalProgress, // Nowy parametr
-  // ancestorHashes - map keyed by full remote path (posix) to allow
-  // honoring flags set in parent folders (e.g. parent hashes.txt containing "folder/file ...")
-  ancestorHashes: Record<string, { hash: string; flag?: 'important' | 'ignore' }> = {}
-): Promise<void> {
-  if (signal.aborted) {
-    return
-  }
+  ancestorHashes: HashMap = {},
+  isStrictFolder: boolean = false
+): Promise<SyncPlan> {
+  const plan: SyncPlan = { downloads: [], deletes: [], totalSize: 0 }
+
+  if (signal.aborted) return plan
 
   await fs.promises.mkdir(localDir, { recursive: true })
-  const changed = await safeCd(client, remoteDir)
-  if (!changed) return
 
-  // Pobieranie i wczytywanie pliku hashes.txt (bez zmian)
-  const localHashesFile = posix.join(localDir, 'hashes.txt')
-  let hasHashesFile = false
+  // 1. Pobranie i parsowanie hashes.txt
+  let currentDirHashes: HashMap = {}
+  const remoteHashesPath = posix.join(remoteDir, 'hashes.txt')
+
   try {
-    await client.downloadTo(localHashesFile, posix.join(remoteDir, 'hashes.txt'))
-    hasHashesFile = true
+    const localHashesPath = posix.join(localDir, 'hashes.txt')
+    await state.client.downloadTo(localHashesPath, remoteHashesPath)
+    const content = await fs.promises.readFile(localHashesPath, 'utf8')
+    currentDirHashes = await parseHashes(content)
   } catch {
-    Logger.log('PokeGoGo Launcher > Brak zdalnego hashes.txt, przyjmujemy pusty zestaw hashy')
-    hasHashesFile = false
+    // Brak hashes.txt - traktujemy jako pusty
   }
 
-  let localHashes: Record<string, { hash: string; flag?: 'important' | 'ignore' }> = {}
-  if (hasHashesFile) {
-    localHashes = await readHashesFile(localDir)
-  } else {
-    localHashes = {}
+  // Budujemy mapę hashy dla tego poziomu
+  const combinedHashes: HashMap = { ...ancestorHashes }
+  for (const [name, entry] of Object.entries(currentDirHashes)) {
+    const fullRemotePath = posix.join(remoteDir, name)
+    combinedHashes[fullRemotePath] = entry
   }
 
-  // Build a combined map keyed by full remote path so we can resolve entries
-  // defined in parent hashes.txt files (they may reference nested paths like "mods/x.jar").
-  let combinedHashes: Record<string, { hash: string; flag?: 'important' | 'ignore' }> = {}
-  // copy ancestor entries first (they are already keyed by remote path)
-  Object.assign(combinedHashes, ancestorHashes)
-  // then add local entries but keyed by their full remote path
-  for (const [name, v] of Object.entries(localHashes)) {
-    const fullRemoteKey = posix.join(remoteDir, name)
-    combinedHashes[fullRemoteKey] = v
-  }
+  // Jeśli to pierwsza instalacja, UKRYWAMY flagi 'ignore'.
+  const effectiveHashes = isFirstInstall ? {} : combinedHashes
 
-  // If this is the first install, ignore remote hashes and force downloading everything.
-  // Some deployments may include a hashes.txt but we still want to fetch all files
-  // on the initial installation (marker file absent).
-  if (isFirstInstall) {
-    hasHashesFile = false
-    combinedHashes = {}
-  }
-
+  // 2. Listing plików na serwerze
   let list
   try {
-    list = await client.list()
+    await safeCd(state.client, remoteDir)
+    list = await state.client.list()
   } catch {
-    // Attempt reconnect on socket closed or other connection errors
     try {
-      client = await connect()
-      await safeCd(client, remoteDir)
-      list = await client.list()
-    } catch (e: unknown) {
-      Logger.error('PokeGoGo Launcher > Failed to list directory ' + remoteDir + ': ' + String(e))
-      return
+      state.client = await connect()
+      await safeCd(state.client, remoteDir)
+      list = await state.client.list()
+    } catch (err) {
+      Logger.error(`Błąd listowania ${remoteDir}: ${err}`)
+      return plan
     }
   }
 
-  // Listy do przetworzenia
-  const itemsToProcess: DownloadItem[] = []
-  const dirsToRecurse: { remotePath: string; localPath: string }[] = []
+  const remoteFilesSet = new Set<string>()
 
-  // --- 1. ETAP: Zbieranie informacji o plikach ---
+  // 3. Przetwarzanie listy plików ZDALNYCH (co pobrać/zaktualizować)
   for (const file of list) {
-    if (signal.aborted) return
-    const remotePath = posix.join(remoteDir, file.name)
-    const localPath = posix.join(localDir, file.name)
+    if (signal.aborted) return plan
+    if (file.name === '.' || file.name === '..') continue
+
+    const itemRemotePath = posix.join(remoteDir, file.name)
+    const itemLocalPath = posix.join(localDir, file.name)
+
+    remoteFilesSet.add(file.name)
+
+    // Sprawdzamy flagi z pełnej mapy, aby wiedzieć, czy są 'important' lub 'ignore'.
+    const entry = effectiveHashes[itemRemotePath]
+    const currentEntry = combinedHashes[itemRemotePath]
+    const isEntryImportant = currentEntry?.flag === 'important'
+    const isEntryIgnored = currentEntry?.flag === 'ignore'
 
     if (file.isDirectory) {
-      // If hashes.txt is missing, default to legacy behaviour: treat folder as important
-      if (!isFirstInstall && hasHashesFile) {
-        // We should recurse into this directory only if at least one referenced
-        // important entry under this directory actually needs updating — i.e.
-        // the remote hash differs from the local file hash OR the local file is missing.
-        const dirRemotePath = posix.join(remoteDir, file.name)
+      let shouldRecurse = true
 
-        let shouldRecurse = false
-
-        const keys = Object.keys(combinedHashes).filter((k) => {
-          return k === dirRemotePath || k.startsWith(dirRemotePath + '/')
-        })
-
-        for (const k of keys) {
-          const entry = combinedHashes[k]
-          if (!entry || entry.flag !== 'important') continue
-
-          // skip directory placeholder entries (hash === 'dir')
-          if (entry.hash === 'dir') {
-            // If parent folder itself is marked important:
-            // - If there are nested hash entries under this dir, we'll evaluate them
-            //   later in this loop (they appear as keys starting with dirRemotePath + '/').
-            // - If there are NO nested entries, treat the directory itself as needing
-            //   download/recurse (force update) when it's marked important.
-            const nested = Object.keys(combinedHashes).some((kk) =>
-              kk.startsWith(dirRemotePath + '/')
-            )
-            if (!nested) {
-              // No nested entries -> force recurse (download whole dir)
-              shouldRecurse = true
-              break
-            }
-
-            // If local directory missing -> we need to recurse
-            try {
-              const localStat = await fs.promises.stat(posix.join(localDir, file.name))
-              if (!localStat.isDirectory()) {
-                shouldRecurse = true
-                break
-              }
-            } catch {
-              shouldRecurse = true
-              break
-            }
-
-            // Otherwise there are nested entries and local directory exists; continue
-            // to evaluate nested entries below.
-            continue
-          }
-
-          // For nested file entries, map the remote key to local path and compare hashes
-          const relative = k.substring(remoteDir.length + 1) // remove remoteDir + '/'
-          const candidateLocalPath = posix.join(localDir, relative)
-          try {
-            await fs.promises.access(candidateLocalPath)
-            const localHash = await getFileHash(candidateLocalPath)
-            if (localHash !== entry.hash) {
-              shouldRecurse = true
-              break
-            }
-          } catch {
-            // local file missing or unreadable -> needs download
-            shouldRecurse = true
-            break
-          }
+      // Warunek optymalizacyjny dla kolejnych aktualizacji
+      if (!isFirstInstall) {
+        // Jeśli nie jest to pierwsza instalacja, wchodzimy TYLKO do folderów 'important'
+        if (isEntryImportant) {
+          shouldRecurse = true
+        } else if (isEntryIgnored) {
+          // Folder ignorowany jest zawsze pomijany
+          shouldRecurse = false
+        } else {
+          // Folder nie jest ani 'important', ani 'ignore' -> OPTYMALIZUJEMY I POMIJAMY SKANOWANIE
+          shouldRecurse = false
+          Logger.log(`[OPT] Pomijam skanowanie folderu: ${itemRemotePath}`)
         }
-
-        if (!shouldRecurse) continue
       }
 
-      dirsToRecurse.push({ remotePath, localPath })
+      if (shouldRecurse) {
+        // Decyzja o "Strict Mode" dla podkatalogu.
+        const nextIsStrict = isStrictFolder || isEntryImportant
+
+        const subPlan = await analyzeDirectory(
+          state,
+          connect,
+          itemRemotePath,
+          itemLocalPath,
+          isFirstInstall,
+          signal,
+          combinedHashes,
+          nextIsStrict
+        )
+
+        plan.downloads.push(...subPlan.downloads)
+        plan.deletes.push(...subPlan.deletes)
+        plan.totalSize += subPlan.totalSize
+      }
     } else if (file.isFile) {
-      if (file.name.endsWith('.sha256') || file.name === 'hashes.txt') continue
+      if (file.name === 'hashes.txt' || file.name.endsWith('.sha256')) continue
 
-      // If hashes.txt is present and not first install, skip files explicitly marked as 'ignore'.
-      // Missing flag should NOT be treated as 'ignore' — only explicit 'ignore' skips on updates.
-      if (!isFirstInstall && hasHashesFile) {
-        const fileRemotePath = posix.join(remoteDir, file.name)
-        const entry = combinedHashes[fileRemotePath]
-        if (entry?.flag === 'ignore') continue
-      }
+      // Jeśli plik jest ignorowany (np. options.txt po instalacji), pomijamy
+      if (isEntryIgnored && !isFirstInstall) continue
 
-      let downloadFile = true
+      let needDownload = true
 
-      // Sprawdzenie hasha lub istnienia pliku
-      const fileRemotePath = posix.join(remoteDir, file.name)
-      const entry = combinedHashes[fileRemotePath]
-      if (entry) {
-        // If entry is present, compare hashes. For 'important' files we must download
-        // only when hashes differ (or local file missing). For other entries the same
-        // comparison applies: skip when hashes match, download otherwise.
-        try {
-          const localHash = await getFileHash(localPath)
+      // Sprawdzanie hasha (jeśli dostępny i nie jest to pierwsza instalacja)
+      if (entry && !isFirstInstall) {
+        const localExists = await fileExists(itemLocalPath)
+        if (localExists) {
+          const localHash = await getFileHash(itemLocalPath)
           if (localHash === entry.hash) {
-            downloadFile = false
-            log(`Plik ${file.name} jest aktualny, pomijam pobieranie.`) // Opcjonalny log
-          } else {
-            downloadFile = true
+            needDownload = false
           }
-        } catch {
-          // local missing or unreadable -> download
-          downloadFile = true
         }
-      } else {
-        try {
-          await fs.promises.access(localPath)
-          // Plik istnieje lokalnie, ale nie ma go w hashu - zostanie usunięty na końcu
-          downloadFile = false
-          log(`Plik ${file.name} istnieje lokalnie (brak hasha), pomijam pobieranie.`) // Opcjonalny log
-        } catch {
-          downloadFile = true // Nie istnieje lokalnie, pobieramy
+      } else if (!isFirstInstall) {
+        // Plik bez hasha w spisie. Jeśli istnieje lokalnie, zostawiamy.
+        if (await fileExists(itemLocalPath)) {
+          needDownload = false
         }
       }
 
-      if (downloadFile) {
-        itemsToProcess.push({
-          remotePath,
-          localPath,
+      if (needDownload) {
+        plan.downloads.push({
+          type: 'download',
           fileName: file.name,
+          localPath: itemLocalPath,
+          remotePath: itemRemotePath,
           size: file.size
         })
-        globalProgress.totalFiles++ // Zliczanie globalne
-        globalProgress.totalSize += file.size // Sumowanie rozmiaru globalnie
+        plan.totalSize += file.size
       }
     }
   }
 
-  // Jeśli to pierwsze wywołanie i mamy co pobierać, startujemy zegar
-  if (globalProgress.startTime === 0 && globalProgress.totalFiles > 0) {
-    globalProgress.startTime = Date.now()
-  }
+  // 4. CLEANUP - Usuwanie nadmiarowych plików (Cheaty, stare mody)
+  if (!isFirstInstall) {
+    try {
+      const localFiles = await fs.promises.readdir(localDir, { withFileTypes: true })
 
-  // --- 2. ETAP: Pobieranie plików ---
-  for (const item of itemsToProcess) {
-    if (signal.aborted) return
+      for (const localDirent of localFiles) {
+        if (!localDirent.isFile()) continue
+        const name = localDirent.name
+        if (name === 'hashes.txt') continue
 
-    // Ustawiamy tracker PRZED wywołaniem downloadTo
-    client.trackProgress((info) => {
-      // info.bytes -> bajty pobrane dla bieżącego pliku
-      const totalElapsedMs = Date.now() - globalProgress.startTime
+        const fullRemotePath = posix.join(remoteDir, name)
+        const entryInHashes = combinedHashes[fullRemotePath]
 
-      // Całkowita pobrana kwota = (to co pobrano do tej pory) + (postęp bieżącego pliku)
-      const totalDownloadedNow = globalProgress.downloadedSize + info.bytes
+        // 1. Jeśli plik ma flagę 'ignore' -> NIE USUWAĆ.
+        if (entryInHashes?.flag === 'ignore') continue
 
-      let remainingTime = 'Oszacowywanie...'
-
-      if (totalElapsedMs > 1000 && globalProgress.totalSize > 0) {
-        const averageSpeedBps = totalDownloadedNow / (totalElapsedMs / 1000)
-
-        if (averageSpeedBps > 0) {
-          const remainingSize = globalProgress.totalSize - totalDownloadedNow
-          const remainingSeconds = remainingSize / averageSpeedBps
-
-          const hours = Math.floor(remainingSeconds / 3600)
-          const minutes = Math.floor((remainingSeconds % 3600) / 60)
-          const seconds = Math.floor(remainingSeconds % 60)
-
-          const timeParts: string[] = []
-          if (hours > 0) timeParts.push(`${hours}g`)
-          if (minutes > 0) timeParts.push(`${minutes}m`)
-          if (seconds >= 0) timeParts.push(`${seconds}s`)
-
-          remainingTime = timeParts.join(' ')
-        }
-      }
-
-      const globalProgressPercent =
-        globalProgress.totalSize > 0
-          ? ((totalDownloadedNow / globalProgress.totalSize) * 100).toFixed(0)
-          : '0'
-
-      const logMessage = `Pobieranie: (${globalProgress.downloadedFiles + 1}/${globalProgress.totalFiles}) - ${globalProgressPercent}% (Pozostało: ${remainingTime})`
-      log(logMessage)
-    })
-
-    // Uruchamiamy pobieranie - z retry przy zamkniętym socketcie
-    let downloaded = false
-    for (let attempt = 0; attempt < 2 && !downloaded; attempt++) {
-      try {
-        await client.downloadTo(item.localPath, item.remotePath)
-        downloaded = true
-      } catch (err: unknown) {
-        const msg = String((err as { message?: unknown })?.message ?? err)
-        Logger.warn('PokeGoGo Launcher > download error: ' + msg)
-        // If socket closed, try reconnect once
-        if (msg.toLowerCase().includes('socket is closed') && attempt === 0) {
-          try {
-            client = await connect()
-            await safeCd(client, remoteDir)
-            // continue to retry
-            continue
-          } catch (reconErr) {
-            Logger.error('PokeGoGo Launcher > Reconnect failed: ' + String(reconErr))
-            throw reconErr
+        // 2. Jeśli pliku NIE MA na liście serwera:
+        if (!remoteFilesSet.has(name)) {
+          // Usuwamy go TYLKO JEŚLI jesteśmy w folderze "Strict"
+          if (isStrictFolder) {
+            plan.deletes.push({ localPath: posix.join(localDir, name) })
+            Logger.log(`[CLEANUP] Usunięto nadmiarowy plik: ${posix.join(localDir, name)}`)
           }
         }
-        throw err
       }
+    } catch (e) {
+      Logger.warn(`Błąd cleanupu w ${localDir}: ${e}`)
     }
+  }
 
-    // Wyłączamy tracker po zakończeniu pobierania pliku
+  return plan
+}
+
+// --- LOGIKA GŁÓWNA (FAZA 2: WYKONANIE) ---
+
+/**
+ * FAZA 2: Wykonanie (Pobieranie i usuwanie)
+ */
+async function executeSyncPlan(
+  state: FtpState,
+  connect: () => Promise<Client>,
+  plan: SyncPlan,
+  log: (msg: string) => void,
+  signal: AbortSignal,
+  globalProgress: GlobalProgress
+): Promise<void> {
+  globalProgress.totalFiles = plan.downloads.length
+  globalProgress.totalSize = plan.totalSize
+  globalProgress.startTime = Date.now()
+
+  // 1. Usuwanie zbędnych plików
+  log(`Usuwanie ${plan.deletes.length} zbędnych plików...`)
+  for (const delTask of plan.deletes) {
+    if (signal.aborted) return
     try {
-      client.trackProgress(undefined)
+      await fs.promises.unlink(delTask.localPath)
     } catch {
       /* ignore */
     }
-
-    // Aktualizujemy globalny postęp *po* pomyślnym pobraniu pliku
-    globalProgress.downloadedFiles++
-    globalProgress.downloadedSize += item.size
   }
 
-  // --- 3. ETAP: Rekurencja dla katalogów ---
-  for (const dir of dirsToRecurse) {
-    await downloadAll(
-      client,
-      connect,
-      dir.remotePath,
-      dir.localPath,
-      log,
-      isFirstInstall,
-      signal,
-      globalProgress, // Przekazanie stanu globalnego
-      combinedHashes // Przekazanie mapy ancestorów (zawierającej pełne remote-path klucze)
-    )
-  }
+  // 2. Pobieranie plików
+  for (let i = 0; i < plan.downloads.length; i++) {
+    if (signal.aborted) return
+    const task = plan.downloads[i]
 
-  // --- 4. ETAP: Usuwanie lokalnych plików (logika z oryginalnego kodu) ---
-  const dirents = await fs.promises.readdir(localDir, { withFileTypes: true })
+    // Callback do paska postępu
+    state.client.trackProgress((info) => {
+      const currentSessionBytes = info.bytes
+      const totalDownloadedNow = globalProgress.downloadedSize + currentSessionBytes
 
-  if (hasHashesFile) {
-    for (const dirent of dirents) {
-      if (!dirent.isFile()) continue
+      // Obliczanie czasu
+      const elapsed = Date.now() - globalProgress.startTime
+      let remainingText = 'Oszacowywanie...'
 
-      const localFile = dirent.name
+      if (elapsed > 1000 && totalDownloadedNow > 0) {
+        const speed = totalDownloadedNow / elapsed // bytes per ms
+        const remainingBytes = globalProgress.totalSize - totalDownloadedNow
+        const remainingMs = remainingBytes / speed
 
-      if (!localHashes[localFile]) {
-        try {
-          await fs.promises.unlink(posix.join(localDir, localFile))
-        } catch (err) {
-          Logger.log(`PokeGoGo Launcher > Błąd podczas usuwania pliku ${localFile}: ${err}`)
+        const sec = Math.floor((remainingMs / 1000) % 60)
+        const min = Math.floor((remainingMs / (1000 * 60)) % 60)
+
+        const timeParts: string[] = []
+        if (min > 0) timeParts.push(`${min}m`)
+        if (sec >= 0) timeParts.push(`${sec}s`)
+        remainingText = timeParts.join(' ')
+      }
+
+      const percent =
+        globalProgress.totalSize > 0
+          ? Math.floor((totalDownloadedNow / globalProgress.totalSize) * 100)
+          : 100
+
+      log(
+        `Pobieranie (${i + 1}/${globalProgress.totalFiles}) ${percent}% (Pozostało: ${remainingText})`
+      )
+    })
+
+    // Próba pobrania z retry
+    let success = false
+    for (let attempt = 0; attempt < 3 && !success; attempt++) {
+      if (signal.aborted) return
+      try {
+        await state.client.downloadTo(task.localPath, task.remotePath)
+        success = true
+      } catch (err: any) {
+        const msg = err.message || String(err)
+        Logger.warn(`Błąd pobierania ${task.fileName}: ${msg}. Próba ${attempt + 1}`)
+
+        if (msg.toLowerCase().includes('socket') || msg.toLowerCase().includes('closed')) {
+          try {
+            state.client = await connect()
+          } catch (reconErr) {
+            Logger.error(`Krytyczny błąd reconnectu: ${reconErr}`)
+            throw reconErr
+          }
+        } else {
+          await new Promise((r) => setTimeout(r, 1000))
         }
       }
     }
+
+    if (!success) {
+      throw new Error(`Nie udało się pobrać pliku ${task.fileName} po 3 próbach.`)
+    }
+
+    state.client.trackProgress(undefined)
+    globalProgress.downloadedSize += task.size
+    globalProgress.downloadedFiles++
   }
 }
+
+// --- Główna funkcja eksportowana ---
 
 export async function copyMCFiles(
   isDev: boolean,
@@ -420,19 +388,20 @@ export async function copyMCFiles(
   const ftp = useFTPService()
   const localRoot = posix.join(app.getPath('userData'), 'mcfiles')
   const markerFile = posix.join(app.getPath('userData'), '.mcfiles_installed')
-  // const importantFiles = ['mods', 'versions', 'resourcepacks', 'datapacks', 'config', 'fancymenu']
-  // const ignoreFiles = ['options']
 
-  let client: Client | undefined
+  const logToUI = (msg: string, isEnded: boolean = false): void => {
+    mainWindow.webContents.send(logHandlerName, msg, isEnded)
+  }
+
+  let state: FtpState | undefined
   try {
     const isFirstInstall = !(await fileExists(markerFile))
-    // Establish a fresh client instance and keep its reference locally.
-    client = await ftp.connect()
 
-    const pwd = await client.pwd()
-    const remoteURL = posix.join(pwd, isDev ? 'dev-mc' : 'mc')
+    state = { client: await ftp.connect() }
 
-    // Inicjalizacja stanu globalnego
+    const pwd = await state.client.pwd()
+    const remoteRoot = posix.join(pwd, isDev ? 'dev-mc' : 'mc')
+
     const globalProgress: GlobalProgress = {
       totalFiles: 0,
       downloadedFiles: 0,
@@ -441,38 +410,49 @@ export async function copyMCFiles(
       startTime: 0
     }
 
-    await downloadAll(
-      client,
+    logToUI('Weryfikacja plików...')
+
+    // KROK 1: Analiza
+    const plan = await analyzeDirectory(
+      state,
       ftp.connect,
-      remoteURL,
+      remoteRoot,
       localRoot,
-      (data: string) => {
-        mainWindow.webContents.send(logHandlerName, data)
-      },
       isFirstInstall,
       signal,
-      globalProgress // Przekazanie stanu
+      {},
+      false
     )
 
-    // ... (pozostała część funkcji)
-    if (signal.aborted) {
-      return 'stop'
+    if (signal.aborted) return 'stop'
+
+    Logger.log(
+      `Plan: ${plan.downloads.length} down, ${plan.deletes.length} del. Size: ${(plan.totalSize / 1024 / 1024).toFixed(2)} MB`
+    )
+
+    // KROK 2: Wykonanie
+    if (plan.downloads.length > 0 || plan.deletes.length > 0) {
+      await executeSyncPlan(state, ftp.connect, plan, logToUI, signal, globalProgress)
+    } else {
+      logToUI('Pliki są aktualne.')
     }
+
+    if (signal.aborted) return 'stop'
 
     if (isFirstInstall) {
       await fs.promises.writeFile(markerFile, 'installed')
-      Logger.log('PokeGoGo Launcher > Created marker file')
+      Logger.log('PokeGoGo Launcher > Utworzono plik markera instalacji')
     }
 
-    mainWindow.webContents.send(logHandlerName, '', true)
-
+    logToUI('', true)
     return 'done'
   } catch (err) {
     Logger.error(err)
+    logToUI(`Błąd aktualizacji: ${err}`, true)
   } finally {
     try {
-      if (client) {
-        client.close()
+      if (state) {
+        state.client.close()
       }
     } catch {
       /* ignore */
