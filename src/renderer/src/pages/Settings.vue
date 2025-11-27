@@ -170,6 +170,10 @@ const openVerifyFilesModal = (): void => {
 
 const changeSkinModalRef = ref()
 const openChangeSkinModal = (): void => {
+  if (!userStore.user?.accountType || userStore.user?.accountType === 'microsoft') {
+    showToast('Zmiana skina jest dostępna tylko dla użytkowników non-premium!', 'error')
+    return
+  }
   changeSkinModalRef.value?.openModal()
 }
 
@@ -417,16 +421,16 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div class="setting-group mb-2!">
+        <div v-if="userStore.user" class="setting-group mb-2!">
           <label>Customowy skin</label>
           <p class="text-[var(--text-secondary)] mb-2 text-[0.7rem]">
             Zmiana skina jest możliwa tylko dla użytkwników non-premium!
           </p>
           <div
             class="flex w-[100px] h-[100px] player-profile rounded-2xl! hover:bg-[var(--bg-light)]/40! hover:cursor-pointer"
-            @click="userStore.user?.mcid ? null : openChangeSkinModal()"
+            @click="openChangeSkinModal()"
           >
-            <SkinViewer v-if="userStore.user" :skin="skinUrl" />
+            <SkinViewer :skin="skinUrl" />
           </div>
         </div>
 
