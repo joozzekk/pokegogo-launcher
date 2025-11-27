@@ -85,7 +85,8 @@ const handleSubmit = async (): Promise<void> => {
   } catch (err) {
     const axiosError = err as AxiosError
 
-    showToast(axiosError.response?.data?.message, 'error')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    showToast((axiosError.response?.data as any)?.message, 'error')
     return
   }
 
