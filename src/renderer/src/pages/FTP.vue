@@ -249,8 +249,12 @@ onMounted(async () => {
 
 <template>
   <div
-    class="relative flex flex-col w-full text-[var(--text-secondary)] max-h-full overflow-y-auto rounded-xl border-dashed border-1 border-[var(--border)]"
-    :class="{ 'border bg-[var(--bg-light)]/30': dragActive }"
+    class="relative flex flex-col w-full text-[var(--text-secondary)] max-h-full rounded-xl border-dashed border-1 border-[var(--border)]"
+    :class="{
+      'border bg-[var(--bg-light)]/30': dragActive,
+      'overflow-y-hidden': loadingStatuses,
+      'overflow-y-auto': !loadingStatuses
+    }"
     @dragenter.prevent="onDragEnter"
     @dragover.prevent="onDragOver"
     @dragleave.prevent="onDragLeave"

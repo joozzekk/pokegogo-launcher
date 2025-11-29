@@ -191,13 +191,7 @@ defineExpose({
                 @click="fileInputRef?.click()"
               >
                 <img
-                  :src="
-                    preview?.length
-                      ? preview
-                      : state.photo.includes('https://')
-                        ? state.photo
-                        : `${url}/events/image/${uuid}`
-                  "
+                  :src="preview?.length ? preview : `${url}/events/image/${uuid}`"
                   class="h-[4rem]"
                   @dragstart.prevent="null"
                 />

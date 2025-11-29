@@ -108,16 +108,32 @@ export const useFTP = (
           )
           const hashes = hashesRes?.entries ?? {}
 
+          let fileCount = 0 // Dodanie licznika plików
+
           for (const item of list) {
             const childPath = dirPath.length ? `${dirPath}/${item.name}` : item.name
             if (item.isDirectory) {
               const ok = await checkDir(childPath)
               if (!ok) return false
             } else {
+              fileCount++ // Zliczaj tylko pliki
               const entry = hashes[item.name]
               if (!entry || entry.flag !== 'important') return false
             }
           }
+
+          // --- POPRAWKA ---
+          // Jeśli pętla się wykonała i nie zwróciła 'false', ale nie znaleziono ŻADNYCH PLIKÓW
+          // (czyli folder był pusty lub zawierał tylko puste podfoldery), zwracamy false.
+          // Folder 'important' musi mieć co najmniej jeden ważny plik.
+          if (fileCount === 0) {
+            // Uznajemy, że jeśli nie ma plików, to folder nie jest 'all important'
+            // (chyba, że ten folder jest katalogiem bazowym, ale dla pustego folderu to również false)
+            return false
+          }
+          // ------------------
+
+          // Jeśli dotąd doszliśmy, folder ma pliki i wszystkie są "important".
           return true
         } catch {
           return false
