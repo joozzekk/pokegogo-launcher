@@ -84,7 +84,7 @@ const addEvent = async (): Promise<void> => {
   if (preview.value)
     uploadResult = await window.electron.ipcRenderer?.invoke(
       'ftp:upload-file',
-      'items',
+      'events',
       await photoFile.value.arrayBuffer(),
       photoFile.value.name
     )
@@ -110,7 +110,7 @@ const editEvent = async (): Promise<void> => {
   if (preview.value)
     await window.electron.ipcRenderer?.invoke(
       'ftp:upload-file',
-      'items',
+      'events',
       await photoFile.value.arrayBuffer(),
       photoFile.value.name
     )

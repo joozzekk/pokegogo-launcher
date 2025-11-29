@@ -89,28 +89,6 @@ export const useFTP = (
     await getFolderContent(name)
   }
 
-  const listFilesRecursive = async (folderPath: string): Promise<any[]> => {
-    const results: any[] = []
-    try {
-      const list = await window.electron.ipcRenderer?.invoke('ftp:list-files', folderPath)
-      if (!list) return results
-
-      for (const item of list) {
-        const childPath = folderPath.length ? `${folderPath}/${item.name}` : item.name
-        if (item.isDirectory) {
-          results.push({ path: childPath, isDirectory: true })
-          const nested = await listFilesRecursive(childPath)
-          results.push(...nested)
-        } else {
-          results.push({ path: childPath, isDirectory: false, name: item.name })
-        }
-      }
-    } catch (err) {
-      // ignore
-    }
-    return results
-  }
-
   const isFolderAllImportant = async (
     folderName: string,
     manageLoading = true

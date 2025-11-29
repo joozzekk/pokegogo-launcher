@@ -1,88 +1,132 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import ftp, { type Client } from 'basic-ftp'
+import Client from 'ssh2-sftp-client'
 import { createHash } from 'crypto'
 import { BrowserWindow, ipcMain } from 'electron'
 import { readFile, unlink, writeFile } from 'fs/promises'
 import { basename, dirname, join, posix } from 'path'
 
-// Helper to build remote FTP paths using POSIX separators
 const remoteJoin = (...parts: string[]): string => posix.join(...parts.filter(Boolean))
 
-export const safeCd = async (client: Client, dir: string): Promise<boolean> => {
-  try {
-    await client.cd(dir)
-    return true
-  } catch (e) {
-    console.error(`Nie można wejść do katalogu: ${dir}`, e)
-    return false
-  }
-}
+const isSftpDir = (type: string | undefined): boolean => type === 'd'
+const isSftpFile = (type: string | undefined): boolean => type === '-'
 
 export const useFTPService = (): {
-  client: Client
+  client: Client | null
   connect: () => Promise<Client>
   createHandlers: (mainWindow: BrowserWindow) => void
 } => {
-  let client: Client = new ftp.Client(1000 * 120)
+  let clientInstance: Client | null = null
+  let isConnecting = false
 
   const connect = async (): Promise<Client> => {
-    const c = new ftp.Client(1000 * 120)
-    await c.access({
-      host: '57.128.211.104',
-      user: 'ftpclient',
-      password: 'PokeAdmin321b!#',
-      secure: false
-    })
+    // 1. Sprawdzenie, czy trwa łączenie
+    if (isConnecting) {
+      // ... (logika oczekiwania na połączenie)
+      let attempts = 0
+      while (isConnecting && attempts < 50) {
+        await new Promise((r) => setTimeout(r, 100))
+        if (clientInstance) return clientInstance
+        attempts++
+      }
+    }
 
-    c.ftp.encoding = 'utf-8'
-    c.ftp.verbose = true
-    client = c
-    return c
+    // 2. Jeśli instancja istnieje, spróbujmy ją zweryfikować
+    if (clientInstance) {
+      try {
+        // Weryfikacja: Wykonaj lekką operację na serwerze (cwd)
+        await clientInstance.cwd()
+        return clientInstance
+      } catch (e: any) {
+        console.warn(
+          'SFTP: Weryfikacja połączenia nie powiodła się. Wymuszam reconnect.',
+          e.message
+        )
+        try {
+          // Koniec starego klienta (może się nie udać, ale próbujemy)
+          await clientInstance.end()
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+
+    // 3. Ustanowienie nowego połączenia
+    isConnecting = true
+    const c = new Client()
+
+    try {
+      await c.connect({
+        host: '57.128.211.104',
+        port: 22,
+        username: 'ftpclient',
+        password: 'PokeAdmin321b!#',
+        ident: 'utf8',
+        readyTimeout: 30000, // Dłuższy czas na handshake
+        keepaliveInterval: 2000, // Ping co 2s (zamiast 5s)
+        keepaliveCountMax: 5 // Więcej prób zanim uznamy zgon
+      })
+
+      c.on('close', () => {
+        console.log('SFTP: Connection closed')
+        clientInstance = null
+      })
+
+      c.on('end', () => {
+        console.log('SFTP: Connection ended')
+        clientInstance = null
+      })
+
+      c.on('error', (err) => {
+        console.error('SFTP: Connection error', err)
+        clientInstance = null
+      })
+
+      clientInstance = c
+      return c
+    } catch (e) {
+      clientInstance = null
+      throw e
+    } finally {
+      isConnecting = false
+    }
   }
 
   const createHandlers = (mainWindow: BrowserWindow): void => {
     ipcMain.handle('ftp:create-folder', async (_, folder, newFolder: string) => {
       const client = await connect()
-      const pwd = await client.pwd()
-      const remoteURL = remoteJoin(pwd, folder)
+      const pwd = await client.cwd()
+      const remoteURL = remoteJoin(pwd, folder, newFolder)
 
-      await client.ensureDir(remoteURL + `${remoteURL.length ? `/${newFolder}` : newFolder}`)
-      client.close()
+      try {
+        await client.mkdir(remoteURL, true)
+      } catch (e: any) {
+        // Ignorujemy błąd jeśli folder już istnieje
+        if (e.code !== 4 && e.code !== 'EEXIST') throw e
+      }
+
       return true
     })
 
     ipcMain.handle('ftp:list-files', async (_, folder) => {
       const client = await connect()
-      const pwd = await client.pwd()
-      const remoteURL = pwd + `/${folder}`
+      const pwd = await client.cwd()
+      const remoteURL = remoteJoin(pwd, folder)
 
       const list = await client.list(remoteURL)
 
-      const listWithModDates = await Promise.all(
-        list.map(async (file) => {
-          let lastModifiedAt: Date | null = null
+      const mappedList = list.map((file) => {
+        const lastModifiedAt = file.modifyTime ? new Date(file.modifyTime) : null
 
-          if (file.isFile) {
-            try {
-              const fileRemotePath = remoteJoin(remoteURL, file.name)
-              lastModifiedAt = await client.lastMod(fileRemotePath)
-            } catch {
-              lastModifiedAt = null
-            }
-          }
+        return {
+          name: file.name,
+          size: file.size,
+          isDirectory: isSftpDir(file.type),
+          isFile: isSftpFile(file.type),
+          lastModifiedAt
+        }
+      })
 
-          return {
-            ...file,
-            isDirectory: file.isDirectory,
-            isFile: file.isFile,
-            lastModifiedAt
-          }
-        })
-      )
-
-      client.close()
-
-      return listWithModDates
+      return mappedList
     })
 
     async function computeHash(buffer: ArrayBuffer): Promise<string> {
@@ -100,7 +144,6 @@ export const useFTPService = (): {
         .map((l) => l.trim())
         .filter(Boolean)
         .forEach((line) => {
-          // name can contain spaces. Format: <name> <hash> [flag]
           const parts = line.split(' ')
           if (parts.length < 2) return
           const last = parts[parts.length - 1]
@@ -135,26 +178,25 @@ export const useFTPService = (): {
       async (_, folder: string, buffer: ArrayBuffer, fileName: string) => {
         const tempFilePath = join(process.cwd(), 'tmp', fileName)
         await writeFile(tempFilePath, Buffer.from(buffer))
-        const client = await connect()
 
-        await client.uploadFrom(tempFilePath, `${folder}${folder.length ? '/' : ''}${fileName}`)
+        const client = await connect()
+        const remotePath = remoteJoin(folder, fileName)
+
+        await client.put(tempFilePath, remotePath)
 
         const tmpHashesPath = join(process.cwd(), 'tmp', 'hashes.txt')
         let remoteMissing = false
         const hashesMap: Record<string, { hash: string; flag?: 'important' | 'ignore' }> = {}
 
         try {
-          await client.downloadTo(tmpHashesPath, remoteJoin(folder, 'hashes.txt'))
+          await client.get(remoteJoin(folder, 'hashes.txt'), tmpHashesPath)
           const data = await readFile(tmpHashesPath, 'utf-8')
           Object.assign(hashesMap, parseHashesContent(data))
         } catch {
-          // hashes.txt may not exist
           remoteMissing = true
         }
 
         const fileHash = await computeHash(buffer)
-
-        // when remote hashes file doesn't exist, new entries should be marked important by default
         const defaultFlag: 'important' | 'ignore' = remoteMissing ? 'important' : 'ignore'
 
         hashesMap[fileName] = { hash: fileHash, flag: hashesMap[fileName]?.flag ?? defaultFlag }
@@ -162,7 +204,7 @@ export const useFTPService = (): {
         const hashesContent = serializeHashes(hashesMap)
         await writeFile(tmpHashesPath, hashesContent)
 
-        await client.uploadFrom(tmpHashesPath, remoteJoin(folder, 'hashes.txt'))
+        await client.put(tmpHashesPath, remoteJoin(folder, 'hashes.txt'))
 
         await unlink(tempFilePath)
         try {
@@ -170,7 +212,6 @@ export const useFTPService = (): {
         } catch {
           /* ignore */
         }
-        client.close()
 
         return true
       }
@@ -195,12 +236,12 @@ export const useFTPService = (): {
       remoteDir: string,
       localTempPath: string
     ): Promise<Record<string, { hash: string; flag?: 'important' | 'ignore' }>> {
+      const client = await connect()
       const hashes: Record<string, { hash: string; flag?: 'important' | 'ignore' }> = {}
       const remoteHashesPath = remoteJoin(remoteDir, 'hashes.txt')
 
       try {
-        await client.downloadTo(localTempPath, remoteHashesPath)
-
+        await client.get(remoteHashesPath, localTempPath)
         const data = await readFile(localTempPath, 'utf-8')
         Object.assign(hashes, parseHashesContent(data))
         await unlink(localTempPath)
@@ -208,7 +249,7 @@ export const useFTPService = (): {
         try {
           await unlink(localTempPath)
         } catch {
-          /* Ignoruj błąd usuwania */
+          /* ignore */
         }
       }
       return hashes
@@ -223,12 +264,10 @@ export const useFTPService = (): {
 
         try {
           const client = await connect()
-
-          const pwd = await client.pwd()
-          const baseRemoteDir = join(pwd, folder).replace(/\\/g, '/')
+          const pwd = await client.cwd()
+          const baseRemoteDir = remoteJoin(pwd, folder)
 
           const filesByDir = groupFilesByDirectory(files)
-
           let fileIndex = currentFile
 
           for (const [relativeDir, filesInDir] of filesByDir.entries()) {
@@ -236,33 +275,31 @@ export const useFTPService = (): {
               relativeDir === '.' ? baseRemoteDir : remoteJoin(baseRemoteDir, relativeDir)
 
             try {
-              await client.ensureDir(currentRemoteDir)
-              await client.cd(currentRemoteDir)
+              await client.mkdir(currentRemoteDir, true)
             } catch (e: any) {
-              throw new Error(`Failed to cd/ensureDir ${currentRemoteDir}. Details: ${e.message}`)
+              if (e.code !== 4 && e.code !== 'EEXIST') {
+                console.error(`Error creating dir ${currentRemoteDir}`, e)
+              }
             }
 
             const hashes = await loadRemoteHashes(currentRemoteDir, localHashesPath)
-
             let hashesChanged = false
 
             for (const file of filesInDir) {
               const { path: normalizedPath, buffer } = file
               const fileName = basename(normalizedPath)
-
               const fileHash = await computeHash(buffer)
 
               await writeFile(localUploadTempPath, Buffer.from(buffer))
 
               try {
-                await client.uploadFrom(localUploadTempPath, fileName)
+                await client.put(localUploadTempPath, remoteJoin(currentRemoteDir, fileName))
                 mainWindow.webContents.send('ftp:upload-folder-progress', ++fileIndex)
               } catch (e) {
                 await unlink(localUploadTempPath)
                 throw e
               }
 
-              // preserve existing flag or default to ignore
               hashes[fileName] = { hash: fileHash, flag: hashes[fileName]?.flag ?? 'ignore' }
               hashesChanged = true
 
@@ -271,33 +308,24 @@ export const useFTPService = (): {
 
             if (hashesChanged) {
               const hashesContent = serializeHashes(hashes)
-
               await writeFile(localHashesPath, hashesContent)
-              await client.uploadFrom(localHashesPath, 'hashes.txt')
+              await client.put(localHashesPath, remoteJoin(currentRemoteDir, 'hashes.txt'))
               await unlink(localHashesPath)
             }
           }
 
-          client.close()
           return true
         } catch (error) {
           try {
-            client.close()
-          } catch {
-            /* Ignoruj */
-          }
-
-          try {
             await unlink(localHashesPath)
           } catch {
-            /* Ignoruj */
+            /* ignore */
           }
           try {
             await unlink(localUploadTempPath)
           } catch {
-            /* Ignoruj */
+            /* ignore */
           }
-
           throw error
         }
       }
@@ -307,175 +335,117 @@ export const useFTPService = (): {
       'ftp:remove-file',
       async (event, folder: string, fileName: string, operationId?: string) => {
         const client = await connect()
+        const fullPath = remoteJoin(folder, fileName)
 
-        const fullPath = posix.join(folder, fileName)
-
-        // Count total items to delete (files + directories)
         const countItems = async (ftpPath: string): Promise<number> => {
           let total = 0
           try {
             const list = await client.list(ftpPath)
             for (const item of list) {
-              const childPath = ftpPath + '/' + item.name
+              const childPath = remoteJoin(ftpPath, item.name)
               total += 1
-              if (item.isDirectory) {
+              if (isSftpDir(item.type)) {
                 total += await countItems(childPath)
               }
             }
           } catch {
-            // ignore listing errors
+            /* ignore */
           }
           return total
         }
 
         let totalToDelete = 1
         try {
-          totalToDelete = await countItems(fullPath)
+          const stat = await client.stat(fullPath)
+          if (stat.isDirectory) {
+            totalToDelete = await countItems(fullPath)
+          }
         } catch {
           totalToDelete = 1
         }
 
         let deletedCount = 0
 
-        // recursive removal that reports progress
-        async function removeFTPPathWithProgress(client: Client, ftpPath: string): Promise<void> {
+        async function removeSFTPPathWithProgress(path: string): Promise<void> {
+          let list: any[] = []
+          let isDir = false
+
           try {
-            const list = await client.list(ftpPath)
+            const stat = await client.stat(path)
+            isDir = stat.isDirectory
+          } catch {
+            return
+          }
 
-            if (list.length === 0) {
-              try {
-                await client.removeDir(ftpPath)
-              } catch (e: any) {
-                if (e.code === 550) {
-                  await client.remove(ftpPath)
-                } else {
-                  throw e
-                }
-              }
-              deletedCount++
-              event.sender.send('ftp:remove-progress', {
-                id: operationId,
-                total: totalToDelete,
-                deleted: deletedCount,
-                current: ftpPath
-              })
-            } else {
-              for (const item of list) {
-                const fullPathItem = ftpPath + '/' + item.name
-                if (item.isDirectory) {
-                  await removeFTPPathWithProgress(client, fullPathItem)
-                } else {
-                  try {
-                    await client.remove(fullPathItem)
-                  } catch (e: any) {
-                    if (e.code !== 550) throw e
-                  }
-                  deletedCount++
-                  event.sender.send('ftp:remove-progress', {
-                    id: operationId,
-                    total: totalToDelete,
-                    deleted: deletedCount,
-                    current: fullPathItem
-                  })
-                }
-              }
-
-              try {
-                await client.removeDir(ftpPath)
-                deletedCount++
-                event.sender.send('ftp:remove-progress', {
-                  id: operationId,
-                  total: totalToDelete,
-                  deleted: deletedCount,
-                  current: ftpPath
-                })
-              } catch (e: any) {
-                if (e.code === 550) {
-                  await client.remove(ftpPath)
-                  deletedCount++
-                  event.sender.send('ftp:remove-progress', {
-                    id: operationId,
-                    total: totalToDelete,
-                    deleted: deletedCount,
-                    current: ftpPath
-                  })
-                } else {
-                  throw e
-                }
-              }
-            }
-          } catch (err: any) {
-            // If path is a file
+          if (isDir) {
             try {
-              await client.remove(ftpPath)
-              deletedCount++
-              event.sender.send('ftp:remove-progress', {
-                id: operationId,
-                total: totalToDelete,
-                deleted: deletedCount,
-                current: ftpPath
-              })
-            } catch (e: any) {
-              if (e.code === 550) {
-                // try remove as file
-                try {
-                  await client.remove(ftpPath)
-                  deletedCount++
-                  event.sender.send('ftp:remove-progress', {
-                    id: operationId,
-                    total: totalToDelete,
-                    deleted: deletedCount,
-                    current: ftpPath
-                  })
-                } catch {
-                  // ignore
-                }
-              } else {
-                throw err
-              }
+              list = await client.list(path)
+            } catch {
+              /* Empty */
+            }
+
+            for (const item of list) {
+              const childPath = remoteJoin(path, item.name)
+              await removeSFTPPathWithProgress(childPath)
+            }
+
+            try {
+              await client.rmdir(path)
+            } catch (e) {
+              console.error('Błąd usuwania katalogu', path, e)
+            }
+          } else {
+            try {
+              await client.delete(path)
+            } catch (e) {
+              console.error('Błąd usuwania pliku', path, e)
             }
           }
+
+          deletedCount++
+          event.sender.send('ftp:remove-progress', {
+            id: operationId,
+            total: totalToDelete,
+            deleted: deletedCount,
+            current: path
+          })
         }
 
+        // eslint-disable-next-line no-useless-catch
         try {
-          await removeFTPPathWithProgress(client, fullPath)
+          await removeSFTPPathWithProgress(fullPath)
 
           try {
             const tmpHashesPath = join(process.cwd(), 'tmp', 'hashes.txt')
-            await client.downloadTo(tmpHashesPath, remoteJoin(folder, 'hashes.txt'))
+            await client.get(remoteJoin(folder, 'hashes.txt'), tmpHashesPath)
             const data = await readFile(tmpHashesPath, 'utf-8')
             const map = parseHashesContent(data)
 
+            let changed = false
             for (const key of Object.keys(map)) {
               if (key === fileName || key.startsWith(fileName + '/')) {
                 delete map[key]
+                changed = true
               }
             }
 
-            const hashesContent = serializeHashes(map)
+            if (changed) {
+              const hashesContent = serializeHashes(map)
+              await writeFile(tmpHashesPath, hashesContent)
 
-            await writeFile(tmpHashesPath, hashesContent)
-
-            if (hashesContent.length === 0) {
-              await client.remove(`${folder}${folder.length ? '/' : ''}hashes.txt`)
-            } else {
-              await client.uploadFrom(tmpHashesPath, remoteJoin(folder, 'hashes.txt'))
+              if (hashesContent.length === 0) {
+                await client.delete(remoteJoin(folder, 'hashes.txt'))
+              } else {
+                await client.put(tmpHashesPath, remoteJoin(folder, 'hashes.txt'))
+              }
             }
-
             await unlink(tmpHashesPath)
           } catch {
-            /* Ignoruj */
+            /* ignore hash errors */
           }
-
-          client.close()
 
           return true
         } catch (error) {
-          try {
-            client.close()
-          } catch {
-            /* Ignoruj */
-          }
           throw error
         }
       }
@@ -485,22 +455,24 @@ export const useFTPService = (): {
       const tempFilePath = join(process.cwd(), 'tmp', name)
       const client = await connect()
 
-      await client.downloadTo(tempFilePath, remoteJoin(folder, name))
-      const fileContent = (await readFile(tempFilePath)).toString('utf8')
-      await unlink(tempFilePath)
-
-      client.close()
-
-      return fileContent
+      // eslint-disable-next-line no-useless-catch
+      try {
+        await client.get(remoteJoin(folder, name), tempFilePath)
+        const fileContent = (await readFile(tempFilePath)).toString('utf8')
+        await unlink(tempFilePath)
+        return fileContent
+      } catch (e) {
+        throw e
+      }
     })
 
-    ipcMain.handle('ftp:get-hash-entries', async (_, folder: string) => {
+    ipcMain.handle('ftp:get-hash-entries', async (_, folder) => {
       const client = await connect()
       const tmpHashesPath = join(process.cwd(), 'tmp', 'hashes.txt')
       let remoteMissing = false
       const map: Record<string, { hash: string; flag?: 'important' | 'ignore' }> = {}
       try {
-        await client.downloadTo(tmpHashesPath, remoteJoin(folder, 'hashes.txt'))
+        await client.get(remoteJoin(folder, 'hashes.txt'), tmpHashesPath)
         const data = await readFile(tmpHashesPath, 'utf-8')
         Object.assign(map, parseHashesContent(data))
         await unlink(tmpHashesPath)
@@ -512,7 +484,6 @@ export const useFTPService = (): {
           /* ignore */
         }
       }
-      client.close()
       return { entries: map, missing: remoteMissing }
     })
 
@@ -525,17 +496,16 @@ export const useFTPService = (): {
         const map: Record<string, { hash: string; flag?: 'important' | 'ignore' }> = {}
 
         try {
-          await client.downloadTo(tmpHashesPath, `${folder}${folder.length ? '/' : ''}hashes.txt`)
+          await client.get(remoteJoin(folder, 'hashes.txt'), tmpHashesPath)
           const data = await readFile(tmpHashesPath, 'utf-8')
           Object.assign(map, parseHashesContent(data))
         } catch {
-          // hashes.txt missing - proceed with empty map
+          /* ignore */
         }
 
-        // If entry doesn't exist, try to download file to compute its hash
         if (!map[name]) {
           try {
-            await client.downloadTo(tmpFilePath, remoteJoin(folder, name))
+            await client.get(remoteJoin(folder, name), tmpFilePath)
             const content = await readFile(tmpFilePath)
             const h = createHash('sha256')
             h.update(content)
@@ -560,14 +530,13 @@ export const useFTPService = (): {
 
         const content = serializeHashes(map)
         await writeFile(tmpHashesPath, content)
-        await client.uploadFrom(tmpHashesPath, `${folder}${folder.length ? '/' : ''}hashes.txt`)
+        await client.put(tmpHashesPath, remoteJoin(folder, 'hashes.txt'))
         try {
           await unlink(tmpHashesPath)
         } catch {
           /* ignore */
         }
 
-        client.close()
         return true
       }
     )
@@ -582,24 +551,22 @@ export const useFTPService = (): {
         operationId?: string
       ) => {
         const client = await connect()
-
         const targetPath = remoteJoin(folder, folderName)
 
-        // Count total files under targetPath
         const countFiles = async (ftpPath: string): Promise<number> => {
           let total = 0
           try {
             const list = await client.list(ftpPath)
             for (const item of list) {
-              const childPath = ftpPath + '/' + item.name
-              if (item.isDirectory) {
+              const childPath = remoteJoin(ftpPath, item.name)
+              if (isSftpDir(item.type)) {
                 total += await countFiles(childPath)
               } else {
                 total += 1
               }
             }
           } catch {
-            // ignore listing errors
+            /* ignore */
           }
           return total
         }
@@ -616,46 +583,39 @@ export const useFTPService = (): {
 
         let processed = 0
 
-        // Traverse and update hashes per-directory
         const traverseAndUpdate = async (ftpPath: string): Promise<void> => {
           try {
             const list = await client.list(ftpPath)
-
-            // load hashes for this directory
             const hashes: Record<string, { hash: string; flag?: 'important' | 'ignore' }> = {}
+
             try {
-              await client.downloadTo(tmpHashesPath, remoteJoin(ftpPath, 'hashes.txt'))
+              await client.get(remoteJoin(ftpPath, 'hashes.txt'), tmpHashesPath)
               const data = await readFile(tmpHashesPath, 'utf-8')
               Object.assign(hashes, parseHashesContent(data))
+              await unlink(tmpHashesPath)
+            } catch {
               try {
                 await unlink(tmpHashesPath)
               } catch {
-                // ignore
+                /* ignore */
               }
-            } catch {
-              // no hashes.txt - proceed with empty map
             }
 
             let hashesChanged = false
 
             for (const item of list) {
-              const childPath = ftpPath + '/' + item.name
-              if (item.isDirectory) {
+              const childPath = remoteJoin(ftpPath, item.name)
+              if (isSftpDir(item.type)) {
                 await traverseAndUpdate(childPath)
               } else {
-                // For files, ensure hash exists (download to compute if missing)
                 if (!hashes[item.name]) {
                   try {
-                    await client.downloadTo(tmpFilePath, childPath)
+                    await client.get(childPath, tmpFilePath)
                     const content = await readFile(tmpFilePath)
                     const h = createHash('sha256')
                     h.update(content)
                     hashes[item.name] = { hash: h.digest('hex') }
-                    try {
-                      await unlink(tmpFilePath)
-                    } catch {
-                      /* ignore */
-                    }
+                    await unlink(tmpFilePath)
                   } catch {
                     try {
                       await unlink(tmpFilePath)
@@ -679,7 +639,6 @@ export const useFTPService = (): {
                   }
 
                   processed++
-                  // send progress
                   try {
                     mainWindow.webContents.send('ftp:set-flag-folder-progress', {
                       id: operationId,
@@ -688,7 +647,7 @@ export const useFTPService = (): {
                       current: childPath
                     })
                   } catch {
-                    // ignore
+                    /* ignore */
                   }
                 }
               }
@@ -698,36 +657,36 @@ export const useFTPService = (): {
               const content = serializeHashes(hashes)
               await writeFile(tmpHashesPath, content)
               try {
-                await client.uploadFrom(tmpHashesPath, remoteJoin(ftpPath, 'hashes.txt'))
+                await client.put(tmpHashesPath, remoteJoin(ftpPath, 'hashes.txt'))
               } catch {
-                // ignore upload errors
+                /* ignore */
               }
               try {
                 await unlink(tmpHashesPath)
               } catch {
-                // ignore
+                /* ignore */
               }
             }
           } catch {
-            // ignore directory errors
+            // ignore dir errors
           }
         }
 
+        // eslint-disable-next-line no-useless-catch
         try {
           await traverseAndUpdate(targetPath)
-          // Also update the parent folder's hashes.txt to reflect the folder entry
+
           try {
             const parentHashesMap: Record<string, { hash: string; flag?: 'important' | 'ignore' }> =
               {}
             try {
-              await client.downloadTo(tmpHashesPath, remoteJoin(folder, 'hashes.txt'))
+              await client.get(remoteJoin(folder, 'hashes.txt'), tmpHashesPath)
               const data = await readFile(tmpHashesPath, 'utf-8')
               Object.assign(parentHashesMap, parseHashesContent(data))
             } catch {
-              // parent hashes may not exist — proceed with empty map
+              /* ignore */
             }
 
-            // Ensure folder entry exists (use existing hash or placeholder)
             if (!parentHashesMap[folderName]) {
               parentHashesMap[folderName] = { hash: 'dir' }
             }
@@ -741,27 +700,21 @@ export const useFTPService = (): {
             const parentContent = serializeHashes(parentHashesMap)
             await writeFile(tmpHashesPath, parentContent)
             try {
-              await client.uploadFrom(tmpHashesPath, remoteJoin(folder, 'hashes.txt'))
+              await client.put(tmpHashesPath, remoteJoin(folder, 'hashes.txt'))
             } catch {
-              // ignore upload errors
+              /* ignore */
             }
             try {
               await unlink(tmpHashesPath)
             } catch {
-              // ignore
+              /* ignore */
             }
-          } catch {
-            // ignore parent update errors
-          }
-
-          client.close()
-          return true
-        } catch (err: any) {
-          try {
-            client.close()
           } catch {
             /* ignore */
           }
+
+          return true
+        } catch (err: any) {
           throw err
         }
       }
@@ -770,26 +723,24 @@ export const useFTPService = (): {
     ipcMain.handle('ftp:read-image', async (_, folder: string, name: string) => {
       const tempFilePath = join(process.cwd(), 'tmp', name)
 
+      // eslint-disable-next-line no-useless-catch
       try {
-        await connect()
-        await client.downloadTo(tempFilePath, `${folder}/${name}`)
+        const client = await connect()
+        await client.get(remoteJoin(folder, name), tempFilePath)
 
         const fileBuffer = await readFile(tempFilePath)
         const fileBase64 = fileBuffer.toString('base64')
 
         await unlink(tempFilePath)
-        client.close()
-
         return fileBase64
       } catch (error) {
-        client.close()
         throw error
       }
     })
   }
 
   return {
-    client,
+    client: clientInstance,
     connect,
     createHandlers
   }

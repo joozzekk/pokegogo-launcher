@@ -1,3 +1,4 @@
+<!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <script lang="ts" setup>
 import { createItem, updateItem } from '@renderer/api/endpoints'
 import { showToast } from '@renderer/utils'

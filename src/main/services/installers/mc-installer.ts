@@ -2,8 +2,8 @@
 import fs from 'fs'
 import { posix } from 'path'
 import crypto from 'crypto'
-import { Client } from 'basic-ftp'
-import { safeCd, useFTPService } from '../ftp-service'
+import Client from 'ssh2-sftp-client' // Zmiana klienta
+import { useFTPService } from '../ftp-service'
 import { app, BrowserWindow } from 'electron'
 import Logger from 'electron-log'
 
@@ -34,18 +34,22 @@ interface SyncPlan {
   totalSize: number
 }
 
-// Wrapper dla klienta FTP, aby obsługiwać reconnect przez referencję
+// Wrapper dla klienta SFTP
 interface FtpState {
   client: Client
 }
 
 interface GlobalProgress {
   totalFiles: number
-  downloadedFiles: number
+  completedFiles: number // Pliki w pełni pobrane
   totalSize: number
-  downloadedSize: number
+  downloadedSizeBase: number // Bajty pobrane z *zakończonych* plików
   startTime: number
 }
+
+// --- HELPERS DLA SFTP ---
+const isSftpDir = (type: string | undefined): boolean => type === 'd'
+const isSftpFile = (type: string | undefined): boolean => type === '-'
 
 // --- FUNKCJE POMOCNICZE ---
 
@@ -75,8 +79,6 @@ async function parseHashes(content: string): Promise<HashMap> {
   const map: HashMap = {}
   const lines = content.split('\n').filter((l) => l.trim())
 
-  // POPRAWKA: Regex akceptuje 64 znaki hasha LUB słowo kluczowe 'dir' jako "hash".
-  // Grupa 2 ([a-fA-F0-9]{64}|dir) jest kluczową zmianą.
   const regex = /^(.*?)\s+([a-fA-F0-9]{64}|dir)(?:\s+(important|ignore))?$/
 
   for (const line of lines) {
@@ -119,7 +121,7 @@ async function analyzeDirectory(
 
   try {
     const localHashesPath = posix.join(localDir, 'hashes.txt')
-    await state.client.downloadTo(localHashesPath, remoteHashesPath)
+    await state.client.get(remoteHashesPath, localHashesPath)
     const content = await fs.promises.readFile(localHashesPath, 'utf8')
     currentDirHashes = await parseHashes(content)
   } catch {
@@ -139,13 +141,14 @@ async function analyzeDirectory(
   // 2. Listing plików na serwerze
   let list
   try {
-    await safeCd(state.client, remoteDir)
-    list = await state.client.list()
+    // W SFTP podajemy pełną ścieżkę do list(), nie używamy cd()
+    list = await state.client.list(remoteDir)
   } catch {
     try {
+      // Próba reconnectu
+      await state.client.end() // upewnij się, że stary jest zamknięty
       state.client = await connect()
-      await safeCd(state.client, remoteDir)
-      list = await state.client.list()
+      list = await state.client.list(remoteDir)
     } catch (err) {
       Logger.error(`Błąd listowania ${remoteDir}: ${err}`)
       return plan
@@ -154,7 +157,7 @@ async function analyzeDirectory(
 
   const remoteFilesSet = new Set<string>()
 
-  // 3. Przetwarzanie listy plików ZDALNYCH (co pobrać/zaktualizować)
+  // 3. Przetwarzanie listy plików ZDALNYCH
   for (const file of list) {
     if (signal.aborted) return plan
     if (file.name === '.' || file.name === '..') continue
@@ -164,32 +167,27 @@ async function analyzeDirectory(
 
     remoteFilesSet.add(file.name)
 
-    // Sprawdzamy flagi z pełnej mapy, aby wiedzieć, czy są 'important' lub 'ignore'.
     const entry = effectiveHashes[itemRemotePath]
     const currentEntry = combinedHashes[itemRemotePath]
     const isEntryImportant = currentEntry?.flag === 'important'
     const isEntryIgnored = currentEntry?.flag === 'ignore'
 
-    if (file.isDirectory) {
+    if (isSftpDir(file.type)) {
       let shouldRecurse = true
 
-      // Warunek optymalizacyjny dla kolejnych aktualizacji
       if (!isFirstInstall) {
-        // Jeśli nie jest to pierwsza instalacja, wchodzimy TYLKO do folderów 'important'
         if (isEntryImportant) {
           shouldRecurse = true
         } else if (isEntryIgnored) {
-          // Folder ignorowany jest zawsze pomijany
           shouldRecurse = false
         } else {
-          // Folder nie jest ani 'important', ani 'ignore' -> OPTYMALIZUJEMY I POMIJAMY SKANOWANIE
+          // Folder nie jest ani 'important', ani 'ignore' -> OPTYMALIZACJA
           shouldRecurse = false
           Logger.log(`[OPT] Pomijam skanowanie folderu: ${itemRemotePath}`)
         }
       }
 
       if (shouldRecurse) {
-        // Decyzja o "Strict Mode" dla podkatalogu.
         const nextIsStrict = isStrictFolder || isEntryImportant
 
         const subPlan = await analyzeDirectory(
@@ -207,15 +205,12 @@ async function analyzeDirectory(
         plan.deletes.push(...subPlan.deletes)
         plan.totalSize += subPlan.totalSize
       }
-    } else if (file.isFile) {
+    } else if (isSftpFile(file.type)) {
       if (file.name === 'hashes.txt' || file.name.endsWith('.sha256')) continue
-
-      // Jeśli plik jest ignorowany (np. options.txt po instalacji), pomijamy
       if (isEntryIgnored && !isFirstInstall) continue
 
       let needDownload = true
 
-      // Sprawdzanie hasha (jeśli dostępny i nie jest to pierwsza instalacja)
       if (entry && !isFirstInstall) {
         const localExists = await fileExists(itemLocalPath)
         if (localExists) {
@@ -225,7 +220,6 @@ async function analyzeDirectory(
           }
         }
       } else if (!isFirstInstall) {
-        // Plik bez hasha w spisie. Jeśli istnieje lokalnie, zostawiamy.
         if (await fileExists(itemLocalPath)) {
           needDownload = false
         }
@@ -244,7 +238,7 @@ async function analyzeDirectory(
     }
   }
 
-  // 4. CLEANUP - Usuwanie nadmiarowych plików (Cheaty, stare mody)
+  // 4. CLEANUP
   if (!isFirstInstall) {
     try {
       const localFiles = await fs.promises.readdir(localDir, { withFileTypes: true })
@@ -257,12 +251,9 @@ async function analyzeDirectory(
         const fullRemotePath = posix.join(remoteDir, name)
         const entryInHashes = combinedHashes[fullRemotePath]
 
-        // 1. Jeśli plik ma flagę 'ignore' -> NIE USUWAĆ.
         if (entryInHashes?.flag === 'ignore') continue
 
-        // 2. Jeśli pliku NIE MA na liście serwera:
         if (!remoteFilesSet.has(name)) {
-          // Usuwamy go TYLKO JEŚLI jesteśmy w folderze "Strict"
           if (isStrictFolder) {
             plan.deletes.push({ localPath: posix.join(localDir, name) })
             Logger.log(`[CLEANUP] Usunięto nadmiarowy plik: ${posix.join(localDir, name)}`)
@@ -310,12 +301,12 @@ async function executeSyncPlan(
     if (signal.aborted) return
     const task = plan.downloads[i]
 
-    // Callback do paska postępu
-    state.client.trackProgress((info) => {
-      const currentSessionBytes = info.bytes
-      const totalDownloadedNow = globalProgress.downloadedSize + currentSessionBytes
+    // Funkcja raportowania postępu dla ssh2-sftp-client (fastGet)
+    const stepCallback = (totalTransferredForFile: number): void => {
+      // Obliczamy całkowity postęp: to co już pobrano z poprzednich plików + to co leci teraz
+      const totalDownloadedNow = globalProgress.downloadedSizeBase + totalTransferredForFile
 
-      // Obliczanie czasu
+      // Czas i ETA
       const elapsed = Date.now() - globalProgress.startTime
       let remainingText = 'Oszacowywanie...'
 
@@ -341,21 +332,37 @@ async function executeSyncPlan(
       log(
         `Pobieranie (${i + 1}/${globalProgress.totalFiles}) ${percent}% (Pozostało: ${remainingText})`
       )
-    })
+    }
 
     // Próba pobrania z retry
     let success = false
     for (let attempt = 0; attempt < 3 && !success; attempt++) {
       if (signal.aborted) return
       try {
-        await state.client.downloadTo(task.localPath, task.remotePath)
+        // fastGet jest szybsze dla SFTP (korzysta z concurrency)
+        // Opcja 'step' pozwala śledzić postęp
+        await state.client.fastGet(task.remotePath, task.localPath, {
+          step: stepCallback
+        })
         success = true
       } catch (err: any) {
         const msg = err.message || String(err)
         Logger.warn(`Błąd pobierania ${task.fileName}: ${msg}. Próba ${attempt + 1}`)
 
-        if (msg.toLowerCase().includes('socket') || msg.toLowerCase().includes('closed')) {
+        // Reconnect przy błędach połączenia
+        if (
+          msg.toLowerCase().includes('socket') ||
+          msg.toLowerCase().includes('closed') ||
+          msg.toLowerCase().includes('no connection')
+        ) {
           try {
+            // Zamknij stare połączenie jeśli wisi
+            try {
+              await state.client.end()
+            } catch {
+              /* ignore */
+            }
+
             state.client = await connect()
           } catch (reconErr) {
             Logger.error(`Krytyczny błąd reconnectu: ${reconErr}`)
@@ -371,13 +378,11 @@ async function executeSyncPlan(
       throw new Error(`Nie udało się pobrać pliku ${task.fileName} po 3 próbach.`)
     }
 
-    state.client.trackProgress(undefined)
-    globalProgress.downloadedSize += task.size
-    globalProgress.downloadedFiles++
+    // Po zakończeniu pliku aktualizujemy bazę pobranych bajtów
+    globalProgress.downloadedSizeBase += task.size
+    globalProgress.completedFiles++
   }
 }
-
-// --- Główna funkcja eksportowana ---
 
 export async function copyMCFiles(
   isDev: boolean,
@@ -385,7 +390,7 @@ export async function copyMCFiles(
   signal: AbortSignal,
   logHandlerName: string = 'launch:show-log'
 ): Promise<string | undefined> {
-  const ftp = useFTPService()
+  const ftpService = useFTPService()
   const localRoot = posix.join(app.getPath('userData'), 'mcfiles')
   const markerFile = posix.join(app.getPath('userData'), '.mcfiles_installed')
 
@@ -397,16 +402,16 @@ export async function copyMCFiles(
   try {
     const isFirstInstall = !(await fileExists(markerFile))
 
-    state = { client: await ftp.connect() }
+    state = { client: await ftpService.connect() }
 
-    const pwd = await state.client.pwd()
+    const pwd = await state.client.cwd()
     const remoteRoot = posix.join(pwd, isDev ? 'dev-mc' : 'mc')
 
     const globalProgress: GlobalProgress = {
       totalFiles: 0,
-      downloadedFiles: 0,
+      completedFiles: 0,
       totalSize: 0,
-      downloadedSize: 0,
+      downloadedSizeBase: 0,
       startTime: 0
     }
 
@@ -415,7 +420,7 @@ export async function copyMCFiles(
     // KROK 1: Analiza
     const plan = await analyzeDirectory(
       state,
-      ftp.connect,
+      ftpService.connect,
       remoteRoot,
       localRoot,
       isFirstInstall,
@@ -432,7 +437,7 @@ export async function copyMCFiles(
 
     // KROK 2: Wykonanie
     if (plan.downloads.length > 0 || plan.deletes.length > 0) {
-      await executeSyncPlan(state, ftp.connect, plan, logToUI, signal, globalProgress)
+      await executeSyncPlan(state, ftpService.connect, plan, logToUI, signal, globalProgress)
     } else {
       logToUI('Pliki są aktualne.')
     }
@@ -452,7 +457,7 @@ export async function copyMCFiles(
   } finally {
     try {
       if (state) {
-        state.client.close()
+        await state.client.end()
       }
     } catch {
       /* ignore */

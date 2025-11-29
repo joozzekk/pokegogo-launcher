@@ -1,3 +1,4 @@
+<!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <script lang="ts" setup>
 import { createChangelog, updateChangelog } from '@renderer/api/endpoints'
 import { showToast } from '@renderer/utils'
@@ -81,7 +82,7 @@ const addChangelog = async (): Promise<void> => {
   if (preview.value)
     uploadResult = await window.electron.ipcRenderer?.invoke(
       'ftp:upload-file',
-      'items',
+      'changelog',
       await photoFile.value.arrayBuffer(),
       photoFile.value.name
     )
@@ -107,7 +108,7 @@ const editChangelog = async (): Promise<void> => {
   if (preview.value)
     await window.electron.ipcRenderer?.invoke(
       'ftp:upload-file',
-      'items',
+      'changelog',
       await photoFile.value.arrayBuffer(),
       photoFile.value.name
     )

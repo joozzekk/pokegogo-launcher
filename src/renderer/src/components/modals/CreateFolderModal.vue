@@ -16,7 +16,7 @@ const v$ = useVuelidate(
   {
     newFolder: {
       required: helpers.withMessage('Nazwa jest wymagana', required),
-      minLength: helpers.withMessage('Nazwa musi mieć co najmniej 3 znaki', minLength(3)),
+      minLength: helpers.withMessage('Nazwa musi mieć co najmniej 2 znaki', minLength(2)),
       maxLength: helpers.withMessage('Nazwa może mieć maksymalnie 50 znaków', maxLength(50))
     }
   },
@@ -26,6 +26,7 @@ const v$ = useVuelidate(
 const handleExit = async (): Promise<void> => {
   modalVisible.value = false
   state.newFolder = ''
+  v$.value.$reset()
 }
 
 defineExpose({
@@ -73,10 +74,7 @@ const handleSubmit = async (): Promise<void> => {
         </div>
         <div class="modal-content">
           <div class="flex flex-col w-full">
-            <label class="input-label mb-1">Nazwa folderu</label>
-            <small class="mb-1 text-[var(--text-secondary)]">
-              Podaj nazwę folderu (do 50 znaków). Nie używaj znaków specjalnych.
-            </small>
+            <label class="input-label mb-1 text-[var(--text-secondary))]">Nazwa folderu</label>
             <div class="form-group h-full">
               <div class="input-wrapper flex">
                 <input
@@ -96,7 +94,7 @@ const handleSubmit = async (): Promise<void> => {
             </div>
           </div>
         </div>
-        <div class="flex gap-2">
+        <div class="flex gap-2 mt-2">
           <button class="btn-primary" @click="handleSubmit">Utwórz</button>
           <button class="btn-secondary" @click="handleExit">Anuluj</button>
         </div>
