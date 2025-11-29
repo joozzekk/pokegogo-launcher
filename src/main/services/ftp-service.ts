@@ -28,9 +28,10 @@ export const useFTPService = (): {
   const connect = async (): Promise<Client> => {
     const c = new ftp.Client(1000 * 120)
     await c.access({
-      host: '57.128.211.105',
-      user: 'ftpuser',
-      password: 'Ewenement2023$'
+      host: '57.128.211.104',
+      user: 'ftpclient',
+      password: 'PokeAdmin321b!#',
+      secure: false
     })
 
     c.ftp.encoding = 'utf-8'
