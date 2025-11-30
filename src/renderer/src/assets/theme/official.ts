@@ -1,62 +1,5 @@
 import { updatePreset } from '@primeuix/themes'
 
-export const halloween = {
-  primary: '#ffae00',
-  primaryDark: '#ad8503',
-  primaryLight: '#ffe8bc',
-  bgDark: '#000000',
-  bgCard: '#25241a20',
-  bgLight: '#25241a',
-  bgBody: '#000000ff',
-  textPrimary: '#ffffff',
-  textSecondary: '#b8ad94',
-  border: 'rgba(255, 222, 154, 0.15)',
-  border2: '#ffae0047',
-  newsItem: 'rgba(197, 145, 34, 0.03)',
-  newsItemHover: 'rgba(197, 145, 34, 0.1)',
-  btnHover: '#ffae003d',
-  banBtn: 'rgba(255, 0, 0, 0.3)',
-  banBtnText: '#b83232',
-  headerBg: 'linear-gradient(180deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.8) 100%)',
-  gradientPrimary: 'linear-gradient(135deg, #ad8503 0%, #ffae00 100%)',
-  gradientBanned: 'linear-gradient(135deg, #c5223d 0%, #b91035 100%)',
-  shadowGlow: '0 0 15px rgba(197, 167, 34, 0.3)',
-  btnGlow: 'rgba(255, 255, 255, 0.2)',
-  bgPrimary: '#000000',
-  bgInput: 'rgba(26, 26, 31, 0.8)',
-  textSecondaryAlt: '#b4b4b8',
-  textMuted: '#6b6b73',
-  borderPrimary: 'rgba(255, 255, 255, 0.1)',
-  borderRadius: '12px',
-  borderRadiusSmall: '8px',
-  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-  shadowCard: '0 20px 40px rgba(0, 0, 0, 0.3)',
-  playerLogout: 'rgb(62, 59, 73)',
-  statusPulse: 'rgba(221, 173, 16, 0.5)',
-  navIcon: 'rgba(255, 255, 255, 0.05)',
-  tagDark: '#00000080',
-  navItem: 'rgba(197, 154, 34, 0.1)',
-  navItemHoverNavIcon: 'rgba(197, 145, 34, 0.2)',
-  navItemActive: 'rgba(197, 173, 34, 0.15)',
-  loginTabBtnBg: 'rgba(51, 48, 35, 0.568)',
-  loginTabBtnHover: 'rgba(51, 48, 35, 0.768)',
-  errorMessage: '#ff4757',
-  loginInvalidBg: 'rgba(255, 71, 87, 0.1)',
-  loginInvalidBorder: 'rgba(255, 71, 87, 0.3)',
-  gradientOverlay: `
-    radial-gradient(circle at 20% 50%, rgba(197, 154, 34, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, rgba(163, 154, 16, 0.05) 0%, transparent 50%),
-    radial-gradient(circle at 40% 20%, rgba(222, 175, 74, 0.03) 0%, transparent 50%)
-    `,
-  btnMicrosoft: ' linear-gradient(90deg, #ffa60265, #ad8503)',
-  toastError: '#ff4757',
-  toastWarning: '#ffa502',
-  loadingOverlay: 'rgba(10, 10, 11, 0.9)',
-  footerHover: 'rgba(255, 255, 255, 0.05)',
-  shopItem: `linear-gradient(180deg, var(--btn-hover) 0%, transparent 100%)`,
-  breadcrumbsText: '#575b69'
-}
-
 export const rose = {
   primary: '#ff69b4', // intensywny różowy
   primaryDark: '#b1396e', // ciemniejszy odcień różowego
@@ -400,6 +343,78 @@ export const red = {
   borderRadius: '12px',
   borderRadiusSmall: '8px',
   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+}
+
+export const halloween ={
+// Primary Accent Palette (Icy Blue)
+ primary: '#00DFFF', // Czysty Lodowy Błękit (akcent interaktywny)
+ primaryDark: '#0099CC',
+ primaryLight: '#E0FFFF', // Icy Off-White
+
+ // Backgrounds (Deep Dark - bez zmian)
+ bgDark: '#0D1117',
+ bgCard: 'rgba(22, 27, 34, 0.7)',
+ bgLight: '#161B22',
+ bgBody: '#0D1117',
+ bgPrimary: '#0D1117',
+ bgInput: 'rgba(22, 27, 34, 0.8)',
+ loadingOverlay: 'rgba(0, 0, 0, 0.95)',
+
+ // Text Colors (Czysta Biel)
+ textPrimary: '#FFFFFF', // Czysta Biel
+ textSecondary: '#F0F8FF', // Icy Off-White
+ textSecondaryAlt: '#B3D4F5',
+ textMuted: '#8B949E',
+ breadcrumbsText: '#F0F8FF',
+ errorMessage: '#FF6B6B',
+
+ // Borders & Dividers (Wzmocniona Biel)
+ border: 'rgba(255, 255, 255, 0.04)', // Mocna Półprzezroczysta Biel
+ border2: 'rgba(255, 255, 255, 0.04)',
+ borderPrimary: 'rgba(255, 255, 255, 0.04)',
+
+ // UI Elements (Białe akcenty)
+ newsItem: 'rgba(255, 255, 255, 0.08)',
+ newsItemHover: 'rgba(255, 255, 255, 0.15)',
+ btnHover: 'rgba(255, 255, 255, 0.3)', // Biały hover
+ btnGlow: 'rgba(255, 255, 255, 0.35)', // Biała poświata
+ footerHover: 'rgba(255, 255, 255, 0.1)',
+ shopItem: `linear-gradient(180deg, var(--btn-hover) 0%, transparent 100%)`,
+
+ // Special/Accent Colors
+ banBtn: 'rgba(255, 255, 255, 0.15)',
+ banBtnText: '#FF6B6B',
+ statusPulse: 'rgba(255, 255, 255, 1.0)', // Czysta Biała
+ toastError: '#FF6B6B',
+ toastWarning: '#FFD700',
+
+ // Navigation
+ navIcon: 'rgba(255, 255, 255, 0.2)', // Białe ikony
+ tagDark: '#0D111780',
+ navItem: 'rgba(255, 255, 255, 0.1)', // Białe tło elementu
+ navItemHoverNavIcon: 'rgba(255, 255, 255, 0.3)',
+ navItemActive: 'rgba(255, 255, 255, 0.2)',
+
+ // Login/Form
+ loginTabBtnBg: 'rgba(255, 255, 255, 0.15)', // Białe przezroczyste tło
+ loginTabBtnHover: 'rgba(255, 255, 255, 0.3)',
+ loginInvalidBg: 'rgba(255, 107, 107, 0.1)',
+ loginInvalidBorder: 'rgba(255, 107, 107, 0.3)',
+ btnMicrosoft: 'linear-gradient(90deg, #00DFFF65, #0099CC)',
+ playerLogout: '#3A475C',
+
+ // Effects & Utilities
+ headerBg: 'linear-gradient(180deg, rgba(13, 17, 23, 0.5) 0%, rgba(13, 17, 23, 0.45) 100%)',
+ gradientPrimary: 'linear-gradient(135deg, #0099CC 0%, #00DFFF 100%)',
+ gradientBanned: 'linear-gradient(135deg, #00DFFF 0%, #0099CC 100%)',
+ shadowGlow: '0 0 20px rgba(255, 255, 255, 0.6)', // Silna biała poświata szronu
+ shadowCard: '0 20px 40px rgba(0, 0, 0, 0.5)',
+ gradientOverlay: `radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.2) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(0, 223, 255, 0.1) 0%, transparent 50%), radial-gradient(circle at 40% 20%, rgba(255, 255, 255, 0.15) 0%, transparent 50%)`,
+
+ // Static Properties (bez zmian)
+ borderRadius: '12px',
+ borderRadiusSmall: '8px',
+ transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
 }
 
 export const themes = [halloween, red, blue, green, violet, rose, grayscale]

@@ -3,7 +3,7 @@
 import { computed, onMounted, ref } from 'vue'
 import LaunchButton from '@renderer/components/buttons/LaunchButton.vue'
 import useGeneralStore from '@renderer/stores/general-store'
-import superEvent from '@renderer/assets/img/superEvent.png'
+import choinka from '@renderer/assets/img/choinka.png'
 import { getEvents, getServerStatus } from '@renderer/api/endpoints'
 import { LOGGER } from '@renderer/services/logger-service'
 import { format, parseISO } from 'date-fns'
@@ -83,7 +83,7 @@ onMounted(async () => {
                     ? megaEvent.src.includes('https://')
                       ? megaEvent.src
                       : `${url}/events/image/${megaEvent.uuid}`
-                    : superEvent
+                    : choinka
                 "
                 alt="Super Event"
                 @dragstart.prevent="null"

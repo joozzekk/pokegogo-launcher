@@ -16,7 +16,7 @@ import BannedModal from '@renderer/components/modals/BannedModal.vue'
 import { useSocket } from '@renderer/services/socket-service'
 import api from '@renderer/utils/client'
 import { LOGGER } from '@renderer/services/logger-service'
-import superEvent from '@renderer/assets/img/superEvent.png'
+import choinka from '@renderer/assets/img/choinka.png'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const refreshInterval = ref<any>(null)
@@ -129,7 +129,7 @@ onUnmounted(() => {
 <template>
   <div class="animated-bg">
     <img
-      :src="superEvent"
+      :src="choinka"
       alt="background"
       class="absolute !h-[100vh] z-[0] opacity-15"
       @dragstart.prevent="null"

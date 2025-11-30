@@ -128,6 +128,19 @@ onUnmounted(() => {
       </div>
     </div>
 
+    <!-- Christmas Tree -->
+    <div class="christmas-tree">
+      <div class="tree-top">⭐</div>
+      <div class="tree-body">
+        <div class="tree-row">
+          <span class="light light-1">●</span>
+          🎄
+          <span class="light light-2">●</span>
+        </div>
+      </div>
+      <div class="tree-trunk">🟫</div>
+    </div>
+
     <div class="flex ml-auto mr-[6rem] items-center gap-2">
       <div class="applogo-badge">{{ generalStore.settings.updateChannel }}</div>
 
@@ -230,5 +243,82 @@ onUnmounted(() => {
 .breadcrumbs > .active:hover {
   cursor: pointer;
   text-decoration: underline;
+}
+
+/* Christmas Tree Styles */
+.christmas-tree {
+  position: absolute;
+  right: 17%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  user-select: none;
+  -webkit-app-region: no-drag;
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
+}
+
+.tree-top {
+  font-size: 12px;
+  animation: twinkle 2s ease-in-out infinite;
+  line-height: 1;
+}
+
+.tree-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: -3px;
+  margin-top: -2px;
+}
+
+.tree-row {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  font-size: 35px;
+  line-height: 1;
+}
+
+.tree-trunk {
+  font-size: 8px;
+  margin-top: -2px;
+  line-height: 1;
+}
+
+.light {
+  font-size: 6px;
+  animation: blink 1.5s ease-in-out infinite;
+}
+
+.light-1 {
+  color: #ff0000;
+  animation-delay: 0s;
+}
+
+.light-2 {
+  color: #00ff00;
+  animation-delay: 0.5s;
+}
+
+@keyframes twinkle {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes blink {
+  0%, 100% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+  50% {
+    opacity: 0.3;
+    filter: brightness(0.5);
+  }
 }
 </style>
