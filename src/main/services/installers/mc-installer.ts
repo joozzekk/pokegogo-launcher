@@ -1,3 +1,4 @@
+/* eslint-disable no-useless-catch */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import fs from 'fs'
 import { posix } from 'path'
@@ -94,14 +95,54 @@ async function parseHashes(content: string): Promise<HashMap> {
   return map
 }
 
-// --- LOGIKA GŁÓWNA (FAZA 1: ANALIZA) ---
+// --- LOGIKA GŁÓWNA (FAZA 1: ANALIZA - ZOPTYMALIZOWANA) ---
 
 /**
- * FAZA 1: Skanowanie i budowanie planu
+ * Struktura pomocnicza do wyników analizy pojedynczego folderu
+ */
+interface DirectoryAnalysisResult {
+  remoteList: any[]
+  hashes: HashMap
+}
+
+/**
+ * Pobiera dane o katalogu (listę plików i hashe) RÓWNOLEGLE
+ */
+async function fetchDirectoryData(
+  state: FtpState,
+  remoteDir: string,
+  localDir: string
+): Promise<DirectoryAnalysisResult> {
+  const remoteHashesPath = posix.join(remoteDir, 'hashes.txt')
+  const localHashesPath = posix.join(localDir, 'hashes.txt')
+
+  // Uruchamiamy oba requesty na raz: LIST oraz GET hashes.txt
+  const listPromise = state.client.list(remoteDir).catch((err) => {
+    Logger.warn(`[FTP] Błąd listowania ${remoteDir}: ${err.message}`)
+    return [] // Zwracamy pusto w razie błędu listowania, by nie wywalić całej apki
+  })
+
+  const hashesPromise = (async () => {
+    try {
+      await state.client.get(remoteHashesPath, localHashesPath)
+      const content = await fs.promises.readFile(localHashesPath, 'utf8')
+      return parseHashes(content)
+    } catch {
+      return {} // Brak pliku hashes.txt lub błąd
+    }
+  })()
+
+  const [remoteList, hashes] = await Promise.all([listPromise, hashesPromise])
+
+  return { remoteList, hashes }
+}
+
+/**
+ * FAZA 1: Skanowanie i budowanie planu (RÓWNOLEGŁA)
  */
 async function analyzeDirectory(
   state: FtpState,
-  connect: () => Promise<Client>,
+  connect: () => Promise<Client>, // connect jest tu rzadziej potrzebny dzięki Promise.all, ale zostawiamy dla spójności
   remoteDir: string,
   localDir: string,
   isFirstInstall: boolean,
@@ -113,155 +154,146 @@ async function analyzeDirectory(
 
   if (signal.aborted) return plan
 
+  // 1. Upewnij się, że katalog istnieje
   await fs.promises.mkdir(localDir, { recursive: true })
 
-  // 1. Pobranie i parsowanie hashes.txt
-  let currentDirHashes: HashMap = {}
-  const remoteHashesPath = posix.join(remoteDir, 'hashes.txt')
+  // 2. Pobierz dane zdalne (Lista + Hashe) równolegle
+  Logger.log(`[ANALIZA] Pobieranie danych dla: ${remoteDir}`)
+  const { remoteList, hashes: currentDirHashes } = await fetchDirectoryData(
+    state,
+    remoteDir,
+    localDir
+  )
 
-  try {
-    const localHashesPath = posix.join(localDir, 'hashes.txt')
-    await state.client.get(remoteHashesPath, localHashesPath)
-    const content = await fs.promises.readFile(localHashesPath, 'utf8')
-    currentDirHashes = await parseHashes(content)
-  } catch {
-    // Brak hashes.txt - traktujemy jako pusty
-  }
-
-  // Budujemy mapę hashy dla tego poziomu
+  // Budowanie mapy hashy
   const combinedHashes: HashMap = { ...ancestorHashes }
   for (const [name, entry] of Object.entries(currentDirHashes)) {
     const fullRemotePath = posix.join(remoteDir, name)
     combinedHashes[fullRemotePath] = entry
   }
 
-  // Jeśli to pierwsza instalacja, UKRYWAMY flagi 'ignore'.
   const effectiveHashes = isFirstInstall ? {} : combinedHashes
-
-  // 2. Listing plików na serwerze
-  let list
-  try {
-    // W SFTP podajemy pełną ścieżkę do list(), nie używamy cd()
-    list = await state.client.list(remoteDir)
-  } catch {
-    try {
-      // Próba reconnectu
-      await state.client.end() // upewnij się, że stary jest zamknięty
-      state.client = await connect()
-      list = await state.client.list(remoteDir)
-    } catch (err) {
-      Logger.error(`Błąd listowania ${remoteDir}: ${err}`)
-      return plan
-    }
-  }
-
   const remoteFilesSet = new Set<string>()
 
-  // 3. Przetwarzanie listy plików ZDALNYCH
-  for (const file of list) {
-    if (signal.aborted) return plan
+  // Kolekcje do przetwarzania równoległego
+  const fileTasks: Promise<void>[] = []
+  const dirTasks: Promise<SyncPlan>[] = []
+
+  // 3. Iteracja po elementach zdalnych
+  for (const file of remoteList) {
     if (file.name === '.' || file.name === '..') continue
 
     const itemRemotePath = posix.join(remoteDir, file.name)
     const itemLocalPath = posix.join(localDir, file.name)
-
     remoteFilesSet.add(file.name)
 
     const entry = effectiveHashes[itemRemotePath]
-    const currentEntry = combinedHashes[itemRemotePath]
-    const isEntryImportant = currentEntry?.flag === 'important'
-    const isEntryIgnored = currentEntry?.flag === 'ignore'
+    const isEntryImportant = combinedHashes[itemRemotePath]?.flag === 'important'
+    const isEntryIgnored = combinedHashes[itemRemotePath]?.flag === 'ignore'
 
+    // --- KATALOGI ---
     if (isSftpDir(file.type)) {
       let shouldRecurse = true
-
+      // Logika flag
       if (!isFirstInstall) {
-        if (isEntryImportant) {
-          shouldRecurse = true
-        } else if (isEntryIgnored) {
-          shouldRecurse = false
-        } else {
-          // Folder nie jest ani 'important', ani 'ignore' -> OPTYMALIZACJA
-          shouldRecurse = false
-          Logger.log(`[OPT] Pomijam skanowanie folderu: ${itemRemotePath}`)
-        }
+        if (isEntryImportant) shouldRecurse = true
+        else if (isEntryIgnored) shouldRecurse = false
+        else shouldRecurse = false // Optymalizacja
       }
 
       if (shouldRecurse) {
         const nextIsStrict = isStrictFolder || isEntryImportant
-
-        const subPlan = await analyzeDirectory(
-          state,
-          connect,
-          itemRemotePath,
-          itemLocalPath,
-          isFirstInstall,
-          signal,
-          combinedHashes,
-          nextIsStrict
+        // Rekurencja: Dodajemy do tablicy zadań, NIE czekamy tutaj (await)
+        dirTasks.push(
+          analyzeDirectory(
+            state,
+            connect,
+            itemRemotePath,
+            itemLocalPath,
+            isFirstInstall,
+            signal,
+            combinedHashes,
+            nextIsStrict
+          )
         )
-
-        plan.downloads.push(...subPlan.downloads)
-        plan.deletes.push(...subPlan.deletes)
-        plan.totalSize += subPlan.totalSize
       }
-    } else if (isSftpFile(file.type)) {
+    }
+    // --- PLIKI ---
+    else if (isSftpFile(file.type)) {
       if (file.name === 'hashes.txt' || file.name.endsWith('.sha256')) continue
       if (isEntryIgnored && !isFirstInstall) continue
 
-      let needDownload = true
+      // Tworzymy zadanie sprawdzenia pliku
+      const task = (async () => {
+        let needDownload = true
 
-      if (entry && !isFirstInstall) {
-        const localExists = await fileExists(itemLocalPath)
-        if (localExists) {
-          const localHash = await getFileHash(itemLocalPath)
-          if (localHash === entry.hash) {
+        // Optymalizacja: Najpierw sprawdź istnienie i hasha, tylko jeśli to konieczne
+        if (entry && !isFirstInstall) {
+          const localExists = await fileExists(itemLocalPath)
+          if (localExists) {
+            // Tu jest największy zysk: Obliczanie hasha dzieje się w tle dla wielu plików naraz
+            const localHash = await getFileHash(itemLocalPath)
+            if (localHash === entry.hash) {
+              needDownload = false
+            }
+          }
+        } else if (!isFirstInstall) {
+          // Brak hasha w bazie, ale plik jest lokalnie - zakładamy że ok (zgodnie z oryginalną logiką)
+          if (await fileExists(itemLocalPath)) {
             needDownload = false
           }
         }
-      } else if (!isFirstInstall) {
-        if (await fileExists(itemLocalPath)) {
-          needDownload = false
-        }
-      }
 
-      if (needDownload) {
-        plan.downloads.push({
-          type: 'download',
-          fileName: file.name,
-          localPath: itemLocalPath,
-          remotePath: itemRemotePath,
-          size: file.size
-        })
-        plan.totalSize += file.size
-      }
+        if (needDownload) {
+          // Uwaga: Pushowanie do tablicy nie jest atomowe w JS, ale w pętli event loop jest bezpieczne
+          // dopóki nie używamy worker threads. Tutaj działamy na jednym wątku JS.
+          plan.downloads.push({
+            type: 'download',
+            remotePath: itemRemotePath,
+            localPath: itemLocalPath,
+            size: file.size,
+            fileName: file.name
+          })
+          plan.totalSize += file.size
+        }
+      })()
+
+      fileTasks.push(task)
     }
   }
 
-  // 4. CLEANUP
+  // 4. Oczekiwanie na zakończenie analizy plików w TYM folderze
+  await Promise.all(fileTasks)
+
+  // 5. Oczekiwanie na zakończenie analizy PODFOLDERÓW (rekurencja równoległa)
+  const subPlans = await Promise.all(dirTasks)
+
+  // Scalanie wyników z podfolderów
+  for (const subPlan of subPlans) {
+    plan.downloads.push(...subPlan.downloads)
+    plan.deletes.push(...subPlan.deletes)
+    plan.totalSize += subPlan.totalSize
+  }
+
+  // 6. Cleanup (Czyszczenie lokalne) - to wykonujemy na końcu, jest szybkie (lokalne FS)
   if (!isFirstInstall) {
     try {
       const localFiles = await fs.promises.readdir(localDir, { withFileTypes: true })
-
       for (const localDirent of localFiles) {
         if (!localDirent.isFile()) continue
         const name = localDirent.name
         if (name === 'hashes.txt') continue
 
         const fullRemotePath = posix.join(remoteDir, name)
-        const entryInHashes = combinedHashes[fullRemotePath]
+        // Sprawdzamy w combinedHashes, które mamy już w pamięci
+        if (combinedHashes[fullRemotePath]?.flag === 'ignore') continue
 
-        if (entryInHashes?.flag === 'ignore') continue
-
-        if (!remoteFilesSet.has(name)) {
-          if (isStrictFolder) {
-            plan.deletes.push({ localPath: posix.join(localDir, name) })
-            Logger.log(`[CLEANUP] Usunięto nadmiarowy plik: ${posix.join(localDir, name)}`)
-          }
+        if (!remoteFilesSet.has(name) && isStrictFolder) {
+          plan.deletes.push({ localPath: posix.join(localDir, name) })
         }
       }
-    } catch (e) {
-      Logger.warn(`Błąd cleanupu w ${localDir}: ${e}`)
+    } catch {
+      /* ignore */
     }
   }
 
@@ -271,7 +303,9 @@ async function analyzeDirectory(
 // --- LOGIKA GŁÓWNA (FAZA 2: WYKONANIE) ---
 
 /**
- * FAZA 2: Wykonanie (Pobieranie i usuwanie)
+ * FAZA 2: Wykonanie (Pobieranie i usuwanie) - ZMODYFIKOWANA
+ *//**
+ * FAZA 2: Wykonanie (Pobieranie i usuwanie) - RÓWNOLEGŁE + ROLLING AVERAGE
  */
 async function executeSyncPlan(
   state: FtpState,
@@ -281,107 +315,150 @@ async function executeSyncPlan(
   signal: AbortSignal,
   globalProgress: GlobalProgress
 ): Promise<void> {
+  // USTAWIENIA
+  const CONCURRENCY_LIMIT = 4 // Pobieraj 4 pliki naraz (bezpieczne dla większości serwerów SFTP)
+  const SMOOTHING_FACTOR = 0.05 // Wygładzanie prędkości (im mniejsze, tym stabilniejszy czas)
+
   globalProgress.totalFiles = plan.downloads.length
   globalProgress.totalSize = plan.totalSize
   globalProgress.startTime = Date.now()
 
-  // 1. Usuwanie zbędnych plików
-  log(`Usuwanie ${plan.deletes.length} zbędnych plików...`)
-  for (const delTask of plan.deletes) {
-    if (signal.aborted) return
-    try {
-      await fs.promises.unlink(delTask.localPath)
-    } catch {
-      /* ignore */
-    }
-  }
+  // Zmienne do obliczania prędkości chwilowej
+  let lastSpeedCalcTime = Date.now()
+  let lastBytesForSpeed = 0
+  let currentSpeed = 0
 
-  // 2. Pobieranie plików
-  for (let i = 0; i < plan.downloads.length; i++) {
-    if (signal.aborted) return
-    const task = plan.downloads[i]
+  // Helper do formatowania MB
+  const byteToMB = (bytes: number): string => (bytes / (1024 * 1024)).toFixed(2)
+  const totalMBString = byteToMB(globalProgress.totalSize)
 
-    // Funkcja raportowania postępu dla ssh2-sftp-client (fastGet)
-    const stepCallback = (totalTransferredForFile: number): void => {
-      // Obliczamy całkowity postęp: to co już pobrano z poprzednich plików + to co leci teraz
-      const totalDownloadedNow = globalProgress.downloadedSizeBase + totalTransferredForFile
-
-      // Czas i ETA
-      const elapsed = Date.now() - globalProgress.startTime
-      let remainingText = 'Oszacowywanie...'
-
-      if (elapsed > 1000 && totalDownloadedNow > 0) {
-        const speed = totalDownloadedNow / elapsed // bytes per ms
-        const remainingBytes = globalProgress.totalSize - totalDownloadedNow
-        const remainingMs = remainingBytes / speed
-
-        const sec = Math.floor((remainingMs / 1000) % 60)
-        const min = Math.floor((remainingMs / (1000 * 60)) % 60)
-
-        const timeParts: string[] = []
-        if (min > 0) timeParts.push(`${min}m`)
-        if (sec >= 0) timeParts.push(`${sec}s`)
-        remainingText = timeParts.join(' ')
-      }
-
-      const percent =
-        globalProgress.totalSize > 0
-          ? Math.floor((totalDownloadedNow / globalProgress.totalSize) * 100)
-          : 100
-
-      log(
-        `Pobieranie (${i + 1}/${globalProgress.totalFiles}) ${percent}% (Pozostało: ${remainingText})`
-      )
-    }
-
-    // Próba pobrania z retry
-    let success = false
-    for (let attempt = 0; attempt < 3 && !success; attempt++) {
+  // 1. Usuwanie zbędnych plików (bez zmian, to jest szybkie)
+  if (plan.deletes.length > 0) {
+    log(`Usuwanie ${plan.deletes.length} zbędnych plików...`)
+    for (const delTask of plan.deletes) {
       if (signal.aborted) return
       try {
-        // fastGet jest szybsze dla SFTP (korzysta z concurrency)
-        // Opcja 'step' pozwala śledzić postęp
-        await state.client.fastGet(task.remotePath, task.localPath, {
-          step: stepCallback
-        })
-        success = true
-      } catch (err: any) {
-        const msg = err.message || String(err)
-        Logger.warn(`Błąd pobierania ${task.fileName}: ${msg}. Próba ${attempt + 1}`)
-
-        // Reconnect przy błędach połączenia
-        if (
-          msg.toLowerCase().includes('socket') ||
-          msg.toLowerCase().includes('closed') ||
-          msg.toLowerCase().includes('no connection')
-        ) {
-          try {
-            // Zamknij stare połączenie jeśli wisi
-            try {
-              await state.client.end()
-            } catch {
-              /* ignore */
-            }
-
-            state.client = await connect()
-          } catch (reconErr) {
-            Logger.error(`Krytyczny błąd reconnectu: ${reconErr}`)
-            throw reconErr
-          }
-        } else {
-          await new Promise((r) => setTimeout(r, 1000))
-        }
+        await fs.promises.unlink(delTask.localPath)
+      } catch {
+        /* ignore */
       }
     }
+  }
 
-    if (!success) {
-      throw new Error(`Nie udało się pobrać pliku ${task.fileName} po 3 próbach.`)
+  // Funkcja aktualizująca UI (wywoływana często)
+  const updateUI = (): void => {
+    const now = Date.now()
+    const timeDiff = now - lastSpeedCalcTime
+
+    // Aktualizujemy prędkość co ok. 1 sekundę, żeby cyferki nie skakały jak szalone
+    if (timeDiff > 1000) {
+      const bytesInWindow = globalProgress.downloadedSizeBase - lastBytesForSpeed
+      const instantSpeed = bytesInWindow / timeDiff // bajty na ms
+
+      // Średnia ważona (Rolling Average) - niweluje skoki ETA
+      if (currentSpeed === 0) {
+        currentSpeed = instantSpeed
+      } else {
+        currentSpeed = currentSpeed * (1 - SMOOTHING_FACTOR) + instantSpeed * SMOOTHING_FACTOR
+      }
+
+      lastSpeedCalcTime = now
+      lastBytesForSpeed = globalProgress.downloadedSizeBase
     }
 
-    // Po zakończeniu pliku aktualizujemy bazę pobranych bajtów
-    globalProgress.downloadedSizeBase += task.size
-    globalProgress.completedFiles++
+    // Obliczanie czasu
+    let remainingText = 'Obliczanie...'
+    if (currentSpeed > 0) {
+      const remainingBytes = globalProgress.totalSize - globalProgress.downloadedSizeBase
+      const remainingMs = remainingBytes / currentSpeed
+
+      const totalSecondsLeft = Math.ceil(remainingMs / 1000)
+      const min = Math.floor(totalSecondsLeft / 60)
+      const sec = totalSecondsLeft % 60
+      const secString = sec.toString().padStart(2, '0')
+      remainingText = min > 0 ? `${min}m ${secString}s` : `${sec}s`
+    }
+
+    const percent =
+      globalProgress.totalSize > 0
+        ? Math.floor((globalProgress.downloadedSizeBase / globalProgress.totalSize) * 100)
+        : 100
+
+    const currentMBString = byteToMB(globalProgress.downloadedSizeBase)
+
+    log(
+      `Pobieranie: ${currentMBString} / ${totalMBString} MB (${percent}%) • Pozostało: ${remainingText}`
+    )
   }
+
+  // Kolejka zadań
+  const queue = [...plan.downloads]
+  const activeWorkers: Promise<void>[] = []
+
+  // Helper: Pobiera jeden plik z retry
+  const downloadWorker = async (): Promise<void> => {
+    while (queue.length > 0 && !signal.aborted) {
+      const task = queue.shift() // Pobierz zadanie z kolejki
+      if (!task) break
+
+      let downloadedForThisFile = 0
+
+      // Callback lokalny dla fastGet
+      const fileStep = (transferred: number): void => {
+        // Obliczamy deltę (ile przybyło od ostatniego wywołania)
+        const delta = transferred - downloadedForThisFile
+        downloadedForThisFile = transferred
+
+        // Aktualizujemy globalny licznik (atomowo-bezpieczne w JS single thread)
+        globalProgress.downloadedSizeBase += delta
+
+        // Odśwież UI
+        updateUI()
+      }
+
+      // Retry logic
+      let success = false
+      for (let attempt = 0; attempt < 3 && !success; attempt++) {
+        if (signal.aborted) return
+        try {
+          await state.client.fastGet(task.remotePath, task.localPath, { step: fileStep })
+          success = true
+        } catch (err: any) {
+          const msg = err.message || String(err)
+          Logger.warn(`[W] Błąd ${task.fileName}: ${msg}. Retry ${attempt + 1}`)
+
+          // Reconnect logic
+          if (msg.toLowerCase().match(/(socket|closed|no connection)/)) {
+            try {
+              try {
+                await state.client.end()
+              } catch {
+                /* ignore */
+              }
+              state.client = await connect()
+            } catch (reErr) {
+              throw reErr
+            }
+          } else {
+            await new Promise((r) => setTimeout(r, 1000))
+          }
+          // Reset licznika dla tego pliku przy retry, bo fastGet zacznie od nowa (lub resume)
+          // Tutaj uproszczenie: przy resume fastGet i tak raportuje total transferred.
+          // Dla bezpieczeństwa obliczeń delty przy błędzie może być lekki off, ale ETA się wyrówna.
+        }
+      }
+
+      if (!success) throw new Error(`Nie udało się pobrać: ${task.fileName}`)
+      globalProgress.completedFiles++
+    }
+  }
+
+  // Start workers (Concurrency)
+  for (let i = 0; i < Math.min(CONCURRENCY_LIMIT, plan.downloads.length); i++) {
+    activeWorkers.push(downloadWorker())
+  }
+
+  await Promise.all(activeWorkers)
 }
 
 export async function copyMCFiles(
