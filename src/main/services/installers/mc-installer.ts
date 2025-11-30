@@ -1,4 +1,3 @@
-/* eslint-disable no-useless-catch */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import fs from 'fs'
 import { posix } from 'path'
@@ -300,12 +299,9 @@ async function analyzeDirectory(
   return plan
 }
 
-// --- LOGIKA GŁÓWNA (FAZA 2: WYKONANIE) ---
-
 /**
- * FAZA 2: Wykonanie (Pobieranie i usuwanie) - ZMODYFIKOWANA
- *//**
- * FAZA 2: Wykonanie (Pobieranie i usuwanie) - RÓWNOLEGŁE + ROLLING AVERAGE
+ * FAZA 2: Wykonanie (Pobieranie i usuwanie)
+ * Zoptymalizowana: Równoległość + Średnia krocząca (ETA) + SYNCHRONIZOWANY RECONNECT (Fix)
  */
 async function executeSyncPlan(
   state: FtpState,
@@ -315,24 +311,27 @@ async function executeSyncPlan(
   signal: AbortSignal,
   globalProgress: GlobalProgress
 ): Promise<void> {
-  // USTAWIENIA
-  const CONCURRENCY_LIMIT = 4 // Pobieraj 4 pliki naraz (bezpieczne dla większości serwerów SFTP)
-  const SMOOTHING_FACTOR = 0.05 // Wygładzanie prędkości (im mniejsze, tym stabilniejszy czas)
+  // --- KONFIGURACJA ---
+  const CONCURRENCY_LIMIT = 4
+  const SMOOTHING_FACTOR = 0.05
 
+  // --- ZMIENNE STANU ---
   globalProgress.totalFiles = plan.downloads.length
   globalProgress.totalSize = plan.totalSize
   globalProgress.startTime = Date.now()
 
-  // Zmienne do obliczania prędkości chwilowej
   let lastSpeedCalcTime = Date.now()
   let lastBytesForSpeed = 0
   let currentSpeed = 0
+
+  // Muteks do reconnectu - zapobiega jednoczesnemu łączeniu się wielu workerów
+  let reconnectPromise: Promise<Client> | null = null
 
   // Helper do formatowania MB
   const byteToMB = (bytes: number): string => (bytes / (1024 * 1024)).toFixed(2)
   const totalMBString = byteToMB(globalProgress.totalSize)
 
-  // 1. Usuwanie zbędnych plików (bez zmian, to jest szybkie)
+  // 1. Usuwanie zbędnych plików (Szybka operacja, bez zmian)
   if (plan.deletes.length > 0) {
     log(`Usuwanie ${plan.deletes.length} zbędnych plików...`)
     for (const delTask of plan.deletes) {
@@ -345,17 +344,18 @@ async function executeSyncPlan(
     }
   }
 
-  // Funkcja aktualizująca UI (wywoływana często)
+  // Funkcja aktualizująca UI (ETA i Pasek postępu)
   const updateUI = (): void => {
     const now = Date.now()
     const timeDiff = now - lastSpeedCalcTime
 
-    // Aktualizujemy prędkość co ok. 1 sekundę, żeby cyferki nie skakały jak szalone
     if (timeDiff > 1000) {
       const bytesInWindow = globalProgress.downloadedSizeBase - lastBytesForSpeed
-      const instantSpeed = bytesInWindow / timeDiff // bajty na ms
+      // Zabezpieczenie przed ujemnym wynikiem przy retry
+      const safeBytes = bytesInWindow < 0 ? 0 : bytesInWindow
 
-      // Średnia ważona (Rolling Average) - niweluje skoki ETA
+      const instantSpeed = safeBytes / timeDiff
+
       if (currentSpeed === 0) {
         currentSpeed = instantSpeed
       } else {
@@ -366,11 +366,10 @@ async function executeSyncPlan(
       lastBytesForSpeed = globalProgress.downloadedSizeBase
     }
 
-    // Obliczanie czasu
     let remainingText = 'Obliczanie...'
     if (currentSpeed > 0) {
       const remainingBytes = globalProgress.totalSize - globalProgress.downloadedSizeBase
-      const remainingMs = remainingBytes / currentSpeed
+      const remainingMs = Math.max(0, remainingBytes / currentSpeed)
 
       const totalSecondsLeft = Math.ceil(remainingMs / 1000)
       const min = Math.floor(totalSecondsLeft / 60)
@@ -391,69 +390,120 @@ async function executeSyncPlan(
     )
   }
 
-  // Kolejka zadań
-  const queue = [...plan.downloads]
-  const activeWorkers: Promise<void>[] = []
+  // --- LOGIKA RECONNECTU (Synchronizowana) ---
+  const handleReconnect = async (): Promise<void> => {
+    // Jeśli reconnect już trwa, po prostu czekamy na jego zakończenie
+    if (reconnectPromise) {
+      Logger.log(`[RECONNECT] Czekam na zakończenie trwającego reconnectu...`)
+      try {
+        await reconnectPromise
+        return
+      } catch {
+        // Jeśli tamten reconnect padł, próbujemy sami poniżej
+      }
+    }
 
-  // Helper: Pobiera jeden plik z retry
+    // Tworzymy nową obietnicę reconnectu (blokada dla innych wątków)
+    reconnectPromise = (async () => {
+      Logger.log(`[RECONNECT] Rozpoczynam procedurę naprawy połączenia...`)
+
+      for (let attempt = 1; attempt <= 5; attempt++) {
+        try {
+          // Próba zamknięcia starego
+          try {
+            await state.client.end()
+          } catch {
+            /* ignore */
+          }
+
+          // Stopniowe wydłużanie czasu oczekiwania (Backoff): 1s, 2s, 3s...
+          await new Promise((r) => setTimeout(r, 1000 * attempt))
+
+          const newClient = await connect()
+          state.client = newClient // Podmieniamy klienta w globalnym stanie
+
+          Logger.log(`[RECONNECT] Sukces w próbie ${attempt}.`)
+          return newClient
+        } catch (err) {
+          Logger.warn(`[RECONNECT] Próba ${attempt} nieudana: ${err}`)
+          if (attempt === 5) throw err // Krytyczny błąd po 5 razach
+        }
+      }
+      throw new Error('Nie udało się nawiązać połączenia po 5 próbach.')
+    })()
+
+    try {
+      await reconnectPromise
+    } finally {
+      // Zwalniamy blokadę niezależnie od wyniku
+      reconnectPromise = null
+    }
+  }
+
+  // --- WORKER POBIERANIA ---
+  const queue = [...plan.downloads]
+
   const downloadWorker = async (): Promise<void> => {
     while (queue.length > 0 && !signal.aborted) {
-      const task = queue.shift() // Pobierz zadanie z kolejki
+      const task = queue.shift()
       if (!task) break
 
       let downloadedForThisFile = 0
 
-      // Callback lokalny dla fastGet
       const fileStep = (transferred: number): void => {
-        // Obliczamy deltę (ile przybyło od ostatniego wywołania)
         const delta = transferred - downloadedForThisFile
         downloadedForThisFile = transferred
-
-        // Aktualizujemy globalny licznik (atomowo-bezpieczne w JS single thread)
         globalProgress.downloadedSizeBase += delta
-
-        // Odśwież UI
         updateUI()
       }
 
-      // Retry logic
       let success = false
+      // Pętla prób dla JEDNEGO pliku
       for (let attempt = 0; attempt < 3 && !success; attempt++) {
         if (signal.aborted) return
         try {
+          // fastGet korzysta z concurrency:
           await state.client.fastGet(task.remotePath, task.localPath, { step: fileStep })
           success = true
         } catch (err: any) {
           const msg = err.message || String(err)
-          Logger.warn(`[W] Błąd ${task.fileName}: ${msg}. Retry ${attempt + 1}`)
+          Logger.warn(`[W] Błąd ${task.fileName} (Próba ${attempt + 1}): ${msg}`)
 
-          // Reconnect logic
-          if (msg.toLowerCase().match(/(socket|closed|no connection)/)) {
+          // Sprawdzamy czy to błąd połączenia
+          const isNetworkError = msg
+            .toLowerCase()
+            .match(/(socket|closed|no connection|timeout|keepalive|econnreset)/)
+
+          if (isNetworkError) {
             try {
-              try {
-                await state.client.end()
-              } catch {
-                /* ignore */
-              }
-              state.client = await connect()
-            } catch (reErr) {
-              throw reErr
+              // Wywołujemy bezpieczny, synchronizowany reconnect
+              await handleReconnect()
+
+              // Po udanym reconnectcie zmniejszamy licznik 'attempt',
+              // aby błąd sieci nie "zjadał" prób pobrania pliku.
+              // Dzięki temu plik ma nadal 3 szanse na pobranie po naprawieniu łącza.
+              attempt--
+            } catch (fatalError) {
+              Logger.error(`[FATAL] Nie można odzyskać połączenia: ${fatalError}`)
+              throw fatalError // To przerwie Promise.all i zatrzyma program
             }
           } else {
+            // Zwykły błąd (np. plik zajęty), czekamy chwilę
             await new Promise((r) => setTimeout(r, 1000))
           }
-          // Reset licznika dla tego pliku przy retry, bo fastGet zacznie od nowa (lub resume)
-          // Tutaj uproszczenie: przy resume fastGet i tak raportuje total transferred.
-          // Dla bezpieczeństwa obliczeń delty przy błędzie może być lekki off, ale ETA się wyrówna.
         }
       }
 
-      if (!success) throw new Error(`Nie udało się pobrać: ${task.fileName}`)
+      if (!success) {
+        throw new Error(`Nie udało się pobrać pliku: ${task.fileName}`)
+      }
+
       globalProgress.completedFiles++
     }
   }
 
-  // Start workers (Concurrency)
+  // Start Workerów
+  const activeWorkers: Promise<void>[] = []
   for (let i = 0; i < Math.min(CONCURRENCY_LIMIT, plan.downloads.length); i++) {
     activeWorkers.push(downloadWorker())
   }
