@@ -345,76 +345,77 @@ export const red = {
   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
 }
 
-export const halloween ={
-// Primary Accent Palette (Icy Blue)
- primary: '#00DFFF', // Czysty Lodowy Błękit (akcent interaktywny)
- primaryDark: '#0099CC',
- primaryLight: '#E0FFFF', // Icy Off-White
+export const halloween = {
+  // Primary Accent Palette (Icy Blue)
+  primary: '#00DFFF', // Czysty Lodowy Błękit (akcent interaktywny)
+  primaryShop: '#00DFFF50', // Czysty Lodowy Błękit (akcent interaktywny)
+  primaryDark: '#0099CC',
+  primaryLight: '#E0FFFF', // Icy Off-White
 
- // Backgrounds (Deep Dark - bez zmian)
- bgDark: '#0D1117',
- bgCard: 'rgba(22, 27, 34, 0.7)',
- bgLight: '#161B22',
- bgBody: '#0D1117',
- bgPrimary: '#0D1117',
- bgInput: 'rgba(22, 27, 34, 0.8)',
- loadingOverlay: 'rgba(0, 0, 0, 0.95)',
+  // Backgrounds (Deep Dark - bez zmian)
+  bgDark: '#0D111740',
+  bgCard: 'rgba(22, 27, 34, 0.3)',
+  bgLight: '#161B22',
+  bgBody: '#0D1117',
+  bgPrimary: '#0D1117',
+  bgInput: 'rgba(22, 27, 34, 0.8)',
+  loadingOverlay: 'rgba(0, 0, 0, 0.95)',
 
- // Text Colors (Czysta Biel)
- textPrimary: '#FFFFFF', // Czysta Biel
- textSecondary: '#F0F8FF', // Icy Off-White
- textSecondaryAlt: '#B3D4F5',
- textMuted: '#8B949E',
- breadcrumbsText: '#F0F8FF',
- errorMessage: '#FF6B6B',
+  // Text Colors (Czysta Biel)
+  textPrimary: '#FFFFFF', // Czysta Biel
+  textSecondary: '#F0F8FF', // Icy Off-White
+  textSecondaryAlt: '#B3D4F5',
+  textMuted: '#8B949E',
+  breadcrumbsText: '#F0F8FF',
+  errorMessage: '#FF6B6B',
 
- // Borders & Dividers (Wzmocniona Biel)
- border: 'rgba(255, 255, 255, 0.04)', // Mocna Półprzezroczysta Biel
- border2: 'rgba(255, 255, 255, 0.04)',
- borderPrimary: 'rgba(255, 255, 255, 0.04)',
+  // Borders & Dividers (Wzmocniona Biel)
+  border: 'rgba(255, 255, 255, 0.04)', // Mocna Półprzezroczysta Biel
+  border2: 'rgba(255, 255, 255, 0.04)',
+  borderPrimary: 'rgba(255, 255, 255, 0.04)',
 
- // UI Elements (Białe akcenty)
- newsItem: 'rgba(255, 255, 255, 0.08)',
- newsItemHover: 'rgba(255, 255, 255, 0.15)',
- btnHover: 'rgba(255, 255, 255, 0.3)', // Biały hover
- btnGlow: 'rgba(255, 255, 255, 0.35)', // Biała poświata
- footerHover: 'rgba(255, 255, 255, 0.1)',
- shopItem: `linear-gradient(180deg, var(--btn-hover) 0%, transparent 100%)`,
+  // UI Elements (Białe akcenty)
+  newsItem: 'rgba(255, 255, 255, 0.05)',
+  newsItemHover: 'rgba(255, 255, 255, 0.05)',
+  btnHover: 'rgba(255, 255, 255, 0.1)', // Biały hover
+  btnGlow: 'rgba(255, 255, 255, 0.15)', // Biała poświata
+  footerHover: 'rgba(255, 255, 255, 0.1)',
+  shopItem: `linear-gradient(180deg, var(--primary-shop) 0%, transparent 100%)`,
 
- // Special/Accent Colors
- banBtn: 'rgba(255, 255, 255, 0.15)',
- banBtnText: '#FF6B6B',
- statusPulse: 'rgba(255, 255, 255, 1.0)', // Czysta Biała
- toastError: '#FF6B6B',
- toastWarning: '#FFD700',
+  // Special/Accent Colors
+  banBtn: 'rgba(255, 255, 255, 0.15)',
+  banBtnText: '#FF6B6B',
+  statusPulse: 'rgba(255, 255, 255, 1.0)', // Czysta Biała
+  toastError: '#FF6B6B',
+  toastWarning: '#FFD700',
 
- // Navigation
- navIcon: 'rgba(255, 255, 255, 0.2)', // Białe ikony
- tagDark: '#0D111780',
- navItem: 'rgba(255, 255, 255, 0.1)', // Białe tło elementu
- navItemHoverNavIcon: 'rgba(255, 255, 255, 0.3)',
- navItemActive: 'rgba(255, 255, 255, 0.2)',
+  // Navigation
+  navIcon: 'rgba(255, 255, 255, 0.05)', // Białe ikony
+  tagDark: '#0D111780',
+  navItem: 'rgba(255, 255, 255, 0.1)', // Białe tło elementu
+  navItemHoverNavIcon: 'rgba(255, 255, 255, 0.1)',
+  navItemActive: 'rgba(255, 255, 255, 0.1)',
 
- // Login/Form
- loginTabBtnBg: 'rgba(255, 255, 255, 0.15)', // Białe przezroczyste tło
- loginTabBtnHover: 'rgba(255, 255, 255, 0.3)',
- loginInvalidBg: 'rgba(255, 107, 107, 0.1)',
- loginInvalidBorder: 'rgba(255, 107, 107, 0.3)',
- btnMicrosoft: 'linear-gradient(90deg, #00DFFF65, #0099CC)',
- playerLogout: '#3A475C',
+  // Login/Form
+  loginTabBtnBg: 'rgba(255, 255, 255, 0.15)', // Białe przezroczyste tło
+  loginTabBtnHover: 'rgba(255, 255, 255, 0.3)',
+  loginInvalidBg: 'rgba(255, 107, 107, 0.1)',
+  loginInvalidBorder: 'rgba(255, 107, 107, 0.3)',
+  btnMicrosoft: 'linear-gradient(90deg, #00DFFF65, #0099CC)',
+  playerLogout: '#3A475C',
 
- // Effects & Utilities
- headerBg: 'linear-gradient(180deg, rgba(13, 17, 23, 0.5) 0%, rgba(13, 17, 23, 0.45) 100%)',
- gradientPrimary: 'linear-gradient(135deg, #0099CC 0%, #00DFFF 100%)',
- gradientBanned: 'linear-gradient(135deg, #00DFFF 0%, #0099CC 100%)',
- shadowGlow: '0 0 20px rgba(255, 255, 255, 0.6)', // Silna biała poświata szronu
- shadowCard: '0 20px 40px rgba(0, 0, 0, 0.5)',
- gradientOverlay: `radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.2) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(0, 223, 255, 0.1) 0%, transparent 50%), radial-gradient(circle at 40% 20%, rgba(255, 255, 255, 0.15) 0%, transparent 50%)`,
+  // Effects & Utilities
+  headerBg: 'linear-gradient(180deg, rgba(13, 17, 23, 0.5) 0%, rgba(13, 17, 23, 0.45) 100%)',
+  gradientPrimary: 'linear-gradient(135deg, #0099CC 0%, #00DFFF 100%)',
+  gradientBanned: 'linear-gradient(135deg, #00DFFF 0%, #0099CC 100%)',
+  shadowGlow: '0 0 20px rgba(255, 255, 255, 0.6)', // Silna biała poświata szronu
+  shadowCard: '0 20px 40px rgba(0, 0, 0, 0.5)',
+  gradientOverlay: `radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.2) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(0, 223, 255, 0.1) 0%, transparent 50%), radial-gradient(circle at 40% 20%, rgba(255, 255, 255, 0.15) 0%, transparent 50%)`,
 
- // Static Properties (bez zmian)
- borderRadius: '12px',
- borderRadiusSmall: '8px',
- transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+  // Static Properties (bez zmian)
+  borderRadius: '12px',
+  borderRadiusSmall: '8px',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
 }
 
 export const themes = [halloween, red, blue, green, violet, rose, grayscale]
