@@ -1,4 +1,3 @@
-import { halloween } from '@renderer/assets/theme/official'
 import { MIN_RAM } from '@renderer/utils'
 import { defineStore } from 'pinia'
 import { reactive, ref } from 'vue'
@@ -19,7 +18,7 @@ const useGeneralStore = defineStore('general', () => {
     javaVersion: 21,
     version: 'PokemonGoGo.pl',
     displayMode: 'Okno',
-    theme: halloween,
+    theme: 'main',
     autoUpdate: true,
     updateChannel: 'beta',
     isSidebarCollapsed: false
@@ -39,6 +38,17 @@ const useGeneralStore = defineStore('general', () => {
   const isOpeningGame = ref<boolean>(false)
   const currentState = ref<string>('start')
   const currentLog = ref<string>('')
+
+  const getTheme = (): string => {
+    return ['main', 'rose', 'violet', 'grayscale', 'blue', 'green', 'red'].includes(settings.theme)
+      ? settings.theme
+      : 'main'
+  }
+
+  const setTheme = (newTheme: string): void => {
+    settings.theme = newTheme
+    saveSettings()
+  }
 
   // Funkcje do aktualizacji tych stanów
   const setIsOpeningGame = (value: boolean): void => {
@@ -72,22 +82,17 @@ const useGeneralStore = defineStore('general', () => {
   const loadSettings = (): void => {
     const savedSettings = localStorage.getItem('launcherSettings')
     if (!savedSettings) return
-    try {
-      const loaded = JSON.parse(savedSettings)
+    const loaded = JSON.parse(savedSettings)
 
-      if (loaded.showNotifications) settings.showNotifications = loaded.showNotifications
-      if (loaded.hideToTray) settings.hideToTray = loaded.hideToTray
-      if (loaded.resolution) settings.resolution = loaded.resolution
-      if (loaded.ram) settings.ram = Number(loaded.ram)
-      if (loaded.version) settings.version = loaded.version
-      if (loaded.displayMode) settings.displayMode = loaded.displayMode
-      if (loaded.theme) settings.theme = loaded.theme
-      if (typeof loaded.autoUpdate === 'boolean') settings.autoUpdate = loaded.autoUpdate
-      if (loaded.updateChannel) settings.updateChannel = loaded.updateChannel
-      if (loaded.isSidebarCollapsed) settings.isSidebarCollapsed = loaded.isSidebarCollapsed
-    } catch {
-      // brak obsługi błędu
-    }
+    if (loaded.showNotifications) settings.showNotifications = loaded.showNotifications
+    if (loaded.hideToTray) settings.hideToTray = loaded.hideToTray
+    if (loaded.resolution) settings.resolution = loaded.resolution
+    if (loaded.ram) settings.ram = Number(loaded.ram)
+    if (loaded.version) settings.version = loaded.version
+    if (loaded.displayMode) settings.displayMode = loaded.displayMode
+    if (typeof loaded.autoUpdate === 'boolean') settings.autoUpdate = loaded.autoUpdate
+    if (loaded.updateChannel) settings.updateChannel = loaded.updateChannel
+    if (loaded.isSidebarCollapsed) settings.isSidebarCollapsed = loaded.isSidebarCollapsed
   }
 
   const saveSettings = (): void => {
@@ -102,7 +107,7 @@ const useGeneralStore = defineStore('general', () => {
     settings.version = 'PokemonGoGo.pl'
     settings.resolution = '1366x768'
     settings.displayMode = 'Okno'
-    settings.theme = 'Dark'
+    settings.theme = 'main'
     settings.autoUpdate = true
     settings.updateChannel = 'beta'
     settings.isSidebarCollapsed = false
@@ -137,7 +142,9 @@ const useGeneralStore = defineStore('general', () => {
     setCurrentLog,
     setMachineData,
     setHideToTray,
-    setShowNotifications
+    setShowNotifications,
+    getTheme,
+    setTheme
   }
 })
 

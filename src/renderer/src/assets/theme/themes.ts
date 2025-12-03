@@ -1,6 +1,7 @@
 import { updatePreset } from '@primeuix/themes'
 
 export const rose = {
+  name: 'rose',
   primary: '#ff69b4', // intensywny różowy
   primaryDark: '#b1396e', // ciemniejszy odcień różowego
   primaryLight: '#ffb6d9', // jasny pastelowy róż
@@ -58,6 +59,7 @@ export const rose = {
 }
 
 export const violet = {
+  name: 'violet',
   primary: '#b269ff', // ciepły fiolet zamiast pomarańczowego
   primaryDark: '#7a3fb8', // ciemny fiolet
   primaryLight: '#d7baff', // jasny, pastelowy fiolet
@@ -115,6 +117,7 @@ export const violet = {
 }
 
 export const grayscale = {
+  name: 'grayscale',
   primary: '#b0b0b0', // neutralny szary podstawowy
   primaryDark: '#6e6e6e', // ciemniejszy odcień szarości
   primaryLight: '#d9d9d9', // jasny pastelowy szary
@@ -168,6 +171,7 @@ export const grayscale = {
 }
 
 export const blue = {
+  name: 'blue',
   primary: '#3a7bd5', // intensywny niebieski
   primaryDark: '#1f4d8a', // ciemny, chłodny niebieski
   primaryLight: '#a8c6ff', // jasny pastelowy niebieski
@@ -221,6 +225,7 @@ export const blue = {
 }
 
 export const green = {
+  name: 'green',
   primary: '#32CD32', // limonkowy intensywny zielony
   primaryDark: '#228B22', // ciemny zielony las
   primaryLight: '#98FB98', // jasny pastelowy zielony (PaleGreen)
@@ -274,6 +279,7 @@ export const green = {
 }
 
 export const red = {
+  name: 'red',
   // Primary Red Palette
   primary: '#FF4500', // intensywny pomarańczowo-czerwony (OrangeRed)
   primaryDark: '#B22222', // ciemny, głęboki czerwony (FireBrick)
@@ -296,7 +302,7 @@ export const red = {
   breadcrumbsText: '#d8b2b2',
   errorMessage: '#ff4757', // Zostawiamy standardową czerwień na błędy
 
-  // Borders & Dividers
+  // Borders & Divi ders
   border: 'rgba(255, 69, 0, 0.15)', // półprzezroczysty OrangeRed
   border2: '#ff450047',
   borderPrimary: 'rgba(255, 255, 255, 0.1)',
@@ -345,7 +351,8 @@ export const red = {
   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
 }
 
-export const halloween = {
+export const main = {
+  name: 'main',
   // Primary Accent Palette (Icy Blue)
   primary: '#00DFFF', // Czysty Lodowy Błękit (akcent interaktywny)
   primaryShop: '#00DFFF50', // Czysty Lodowy Błękit (akcent interaktywny)
@@ -418,9 +425,11 @@ export const halloween = {
   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
 }
 
-export const themes = [halloween, red, blue, green, violet, rose, grayscale]
+export const themes = [main, red, blue, green, violet, rose, grayscale]
 
-export function applyTheme(theme: { [key: string]: string }): void {
+export function applyTheme(newTheme: string): void {
+  const theme = themes.find((t) => t.name.toLowerCase() === newTheme?.toLowerCase()) || main
+
   const root = document.documentElement
   Object.entries(theme).forEach(([key, value]: [string, string]) => {
     root.style.setProperty(`--${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`, value)
@@ -468,6 +477,4 @@ export function applyTheme(theme: { [key: string]: string }): void {
       }
     }
   })
-
-  localStorage.setItem('selectedTheme', JSON.stringify(theme))
 }

@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { changeEmail, changePassword } from '@renderer/api/endpoints'
-import { applyTheme, themes } from '@renderer/assets/theme/official'
+import { applyTheme, themes } from '@renderer/assets/theme/themes'
 import ChangeSkinModal from '@renderer/components/modals/ChangeSkinModal.vue'
 import VerifyFilesModal from '@renderer/components/modals/VerifyFilesModal.vue'
 import SkinViewer from '@renderer/components/SkinViewer.vue'
@@ -177,6 +177,12 @@ const openChangeSkinModal = (): void => {
   changeSkinModalRef.value?.openModal()
 }
 
+const setNewTheme = (newTheme: string): void => {
+  applyTheme(newTheme)
+  generalStore.setTheme(newTheme)
+  saveSettings()
+}
+
 onUnmounted(() => {
   generalStore.saveSettings()
 })
@@ -289,7 +295,7 @@ onUnmounted(() => {
               v-for="theme in themes"
               :key="theme.primary"
               class="nav-icon !w-[2rem] !h-[2rem] !text-[1rem]"
-              @click="applyTheme(theme)"
+              @click="setNewTheme(theme.name)"
             >
               <i class="fa fa-home" :style="{ color: theme.primary }" />
             </button>

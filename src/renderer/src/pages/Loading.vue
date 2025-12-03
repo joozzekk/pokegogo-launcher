@@ -3,7 +3,7 @@ import logo from '@renderer/assets/logo.png'
 import { ref, onMounted } from 'vue'
 import dynia from '@renderer/assets/img/dynia.png'
 import ghost from '@renderer/assets/img/ghost.png'
-import { applyTheme, halloween } from '@renderer/assets/theme/official'
+import { applyTheme } from '@renderer/assets/theme/themes'
 import { checkUpdate } from '@renderer/utils'
 import useGeneralStore from '@renderer/stores/general-store'
 
@@ -21,11 +21,7 @@ const statuses = {
 onMounted(() => {
   generalStore.loadSettings()
 
-  applyTheme(
-    localStorage.getItem('selectedTheme')
-      ? JSON.parse(localStorage.getItem('selectedTheme')!)
-      : halloween
-  )
+  applyTheme(generalStore.getTheme())
 
   const runLoadingFlow = async (): Promise<void> => {
     try {
