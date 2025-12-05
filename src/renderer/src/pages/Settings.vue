@@ -170,10 +170,6 @@ const openVerifyFilesModal = (): void => {
 
 const changeSkinModalRef = ref()
 const openChangeSkinModal = (): void => {
-  if (!userStore.user?.accountType || userStore.user?.accountType === 'microsoft') {
-    showToast('Zmiana skina jest dostępna tylko dla użytkowników non-premium!', 'error')
-    return
-  }
   changeSkinModalRef.value?.openModal()
 }
 
