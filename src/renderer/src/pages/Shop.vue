@@ -1,3 +1,4 @@
+<!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <script lang="ts" setup>
 import { getItems } from '@renderer/api/endpoints'
 import ShopItem from '@renderer/components/ShopItem.vue'
@@ -128,8 +129,7 @@ onMounted(async () => {
   font-size: 13px;
   padding: 6px 10px;
   border-radius: 999px;
-  color: var(--primary);
-  background: black;
+  background: var(--bg-dark);
   border: 1px dashed var(--border);
   box-shadow:
     inset 0 0 0 1px rgba(0, 0, 0, 0.06),

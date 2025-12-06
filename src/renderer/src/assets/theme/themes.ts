@@ -287,7 +287,7 @@ export const red = {
 
   // Backgrounds
   bgDark: '#330000', // bardzo ciemny czerwony, niemal czarny
-  bgCard: '#66222220', // półprzezroczysty ciemny czerwony
+  bgCard: '#66222250', // półprzezroczysty ciemny czerwony
   bgLight: '#662222', // ciemny czerwony
   bgBody: '#000000ff', // Ciemne tło (czarne dla kontrastu)
   bgPrimary: '#330000',
@@ -360,9 +360,9 @@ export const main = {
   primaryLight: '#E0FFFF', // Icy Off-White
 
   // Backgrounds (Deep Dark - bez zmian)
-  bgDark: '#0D111740',
-  bgCard: 'rgba(22, 27, 34, 0.3)',
-  bgLight: '#161B22',
+  bgDark: '#0D1117aa',
+  bgCard: 'rgba(22, 27, 34, 0.4)',
+  bgLight: '#161B2280',
   bgBody: '#0D1117',
   bgPrimary: '#0D1117',
   bgInput: 'rgba(22, 27, 34, 0.8)',
@@ -412,7 +412,6 @@ export const main = {
   playerLogout: '#3A475C',
 
   // Effects & Utilities
-  headerBg: 'linear-gradient(180deg, rgba(13, 17, 23, 0.5) 0%, rgba(13, 17, 23, 0.45) 100%)',
   gradientPrimary: 'linear-gradient(135deg, #0099CC 0%, #00DFFF 100%)',
   gradientBanned: 'linear-gradient(135deg, #00DFFF 0%, #0099CC 100%)',
   shadowGlow: '0 0 20px rgba(255, 255, 255, 0.6)', // Silna biała poświata szronu

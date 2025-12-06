@@ -127,28 +127,30 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="animated-bg">
-    <img
-      :src="choinka"
-      alt="background"
-      class="absolute !h-[100vh] z-[0] opacity-15"
-      @dragstart.prevent="null"
-    />
+  <div>
+    <div class="animated-bg">
+      <img
+        :src="choinka"
+        alt="background"
+        class="absolute !h-[100vh] z-[0]"
+        @dragstart.prevent="null"
+      />
 
-    <!-- <div class="gradient-overlay"></div> -->
-    <div class="particles"></div>
+      <div class="particles"></div>
+    </div>
+    <div class="vignette"></div>
+
+    <Header />
+
+    <div class="container">
+      <Sidebar />
+
+      <main class="main-content">
+        <RouterView />
+      </main>
+    </div>
+
+    <div id="toastContainer" class="toast-container"></div>
+    <BannedModal />
   </div>
-
-  <Header />
-
-  <div class="container">
-    <Sidebar />
-
-    <main class="main-content">
-      <RouterView />
-    </main>
-  </div>
-
-  <div id="toastContainer" class="toast-container"></div>
-  <BannedModal />
 </template>

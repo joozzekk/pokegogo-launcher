@@ -99,8 +99,8 @@ watch(
 </script>
 
 <template>
-  <aside class="sidebar my-2" :class="{ collapsed: generalStore.settings.isSidebarCollapsed }">
-    <div class="player-profile mx-3 mb-3">
+  <aside class="sidebar" :class="{ collapsed: generalStore.settings.isSidebarCollapsed }">
+    <div class="player-profile mx-3 my-3">
       <div class="player-fullinfo">
         <div class="player-avatar">
           <img

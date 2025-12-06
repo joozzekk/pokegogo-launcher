@@ -128,19 +128,6 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- Christmas Tree -->
-    <div class="christmas-tree">
-      <div class="tree-top">⭐</div>
-      <div class="tree-body">
-        <div class="tree-row">
-          <span class="light light-1">●</span>
-          🎄
-          <span class="light light-2">●</span>
-        </div>
-      </div>
-      <div class="tree-trunk">🟫</div>
-    </div>
-
     <div class="flex ml-auto mr-[6rem] items-center gap-2">
       <div class="applogo-badge">{{ generalStore.settings.updateChannel }}</div>
 
@@ -301,7 +288,8 @@ onUnmounted(() => {
 }
 
 @keyframes twinkle {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
     transform: scale(1);
   }
@@ -312,7 +300,8 @@ onUnmounted(() => {
 }
 
 @keyframes blink {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
     filter: brightness(1);
   }

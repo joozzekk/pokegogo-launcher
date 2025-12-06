@@ -5,6 +5,7 @@ import useGeneralStore from '@renderer/stores/general-store'
 import useUserStore from '@renderer/stores/user-store'
 import { createParticles, refreshMicrosoftToken, showToast } from '@renderer/utils'
 import { differenceInMilliseconds, intervalToDuration, parseISO } from 'date-fns'
+import { watch } from 'vue'
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 
 const generalStore = useGeneralStore()
@@ -159,16 +160,19 @@ window.electron?.ipcRenderer?.on('launch:change-state', async (_event, state: st
   const parsedState = JSON.parse(state)
   generalStore.setCurrentState(parsedState)
 
+  if (parsedState === 'minecraft-start') {
+    generalStore.setIsOpeningGame(true)
+  }
+
   if (parsedState === 'minecraft-started') {
     LOGGER.log('Minecraft is running..')
     await connectPlayer()
   }
 
   if (parsedState === 'minecraft-closed') {
-    setTimeout(() => {
-      generalStore.setCurrentState('start')
-      generalStore.setIsOpeningGame(false)
-    }, 500)
+    generalStore.setCurrentState('start')
+    generalStore.setIsOpeningGame(false)
+    generalStore.setCurrentLog('')
     LOGGER.log('Minecraft is closed.')
     await disconnectPlayer()
   }
@@ -181,6 +185,10 @@ window.electron?.ipcRenderer?.on('launch:show-log', (_event, data: string, ended
   }
 
   generalStore.setCurrentLog('')
+})
+
+const currentState = computed(() => {
+  return generalStore.currentState
 })
 
 onMounted(async () => {
@@ -209,14 +217,13 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div
-    class="launch-button-container"
-    :class="{ 'margin-36': generalStore.currentState === 'files-verify' }"
-  >
+  <div class="relative">
     <button
-      id="launchBtn"
       class="launch-button"
-      :class="{ banned: isBanned }"
+      :class="{
+        banned: isBanned,
+        'mb-7': generalStore.currentLog.length
+      }"
       :disabled="isBanned"
       @click="(e) => handleToggleGame(e)"
     >
@@ -250,18 +257,13 @@ onUnmounted(() => {
           <i v-if="generalStore.isOpeningGame" class="fas fa-spinner fa-spin"></i>
           <span>{{ state }}</span>
         </div>
-        <span
-          v-if="generalStore.isOpeningGame && generalStore.currentState !== 'java-install'"
-          class="info"
+        <span v-if="generalStore.isOpeningGame && currentState !== 'java-install'" class="info"
           >Kliknij, aby przerwać</span
         >
       </div>
     </button>
     <Transition name="slide-down">
-      <div
-        v-if="generalStore.currentState === 'files-verify' && generalStore.currentLog.length"
-        class="launch-button-info"
-      >
+      <div v-if="generalStore.currentLog.length" class="launch-button-info">
         {{ generalStore.currentLog }}
       </div>
     </Transition>
@@ -269,23 +271,17 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-.launch-button-container {
-  position: relative;
-}
-
-.margin-36 {
-  margin-bottom: 2.5rem;
-}
-
 .launch-button-info {
   width: 100%;
-  height: 2rem;
+  height: 1.5rem;
   position: absolute;
-  top: 90%;
+  bottom: -25%;
   width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: var(--bg-dark);
-  padding: 0.25rem 0.5rem;
-  padding-top: 0.75rem;
+  padding: 0.1rem;
   font-size: 0.6rem;
   color: var(--text-secondary);
   text-align: center;
@@ -317,7 +313,6 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   gap: 12px;
-  margin-bottom: 20px;
   z-index: 2;
 }
 

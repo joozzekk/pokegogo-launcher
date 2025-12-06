@@ -88,6 +88,7 @@ export async function launchMinecraft(
     client.emit('close', 1)
     process?.kill('SIGTERM')
     Logger.log('PokeGoGo Launcher > Killed minecraft.')
+    win.webContents.send('launch:change-state', JSON.stringify('minecraft-closed'))
   })
 
   ipcMain.removeHandler('launch:check-state')
@@ -104,6 +105,7 @@ export async function launchMinecraft(
   })
   client.on('data', (data) => {
     Logger.log('PokeGoGo Launcher > MC Data > ', data)
+    win.webContents.send('launch:change-state', JSON.stringify('minecraft-start'))
 
     if (data.includes('Initializing Client')) {
       win.webContents.send('launch:change-state', JSON.stringify('minecraft-started'))
