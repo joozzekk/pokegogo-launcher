@@ -110,166 +110,6 @@ async function fetchGlobalManifest(state: FtpState, localTempDir: string): Promi
   }
 }
 
-// --- 2. ANALIZA PŁASKA ---
-
-async function analyzeDirectory(
-  state: FtpState,
-  remoteTargetDir: string, // np. "dev-mc"
-  localDir: string,
-  isFirstInstall: boolean,
-  signal: AbortSignal,
-  globalHashes: HashMap // Przekazujemy załadowane wcześniej hashe
-): Promise<SyncPlan> {
-  const plan: SyncPlan = { downloads: [], deletes: [], totalSize: 0 }
-
-  if (signal.aborted) return plan
-
-  await fs.promises.mkdir(localDir, { recursive: true })
-
-  Logger.log(`[ANALIZA] Skanowanie folderu wersji: ${remoteTargetDir}`)
-
-  // Pobieramy listę plików tylko z folderu docelowego (np. dev-mc)
-  let remoteList: any[] = []
-  try {
-    remoteList = await state.client.list(remoteTargetDir)
-  } catch (e: any) {
-    Logger.error(`[FTP] Błąd listowania folderu ${remoteTargetDir}: ${e.message}`)
-    return plan
-  }
-
-  const remoteFilesSet = new Set<string>()
-
-  for (const file of remoteList) {
-    if (['.', '..', '.hashes', '.meta.json', '.ziphash'].includes(file.name)) continue
-
-    if (file.name.endsWith('.zip')) {
-      remoteFilesSet.add(file.name)
-      continue
-    }
-
-    // Ścieżki fizyczne
-    const itemRemotePath = posix.join(remoteTargetDir, file.name) // np. dev-mc/mods
-    const itemLocalPath = posix.join(localDir, file.name)
-
-    // === BUDOWANIE KLUCZA ===
-    // Ponieważ remoteTargetDir to np. "dev-mc", a file.name to "mods",
-    // klucz w JSON to dokładnie "dev-mc/mods".
-    // Używamy tego wprost, bez relatywnego obliczania względem roota.
-    const lookupKey = `${remoteTargetDir}/${file.name}`
-
-    const entry = globalHashes[lookupKey]
-
-    remoteFilesSet.add(file.name)
-
-    const isEntryImportant = entry?.flag === 'important'
-    const isEntryIgnored = entry?.flag === 'ignore'
-
-    // === BRAMKA LOGICZNA ===
-    let shouldProcess = true
-
-    if (isEntryIgnored) {
-      shouldProcess = false
-    } else if (!isFirstInstall && !isEntryImportant) {
-      // Jeśli aktualizacja i nie jest ważny -> SKIP
-      shouldProcess = false
-    }
-
-    // [DEBUG LOG] Pomoże zrozumieć dlaczego coś jest pomijane
-    // if (!shouldProcess) Logger.log(`[SKIP] ${lookupKey} (First: ${isFirstInstall}, Imp: ${isEntryImportant})`)
-
-    if (!shouldProcess) continue
-
-    // --- KATALOGI ---
-    if (isSftpDir(file.type)) {
-      if (entry?.isZipped) {
-        const zipName = `${file.name}.zip`
-        const zipRemotePath = posix.join(remoteTargetDir, zipName)
-        const zipLocalPath = posix.join(localDir, zipName)
-
-        const zipTask = (async () => {
-          let needDownload = true
-          const markerPath = posix.join(itemLocalPath, '.ziphash')
-
-          if (await fileExists(itemLocalPath)) {
-            if (entry.zipHash) {
-              try {
-                const localStoredHash = await fs.promises.readFile(markerPath, 'utf8')
-                if (localStoredHash.trim() === entry.zipHash.trim()) {
-                  needDownload = false
-                } else {
-                  Logger.log(`[UPDATE] Zmiana hasha zipa: ${lookupKey}`)
-                }
-              } catch {
-                Logger.log(`[FIX] Brak markera .ziphash w: ${lookupKey}`)
-                needDownload = true
-              }
-            } else {
-              needDownload = false
-            }
-          } else {
-            Logger.log(`[NEW] Pobieranie nowego modułu: ${lookupKey}`)
-          }
-
-          if (needDownload) {
-            let zipSize = 0
-            const zipFileEntry = remoteList.find((f) => f.name === zipName)
-
-            if (zipFileEntry) {
-              zipSize = zipFileEntry.size
-
-              plan.downloads.push({
-                type: 'download',
-                remotePath: zipRemotePath,
-                localPath: zipLocalPath,
-                size: zipSize,
-                fileName: zipName,
-                isZip: true,
-                targetDir: localDir,
-                zipHash: entry.zipHash
-              })
-              plan.totalSize += zipSize
-            } else {
-              Logger.warn(`[ERROR] Brak pliku ${zipName} dla klucza ${lookupKey}`)
-            }
-          }
-        })()
-        // Ponieważ to funkcja asynchroniczna wewnątrz pętli, dodajemy ją do tablicy (tutaj uproszczone pushowanie do planu synchronicznie wewnątrz async IIFE wymagałoby Promise.all, ale w tym modelu "płaskim" możemy dodać to do listy zadań)
-        // W poprzednim kodzie mieliśmy `fileTasks`. Przywracam tę logikę.
-        return zipTask
-      } else {
-        Logger.log(`[SKIP-DIR] Niespakowany folder: ${lookupKey}`)
-      }
-    }
-    // --- PLIKI ---
-    else if (isSftpFile(file.type)) {
-      const fileTask = (async () => {
-        let needDownload = true
-        if (entry?.hash && (await fileExists(itemLocalPath))) {
-          const localHash = await getFileHash(itemLocalPath)
-          if (localHash === entry.hash) needDownload = false
-        } else if (!entry?.hash && (await fileExists(itemLocalPath))) {
-          needDownload = false
-        } else {
-          Logger.log(`[NEW/UPDATE] Plik: ${lookupKey}`)
-        }
-
-        if (needDownload) {
-          plan.downloads.push({
-            type: 'download',
-            remotePath: itemRemotePath,
-            localPath: itemLocalPath,
-            size: file.size,
-            fileName: file.name
-          })
-          plan.totalSize += file.size
-        }
-      })()
-      return fileTask
-    }
-  }
-  return null
-}
-
 // --- 3. WYKONANIE PLANU ---
 
 async function executeSyncPlan(
@@ -289,7 +129,7 @@ async function executeSyncPlan(
   let lastBytesForSpeed = 0
   let currentSpeed = 0
   let reconnectPromise: Promise<Client> | null = null
-  const byteToMB = (bytes: number) => (bytes / (1024 * 1024)).toFixed(2)
+  const byteToMB = (bytes: number): string => (bytes / (1024 * 1024)).toFixed(2)
 
   // 1. Usuwanie
   if (plan.deletes.length > 0) {
@@ -336,7 +176,7 @@ async function executeSyncPlan(
   }
 
   // Reconnect
-  const handleReconnect = async () => {
+  const handleReconnect = async (): Promise<void> => {
     if (reconnectPromise) {
       await reconnectPromise
       return
@@ -363,7 +203,7 @@ async function executeSyncPlan(
       if (!task) break
 
       let downloadedForThisFile = 0
-      const fileStep = (transferred: number) => {
+      const fileStep = (transferred: number): void => {
         const delta = transferred - downloadedForThisFile
         downloadedForThisFile = transferred
         globalProgress.downloadedSizeBase += delta
@@ -618,7 +458,9 @@ export async function copyMCFiles(
             else plan.deletes.push({ localPath: p })
           }
         }
-      } catch {}
+      } catch {
+        /* ignore */
+      }
     }
 
     if (signal.aborted) return 'stop'
@@ -645,7 +487,9 @@ export async function copyMCFiles(
   } finally {
     try {
       await state?.client.end()
-    } catch {}
+    } catch {
+      /* ignore */
+    }
   }
   return
 }

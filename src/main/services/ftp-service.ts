@@ -199,7 +199,7 @@ export const useFTPService = (): {
       })
     })
 
-    async function computeHash(buffer: ArrayBuffer): Promise<string> {
+    async function computeHash(buffer: Buffer): Promise<string> {
       const hash = createHash('sha256')
       hash.update(Buffer.from(buffer))
       return hash.digest('hex')
