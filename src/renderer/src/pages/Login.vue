@@ -4,6 +4,7 @@ import { onMounted } from 'vue'
 import { PokeGoGoLogin } from '@renderer/assets/scripts/login'
 import dynia from '@renderer/assets/img/dynia.png'
 import ghost from '@renderer/assets/img/ghost.png'
+import choinka from '@renderer/assets/img/choinka.png'
 
 const handleDiscordLink = (): void => {
   window.open('https://discord.com/invite/pokemongogo', '_blank')
@@ -23,6 +24,17 @@ onMounted(() => {
 </script>
 
 <template>
+  <div class="animated-bg">
+    <img
+      :src="choinka"
+      alt="background"
+      class="absolute !h-[100vh] z-[0]"
+      @dragstart.prevent="null"
+    />
+
+    <div class="particles"></div>
+  </div>
+  <div class="vignette"></div>
   <div class="background">
     <div class="bg-gradient"></div>
     <div class="floating-blocks">

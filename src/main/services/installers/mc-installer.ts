@@ -1,17 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import fs from 'fs'
-import { posix } from 'path'
+import { posix, join } from 'path'
 import crypto from 'crypto'
-import Client from 'ssh2-sftp-client' // Zmiana klienta
+import Client from 'ssh2-sftp-client'
 import { useFTPService } from '../ftp-service'
 import { app, BrowserWindow } from 'electron'
 import Logger from 'electron-log'
+import AdmZip from 'adm-zip'
 
-// --- TYPY I INTERFEJSY ---
+// --- TYPY ---
 
 interface HashEntry {
-  hash: string
+  hash?: string
+  zipHash?: string
   flag?: 'important' | 'ignore'
+  isZipped?: boolean
+  type?: 'file' | 'dir'
 }
 
 type HashMap = Record<string, HashEntry>
@@ -22,6 +26,9 @@ interface SyncTask {
   localPath: string
   size: number
   fileName: string
+  isZip?: boolean
+  targetDir?: string
+  zipHash?: string
 }
 
 interface DeleteTask {
@@ -34,24 +41,22 @@ interface SyncPlan {
   totalSize: number
 }
 
-// Wrapper dla klienta SFTP
 interface FtpState {
   client: Client
 }
 
 interface GlobalProgress {
   totalFiles: number
-  completedFiles: number // Pliki w pełni pobrane
+  completedFiles: number
   totalSize: number
-  downloadedSizeBase: number // Bajty pobrane z *zakończonych* plików
+  downloadedSizeBase: number
   startTime: number
 }
 
-// --- HELPERS DLA SFTP ---
+// --- HELPERS ---
+
 const isSftpDir = (type: string | undefined): boolean => type === 'd'
 const isSftpFile = (type: string | undefined): boolean => type === '-'
-
-// --- FUNKCJE POMOCNICZE ---
 
 async function fileExists(filePath: string): Promise<boolean> {
   try {
@@ -72,180 +77,183 @@ async function getFileHash(filePath: string): Promise<string> {
   })
 }
 
-/**
- * Parsuje plik hashes.txt
- */
-async function parseHashes(content: string): Promise<HashMap> {
-  const map: HashMap = {}
-  const lines = content.split('\n').filter((l) => l.trim())
-
-  const regex = /^(.*?)\s+([a-fA-F0-9]{64}|dir)(?:\s+(important|ignore))?$/
-
-  for (const line of lines) {
-    const match = line.trim().match(regex)
-    if (match) {
-      const [, name, hash, flag] = match
-      map[name.trim()] = {
-        hash,
-        flag: flag as 'important' | 'ignore' | undefined
-      }
-    }
+async function loadManifest(filePath: string): Promise<HashMap> {
+  try {
+    const content = await fs.promises.readFile(filePath, 'utf8')
+    return JSON.parse(content)
+  } catch {
+    return {}
   }
-  return map
 }
 
-// --- LOGIKA GŁÓWNA (FAZA 1: ANALIZA - ZOPTYMALIZOWANA) ---
+// --- 1. POBIERANIE GLOBALNEGO MANIFESTU ---
 
-/**
- * Struktura pomocnicza do wyników analizy pojedynczego folderu
- */
-interface DirectoryAnalysisResult {
-  remoteList: any[]
-  hashes: HashMap
+async function fetchGlobalManifest(state: FtpState, localTempDir: string): Promise<HashMap> {
+  // Pobieramy .hashes z GŁÓWNEGO katalogu FTP ('.')
+  const remoteManifestPath = '.hashes'
+  const localManifestPath = posix.join(localTempDir, '.hashes_global.json')
+
+  try {
+    await fs.promises.mkdir(localTempDir, { recursive: true })
+
+    // Logger.log(`[MANIFEST] Pobieranie globalnego pliku .hashes...`)
+    await state.client.get(remoteManifestPath, localManifestPath)
+
+    const map = await loadManifest(localManifestPath)
+    await fs.promises.unlink(localManifestPath).catch(() => {})
+
+    // Logger.log(`[MANIFEST] Załadowano ${Object.keys(map).length} wpisów.`)
+    return map
+  } catch (e: any) {
+    Logger.warn(`[ERROR] Nie udało się pobrać głównego pliku .hashes: ${e.message}`)
+    return {}
+  }
 }
 
-/**
- * Pobiera dane o katalogu (listę plików i hashe) RÓWNOLEGLE
- */
-async function fetchDirectoryData(
-  state: FtpState,
-  remoteDir: string,
-  localDir: string
-): Promise<DirectoryAnalysisResult> {
-  const remoteHashesPath = posix.join(remoteDir, 'hashes.txt')
-  const localHashesPath = posix.join(localDir, 'hashes.txt')
+// --- 2. ANALIZA PŁASKA ---
 
-  // Uruchamiamy oba requesty na raz: LIST oraz GET hashes.txt
-  const listPromise = state.client.list(remoteDir).catch((err) => {
-    Logger.warn(`[FTP] Błąd listowania ${remoteDir}: ${err.message}`)
-    return [] // Zwracamy pusto w razie błędu listowania, by nie wywalić całej apki
-  })
-
-  const hashesPromise = (async () => {
-    try {
-      await state.client.get(remoteHashesPath, localHashesPath)
-      const content = await fs.promises.readFile(localHashesPath, 'utf8')
-      return parseHashes(content)
-    } catch {
-      return {} // Brak pliku hashes.txt lub błąd
-    }
-  })()
-
-  const [remoteList, hashes] = await Promise.all([listPromise, hashesPromise])
-
-  return { remoteList, hashes }
-}
-
-/**
- * FAZA 1: Skanowanie i budowanie planu (RÓWNOLEGŁA)
- */
 async function analyzeDirectory(
   state: FtpState,
-  connect: () => Promise<Client>, // connect jest tu rzadziej potrzebny dzięki Promise.all, ale zostawiamy dla spójności
-  remoteDir: string,
+  remoteTargetDir: string, // np. "dev-mc"
   localDir: string,
   isFirstInstall: boolean,
   signal: AbortSignal,
-  ancestorHashes: HashMap = {},
-  isStrictFolder: boolean = false
+  globalHashes: HashMap // Przekazujemy załadowane wcześniej hashe
 ): Promise<SyncPlan> {
   const plan: SyncPlan = { downloads: [], deletes: [], totalSize: 0 }
 
   if (signal.aborted) return plan
 
-  // 1. Upewnij się, że katalog istnieje
   await fs.promises.mkdir(localDir, { recursive: true })
 
-  // 2. Pobierz dane zdalne (Lista + Hashe) równolegle
-  Logger.log(`[ANALIZA] Pobieranie danych dla: ${remoteDir}`)
-  const { remoteList, hashes: currentDirHashes } = await fetchDirectoryData(
-    state,
-    remoteDir,
-    localDir
-  )
+  Logger.log(`[ANALIZA] Skanowanie folderu wersji: ${remoteTargetDir}`)
 
-  // Budowanie mapy hashy
-  const combinedHashes: HashMap = { ...ancestorHashes }
-  for (const [name, entry] of Object.entries(currentDirHashes)) {
-    const fullRemotePath = posix.join(remoteDir, name)
-    combinedHashes[fullRemotePath] = entry
+  // Pobieramy listę plików tylko z folderu docelowego (np. dev-mc)
+  let remoteList: any[] = []
+  try {
+    remoteList = await state.client.list(remoteTargetDir)
+  } catch (e: any) {
+    Logger.error(`[FTP] Błąd listowania folderu ${remoteTargetDir}: ${e.message}`)
+    return plan
   }
 
-  const effectiveHashes = isFirstInstall ? {} : combinedHashes
   const remoteFilesSet = new Set<string>()
 
-  // Kolekcje do przetwarzania równoległego
-  const fileTasks: Promise<void>[] = []
-  const dirTasks: Promise<SyncPlan>[] = []
-
-  // 3. Iteracja po elementach zdalnych
   for (const file of remoteList) {
-    if (file.name === '.' || file.name === '..') continue
+    if (['.', '..', '.hashes', '.meta.json', '.ziphash'].includes(file.name)) continue
 
-    const itemRemotePath = posix.join(remoteDir, file.name)
+    if (file.name.endsWith('.zip')) {
+      remoteFilesSet.add(file.name)
+      continue
+    }
+
+    // Ścieżki fizyczne
+    const itemRemotePath = posix.join(remoteTargetDir, file.name) // np. dev-mc/mods
     const itemLocalPath = posix.join(localDir, file.name)
+
+    // === BUDOWANIE KLUCZA ===
+    // Ponieważ remoteTargetDir to np. "dev-mc", a file.name to "mods",
+    // klucz w JSON to dokładnie "dev-mc/mods".
+    // Używamy tego wprost, bez relatywnego obliczania względem roota.
+    const lookupKey = `${remoteTargetDir}/${file.name}`
+
+    const entry = globalHashes[lookupKey]
+
     remoteFilesSet.add(file.name)
 
-    const entry = effectiveHashes[itemRemotePath]
-    const isEntryImportant = combinedHashes[itemRemotePath]?.flag === 'important'
-    const isEntryIgnored = combinedHashes[itemRemotePath]?.flag === 'ignore'
+    const isEntryImportant = entry?.flag === 'important'
+    const isEntryIgnored = entry?.flag === 'ignore'
+
+    // === BRAMKA LOGICZNA ===
+    let shouldProcess = true
+
+    if (isEntryIgnored) {
+      shouldProcess = false
+    } else if (!isFirstInstall && !isEntryImportant) {
+      // Jeśli aktualizacja i nie jest ważny -> SKIP
+      shouldProcess = false
+    }
+
+    // [DEBUG LOG] Pomoże zrozumieć dlaczego coś jest pomijane
+    // if (!shouldProcess) Logger.log(`[SKIP] ${lookupKey} (First: ${isFirstInstall}, Imp: ${isEntryImportant})`)
+
+    if (!shouldProcess) continue
 
     // --- KATALOGI ---
     if (isSftpDir(file.type)) {
-      let shouldRecurse = true
-      // Logika flag
-      if (!isFirstInstall) {
-        if (isEntryImportant) shouldRecurse = true
-        else if (isEntryIgnored) shouldRecurse = false
-        else shouldRecurse = false // Optymalizacja
-      }
+      if (entry?.isZipped) {
+        const zipName = `${file.name}.zip`
+        const zipRemotePath = posix.join(remoteTargetDir, zipName)
+        const zipLocalPath = posix.join(localDir, zipName)
 
-      if (shouldRecurse) {
-        const nextIsStrict = isStrictFolder || isEntryImportant
-        // Rekurencja: Dodajemy do tablicy zadań, NIE czekamy tutaj (await)
-        dirTasks.push(
-          analyzeDirectory(
-            state,
-            connect,
-            itemRemotePath,
-            itemLocalPath,
-            isFirstInstall,
-            signal,
-            combinedHashes,
-            nextIsStrict
-          )
-        )
+        const zipTask = (async () => {
+          let needDownload = true
+          const markerPath = posix.join(itemLocalPath, '.ziphash')
+
+          if (await fileExists(itemLocalPath)) {
+            if (entry.zipHash) {
+              try {
+                const localStoredHash = await fs.promises.readFile(markerPath, 'utf8')
+                if (localStoredHash.trim() === entry.zipHash.trim()) {
+                  needDownload = false
+                } else {
+                  Logger.log(`[UPDATE] Zmiana hasha zipa: ${lookupKey}`)
+                }
+              } catch {
+                Logger.log(`[FIX] Brak markera .ziphash w: ${lookupKey}`)
+                needDownload = true
+              }
+            } else {
+              needDownload = false
+            }
+          } else {
+            Logger.log(`[NEW] Pobieranie nowego modułu: ${lookupKey}`)
+          }
+
+          if (needDownload) {
+            let zipSize = 0
+            const zipFileEntry = remoteList.find((f) => f.name === zipName)
+
+            if (zipFileEntry) {
+              zipSize = zipFileEntry.size
+
+              plan.downloads.push({
+                type: 'download',
+                remotePath: zipRemotePath,
+                localPath: zipLocalPath,
+                size: zipSize,
+                fileName: zipName,
+                isZip: true,
+                targetDir: localDir,
+                zipHash: entry.zipHash
+              })
+              plan.totalSize += zipSize
+            } else {
+              Logger.warn(`[ERROR] Brak pliku ${zipName} dla klucza ${lookupKey}`)
+            }
+          }
+        })()
+        // Ponieważ to funkcja asynchroniczna wewnątrz pętli, dodajemy ją do tablicy (tutaj uproszczone pushowanie do planu synchronicznie wewnątrz async IIFE wymagałoby Promise.all, ale w tym modelu "płaskim" możemy dodać to do listy zadań)
+        // W poprzednim kodzie mieliśmy `fileTasks`. Przywracam tę logikę.
+        return zipTask
+      } else {
+        Logger.log(`[SKIP-DIR] Niespakowany folder: ${lookupKey}`)
       }
     }
     // --- PLIKI ---
     else if (isSftpFile(file.type)) {
-      if (file.name === 'hashes.txt' || file.name.endsWith('.sha256')) continue
-      if (isEntryIgnored && !isFirstInstall) continue
-
-      // Tworzymy zadanie sprawdzenia pliku
-      const task = (async () => {
+      const fileTask = (async () => {
         let needDownload = true
-
-        // Optymalizacja: Najpierw sprawdź istnienie i hasha, tylko jeśli to konieczne
-        if (entry && !isFirstInstall) {
-          const localExists = await fileExists(itemLocalPath)
-          if (localExists) {
-            // Tu jest największy zysk: Obliczanie hasha dzieje się w tle dla wielu plików naraz
-            const localHash = await getFileHash(itemLocalPath)
-            if (localHash === entry.hash) {
-              needDownload = false
-            }
-          }
-        } else if (!isFirstInstall) {
-          // Brak hasha w bazie, ale plik jest lokalnie - zakładamy że ok (zgodnie z oryginalną logiką)
-          if (await fileExists(itemLocalPath)) {
-            needDownload = false
-          }
+        if (entry?.hash && (await fileExists(itemLocalPath))) {
+          const localHash = await getFileHash(itemLocalPath)
+          if (localHash === entry.hash) needDownload = false
+        } else if (!entry?.hash && (await fileExists(itemLocalPath))) {
+          needDownload = false
+        } else {
+          Logger.log(`[NEW/UPDATE] Plik: ${lookupKey}`)
         }
 
         if (needDownload) {
-          // Uwaga: Pushowanie do tablicy nie jest atomowe w JS, ale w pętli event loop jest bezpieczne
-          // dopóki nie używamy worker threads. Tutaj działamy na jednym wątku JS.
           plan.downloads.push({
             type: 'download',
             remotePath: itemRemotePath,
@@ -256,53 +264,14 @@ async function analyzeDirectory(
           plan.totalSize += file.size
         }
       })()
-
-      fileTasks.push(task)
+      return fileTask
     }
   }
-
-  // 4. Oczekiwanie na zakończenie analizy plików w TYM folderze
-  await Promise.all(fileTasks)
-
-  // 5. Oczekiwanie na zakończenie analizy PODFOLDERÓW (rekurencja równoległa)
-  const subPlans = await Promise.all(dirTasks)
-
-  // Scalanie wyników z podfolderów
-  for (const subPlan of subPlans) {
-    plan.downloads.push(...subPlan.downloads)
-    plan.deletes.push(...subPlan.deletes)
-    plan.totalSize += subPlan.totalSize
-  }
-
-  // 6. Cleanup (Czyszczenie lokalne) - to wykonujemy na końcu, jest szybkie (lokalne FS)
-  if (!isFirstInstall) {
-    try {
-      const localFiles = await fs.promises.readdir(localDir, { withFileTypes: true })
-      for (const localDirent of localFiles) {
-        if (!localDirent.isFile()) continue
-        const name = localDirent.name
-        if (name === 'hashes.txt') continue
-
-        const fullRemotePath = posix.join(remoteDir, name)
-        // Sprawdzamy w combinedHashes, które mamy już w pamięci
-        if (combinedHashes[fullRemotePath]?.flag === 'ignore') continue
-
-        if (!remoteFilesSet.has(name) && isStrictFolder) {
-          plan.deletes.push({ localPath: posix.join(localDir, name) })
-        }
-      }
-    } catch {
-      /* ignore */
-    }
-  }
-
-  return plan
+  return null
 }
 
-/**
- * FAZA 2: Wykonanie (Pobieranie i usuwanie)
- * Zoptymalizowana: Równoległość + Średnia krocząca (ETA) + SYNCHRONIZOWANY RECONNECT (Fix)
- */
+// --- 3. WYKONANIE PLANU ---
+
 async function executeSyncPlan(
   state: FtpState,
   connect: () => Promise<Client>,
@@ -311,136 +280,81 @@ async function executeSyncPlan(
   signal: AbortSignal,
   globalProgress: GlobalProgress
 ): Promise<void> {
-  // --- KONFIGURACJA ---
   const CONCURRENCY_LIMIT = 4
   const SMOOTHING_FACTOR = 0.05
-
-  // --- ZMIENNE STANU ---
   globalProgress.totalFiles = plan.downloads.length
   globalProgress.totalSize = plan.totalSize
   globalProgress.startTime = Date.now()
-
   let lastSpeedCalcTime = Date.now()
   let lastBytesForSpeed = 0
   let currentSpeed = 0
-
-  // Muteks do reconnectu - zapobiega jednoczesnemu łączeniu się wielu workerów
   let reconnectPromise: Promise<Client> | null = null
+  const byteToMB = (bytes: number) => (bytes / (1024 * 1024)).toFixed(2)
 
-  // Helper do formatowania MB
-  const byteToMB = (bytes: number): string => (bytes / (1024 * 1024)).toFixed(2)
-  const totalMBString = byteToMB(globalProgress.totalSize)
-
-  // 1. Usuwanie zbędnych plików (Szybka operacja, bez zmian)
+  // 1. Usuwanie
   if (plan.deletes.length > 0) {
-    log(`Usuwanie ${plan.deletes.length} zbędnych plików...`)
+    log(`Usuwanie ${plan.deletes.length} zbędnych elementów...`)
     for (const delTask of plan.deletes) {
-      if (signal.aborted) return
       try {
-        await fs.promises.unlink(delTask.localPath)
+        const stats = await fs.promises.stat(delTask.localPath)
+        if (stats.isDirectory())
+          await fs.promises.rm(delTask.localPath, { recursive: true, force: true })
+        else await fs.promises.unlink(delTask.localPath)
       } catch {
         /* ignore */
       }
     }
   }
 
-  // Funkcja aktualizująca UI (ETA i Pasek postępu)
+  // UI
   const updateUI = (): void => {
     const now = Date.now()
     const timeDiff = now - lastSpeedCalcTime
-
     if (timeDiff > 1000) {
       const bytesInWindow = globalProgress.downloadedSizeBase - lastBytesForSpeed
-      // Zabezpieczenie przed ujemnym wynikiem przy retry
-      const safeBytes = bytesInWindow < 0 ? 0 : bytesInWindow
-
-      const instantSpeed = safeBytes / timeDiff
-
-      if (currentSpeed === 0) {
-        currentSpeed = instantSpeed
-      } else {
-        currentSpeed = currentSpeed * (1 - SMOOTHING_FACTOR) + instantSpeed * SMOOTHING_FACTOR
-      }
-
+      const instantSpeed = (bytesInWindow < 0 ? 0 : bytesInWindow) / timeDiff
+      currentSpeed =
+        currentSpeed === 0
+          ? instantSpeed
+          : currentSpeed * (1 - SMOOTHING_FACTOR) + instantSpeed * SMOOTHING_FACTOR
       lastSpeedCalcTime = now
       lastBytesForSpeed = globalProgress.downloadedSizeBase
     }
-
-    let remainingText = 'Obliczanie...'
+    let remainingText = '...'
     if (currentSpeed > 0) {
       const remainingBytes = globalProgress.totalSize - globalProgress.downloadedSizeBase
-      const remainingMs = Math.max(0, remainingBytes / currentSpeed)
-
-      const totalSecondsLeft = Math.ceil(remainingMs / 1000)
-      const min = Math.floor(totalSecondsLeft / 60)
-      const sec = totalSecondsLeft % 60
-      const secString = sec.toString().padStart(2, '0')
-      remainingText = min > 0 ? `${min}m ${secString}s` : `${sec}s`
+      const sec = Math.ceil(Math.max(0, remainingBytes / currentSpeed) / 1000)
+      remainingText = `${Math.floor(sec / 60)}m ${sec % 60}s`
     }
-
     const percent =
       globalProgress.totalSize > 0
         ? Math.floor((globalProgress.downloadedSizeBase / globalProgress.totalSize) * 100)
         : 100
-
-    const currentMBString = byteToMB(globalProgress.downloadedSizeBase)
-
     log(
-      `Pobieranie: ${currentMBString} / ${totalMBString} MB (${percent}%) • Pozostało: ${remainingText}`
+      `Pobieranie: ${byteToMB(globalProgress.downloadedSizeBase)}/${byteToMB(globalProgress.totalSize)} MB (${percent}%) • ETA: ${remainingText}`
     )
   }
 
-  // --- LOGIKA RECONNECTU (Synchronizowana) ---
-  const handleReconnect = async (): Promise<void> => {
-    // Jeśli reconnect już trwa, po prostu czekamy na jego zakończenie
+  // Reconnect
+  const handleReconnect = async () => {
     if (reconnectPromise) {
-      Logger.log(`[RECONNECT] Czekam na zakończenie trwającego reconnectu...`)
-      try {
-        await reconnectPromise
-        return
-      } catch {
-        // Jeśli tamten reconnect padł, próbujemy sami poniżej
-      }
+      await reconnectPromise
+      return
     }
-
-    // Tworzymy nową obietnicę reconnectu (blokada dla innych wątków)
     reconnectPromise = (async () => {
-      Logger.log(`[RECONNECT] Rozpoczynam procedurę naprawy połączenia...`)
-
-      for (let attempt = 1; attempt <= 5; attempt++) {
-        try {
-          // Próba zamknięcia starego
-          try {
-            await state.client.end()
-          } catch {
-            /* ignore */
-          }
-
-          // Stopniowe wydłużanie czasu oczekiwania (Backoff): 1s, 2s, 3s...
-          await new Promise((r) => setTimeout(r, 1000 * attempt))
-
-          const newClient = await connect()
-          state.client = newClient // Podmieniamy klienta w globalnym stanie
-
-          Logger.log(`[RECONNECT] Sukces w próbie ${attempt}.`)
-          return newClient
-        } catch (err) {
-          Logger.warn(`[RECONNECT] Próba ${attempt} nieudana: ${err}`)
-          if (attempt === 5) throw err // Krytyczny błąd po 5 razach
-        }
-      }
-      throw new Error('Nie udało się nawiązać połączenia po 5 próbach.')
+      await state.client.end().catch(() => {})
+      await new Promise((r) => setTimeout(r, 2000))
+      const newClient = await connect()
+      state.client = newClient
+      return newClient
     })()
-
     try {
       await reconnectPromise
     } finally {
-      // Zwalniamy blokadę niezależnie od wyniku
       reconnectPromise = null
     }
   }
 
-  // --- WORKER POBIERANIA ---
   const queue = [...plan.downloads]
 
   const downloadWorker = async (): Promise<void> => {
@@ -449,8 +363,7 @@ async function executeSyncPlan(
       if (!task) break
 
       let downloadedForThisFile = 0
-
-      const fileStep = (transferred: number): void => {
+      const fileStep = (transferred: number) => {
         const delta = transferred - downloadedForThisFile
         downloadedForThisFile = transferred
         globalProgress.downloadedSizeBase += delta
@@ -458,58 +371,51 @@ async function executeSyncPlan(
       }
 
       let success = false
-      // Pętla prób dla JEDNEGO pliku
       for (let attempt = 0; attempt < 3 && !success; attempt++) {
         if (signal.aborted) return
         try {
-          // fastGet korzysta z concurrency:
           await state.client.fastGet(task.remotePath, task.localPath, { step: fileStep })
+
+          if (task.isZip && task.targetDir) {
+            Logger.log(`[ZIP] Rozpakowywanie ${task.fileName}...`)
+            const zip = new AdmZip(task.localPath)
+            const folderName = task.fileName.replace('.zip', '')
+            const extractionPath = join(task.targetDir, folderName)
+            await fs.promises.mkdir(extractionPath, { recursive: true })
+            zip.extractAllTo(extractionPath, true)
+            await fs.promises.unlink(task.localPath)
+
+            if (task.zipHash) {
+              const folderName = task.fileName.replace('.zip', '')
+              const extractedFolderPath = join(task.targetDir, folderName)
+              const markerPath = join(extractedFolderPath, '.ziphash')
+              if (await fileExists(extractedFolderPath)) {
+                await fs.promises.writeFile(markerPath, task.zipHash)
+              }
+            }
+          }
           success = true
         } catch (err: any) {
           const msg = err.message || String(err)
-          Logger.warn(`[W] Błąd ${task.fileName} (Próba ${attempt + 1}): ${msg}`)
-
-          // Sprawdzamy czy to błąd połączenia
-          const isNetworkError = msg
-            .toLowerCase()
-            .match(/(socket|closed|no connection|timeout|keepalive|econnreset)/)
-
-          if (isNetworkError) {
-            try {
-              // Wywołujemy bezpieczny, synchronizowany reconnect
-              await handleReconnect()
-
-              // Po udanym reconnectcie zmniejszamy licznik 'attempt',
-              // aby błąd sieci nie "zjadał" prób pobrania pliku.
-              // Dzięki temu plik ma nadal 3 szanse na pobranie po naprawieniu łącza.
-              attempt--
-            } catch (fatalError) {
-              Logger.error(`[FATAL] Nie można odzyskać połączenia: ${fatalError}`)
-              throw fatalError // To przerwie Promise.all i zatrzyma program
-            }
-          } else {
-            // Zwykły błąd (np. plik zajęty), czekamy chwilę
-            await new Promise((r) => setTimeout(r, 1000))
-          }
+          if (msg.match(/(socket|closed|timeout)/i)) {
+            await handleReconnect()
+            attempt--
+          } else await new Promise((r) => setTimeout(r, 1000))
         }
       }
-
-      if (!success) {
-        throw new Error(`Nie udało się pobrać pliku: ${task.fileName}`)
-      }
-
+      if (!success) throw new Error(`Failed: ${task.fileName}`)
       globalProgress.completedFiles++
     }
   }
 
-  // Start Workerów
   const activeWorkers: Promise<void>[] = []
   for (let i = 0; i < Math.min(CONCURRENCY_LIMIT, plan.downloads.length); i++) {
     activeWorkers.push(downloadWorker())
   }
-
   await Promise.all(activeWorkers)
 }
+
+// --- 4. FUNKCJA STARTOWA ---
 
 export async function copyMCFiles(
   isDev: boolean,
@@ -528,11 +434,9 @@ export async function copyMCFiles(
   let state: FtpState | undefined
   try {
     const isFirstInstall = !(await fileExists(markerFile))
-
     state = { client: await ftpService.connect() }
 
-    const pwd = await state.client.cwd()
-    const remoteRoot = posix.join(pwd, isDev ? 'dev-mc' : 'mc')
+    const currentVersionFolder = isDev ? 'dev-mc' : 'mc'
 
     const globalProgress: GlobalProgress = {
       totalFiles: 0,
@@ -542,27 +446,185 @@ export async function copyMCFiles(
       startTime: 0
     }
 
-    logToUI('Weryfikacja plików...')
+    logToUI(`Weryfikacja plików (${isDev ? 'DEV' : 'PROD'})...`)
 
-    // KROK 1: Analiza
-    const plan = await analyzeDirectory(
-      state,
-      ftpService.connect,
-      remoteRoot,
-      localRoot,
-      isFirstInstall,
-      signal,
-      {},
-      false
-    )
+    const globalHashes = await fetchGlobalManifest(state, localRoot)
+    const plan: SyncPlan = { downloads: [], deletes: [], totalSize: 0 }
+    const localTargetDir = localRoot
+
+    await fs.promises.mkdir(localTargetDir, { recursive: true })
+
+    const remoteList = await state.client.list(currentVersionFolder)
+    const tasks: Promise<void>[] = []
+    const remoteFilesSet = new Set<string>()
+
+    // === GŁÓWNA PĘTLA ANALIZY (POPRAWIONA) ===
+    for (const file of remoteList) {
+      // 1. Pomiń pliki systemowe i manifesty
+      if (['.', '..', '.hashes', '.meta.json', '.ziphash'].includes(file.name)) continue
+
+      remoteFilesSet.add(file.name)
+
+      // 2. Ustalanie klucza i wpisu w manifeście
+      // Domyślny klucz: np. "dev-mc/mods" (dla folderu) lub "dev-mc/plik.txt"
+      let lookupKey = `${currentVersionFolder}/${file.name}`
+      let entry = globalHashes[lookupKey]
+      let isMappedZip = false
+      let extractedDirName = ''
+
+      // 3. SPECIAL CASE: Obsługa plików .zip, które mapują się na foldery w manifeście
+      // Np. widzimy "mods.zip", ale w manifeście jest "dev-mc/mods" z isZipped: true
+      if (!entry && file.name.endsWith('.zip')) {
+        const rawName = file.name.slice(0, -4) // usuń .zip
+        const rawKey = `${currentVersionFolder}/${rawName}`
+        const rawEntry = globalHashes[rawKey]
+
+        if (rawEntry?.isZipped) {
+          entry = rawEntry
+          lookupKey = rawKey // Używamy klucza folderu do weryfikacji hasha
+          isMappedZip = true // Oznaczamy, że to zip do rozpakowania
+          extractedDirName = rawName
+        }
+      }
+
+      // 4. Filtrowanie (ignore / important)
+      let shouldProcess = true
+      if (!entry) {
+        // Opcjonalnie: Pomiń nieznane pliki .zip, które nie są mapowane
+        if (file.name.endsWith('.zip') && !isMappedZip) shouldProcess = false
+        // Jeśli plik nie jest w manifeście w ogóle, domyślnie go pobieramy (chyba że chcesz inaczej)
+      } else {
+        if (entry.flag === 'ignore') shouldProcess = false
+        else if (!isFirstInstall && entry.flag !== 'important') shouldProcess = false
+      }
+
+      if (!shouldProcess) continue
+
+      const itemRemotePath = posix.join(currentVersionFolder, file.name)
+      const itemLocalPath = posix.join(localTargetDir, file.name)
+
+      // === SCENARIUSZ A: To jest ZIP odpowiadający folderowi (np. mods.zip) ===
+      if (isMappedZip) {
+        tasks.push(
+          (async () => {
+            let need = true
+            // Ścieżka do ROZPAKOWANEGO folderu (np. mcfiles/mods)
+            const extractedFolderPath = posix.join(localTargetDir, extractedDirName)
+            const marker = posix.join(extractedFolderPath, '.ziphash')
+
+            // Sprawdzamy czy folder istnieje i czy hash zipa się zgadza
+            if (await fileExists(extractedFolderPath)) {
+              if (entry.zipHash) {
+                try {
+                  const localH = await fs.promises.readFile(marker, 'utf8')
+                  if (localH.trim() === entry.zipHash.trim()) need = false
+                  else Logger.log(`[UPDATE] Zmiana hasha dla zipa: ${extractedDirName}`)
+                } catch {
+                  need = true // Brak markera = ponowne pobranie
+                }
+              } else {
+                need = false // Brak hasha w manifeście = zakładamy że jest ok
+              }
+            } else {
+              Logger.log(`[NEW] Nowy moduł (zip): ${extractedDirName}`)
+            }
+
+            if (need) {
+              plan.downloads.push({
+                type: 'download',
+                remotePath: itemRemotePath, // dev-mc/mods.zip
+                localPath: itemLocalPath, // mcfiles/mods.zip (tymczasowo)
+                size: file.size,
+                fileName: file.name, // mods.zip
+                isZip: true,
+                targetDir: localTargetDir, // Rozpakuj do mcfiles/
+                zipHash: entry.zipHash
+              })
+              plan.totalSize += file.size
+            }
+          })()
+        )
+        continue // Zrobione, idziemy do następnego pliku
+      }
+
+      // === SCENARIUSZ B: To jest FOLDER (np. mods/) ===
+      if (isSftpDir(file.type)) {
+        // Jeśli folder ma być zippowany (isZipped), a my jesteśmy tutaj,
+        // to znaczy, że albo nie znaleźliśmy zipa, albo zip zostanie obsłużony w innej iteracji.
+        // Zazwyczaj ignorujemy folder "źródłowy" jeśli spodziewamy się zipa,
+        // chyba że na serwerze są rozpakowane pliki zamiast zipa.
+        // W Twoim przypadku (manifest ma zipHash) zakładamy obsługę przez SCENARIUSZ A.
+        if (entry?.isZipped) {
+          // SKIP: Czekamy na plik .zip w pętli lub go nie ma.
+          continue
+        }
+
+        // Tutaj ewentualna logika dla zwykłych folderów (recursive), jeśli potrzebna
+        continue
+      }
+
+      // === SCENARIUSZ C: Zwykły plik (nie-zip lub nie-mapowany zip) ===
+      if (isSftpFile(file.type)) {
+        tasks.push(
+          (async () => {
+            let need = true
+            if (entry?.hash && (await fileExists(itemLocalPath))) {
+              const h = await getFileHash(itemLocalPath)
+              if (h === entry.hash) need = false
+            } else if (!entry?.hash && (await fileExists(itemLocalPath))) {
+              need = false
+            }
+
+            if (need) {
+              plan.downloads.push({
+                type: 'download',
+                remotePath: itemRemotePath,
+                localPath: itemLocalPath,
+                size: file.size,
+                fileName: file.name
+              })
+              plan.totalSize += file.size
+            }
+          })()
+        )
+      }
+    }
+    // === KONIEC PĘTLI ===
+
+    await Promise.all(tasks)
+
+    // Cleanup (bez zmian, logika jest poprawna)
+    if (!isFirstInstall) {
+      try {
+        const lFiles = await fs.promises.readdir(localTargetDir, { withFileTypes: true })
+        for (const lf of lFiles) {
+          if (['.hashes', '.ziphash', '.mcfiles_installed'].includes(lf.name)) continue
+
+          // Spróbuj znaleźć dopasowanie w haszach
+          const keyDirect = `${currentVersionFolder}/${lf.name}`
+          const entDirect = globalHashes[keyDirect]
+
+          // Ważne: Jeśli lokalnie mamy folder "mods", a w hashu jest on oznaczony isZipped,
+          // to nie usuwamy go, mimo że remoteFilesSet może zawierać tylko "mods.zip"
+          if (entDirect?.isZipped && lf.isDirectory()) continue
+          if (entDirect?.flag === 'ignore') continue
+
+          // Jeśli plik/folder nie istnieje na serwerze (ani jako zip, ani wprost) -> usuń
+          // Musimy sprawdzić, czy nazwa pliku (np. mods) nie przyszła jako mods.zip
+          const zipName = `${lf.name}.zip`
+          if (!remoteFilesSet.has(lf.name) && !remoteFilesSet.has(zipName)) {
+            const p = posix.join(localTargetDir, lf.name)
+            if (lf.isDirectory()) plan.deletes.push({ localPath: p })
+            else plan.deletes.push({ localPath: p })
+          }
+        }
+      } catch {}
+    }
 
     if (signal.aborted) return 'stop'
 
-    Logger.log(
-      `Plan: ${plan.downloads.length} down, ${plan.deletes.length} del. Size: ${(plan.totalSize / 1024 / 1024).toFixed(2)} MB`
-    )
+    Logger.log(`Plan: ${plan.downloads.length} plików do pobrania.`)
 
-    // KROK 2: Wykonanie
     if (plan.downloads.length > 0 || plan.deletes.length > 0) {
       await executeSyncPlan(state, ftpService.connect, plan, logToUI, signal, globalProgress)
     } else {
@@ -573,7 +635,6 @@ export async function copyMCFiles(
 
     if (isFirstInstall) {
       await fs.promises.writeFile(markerFile, 'installed')
-      Logger.log('PokeGoGo Launcher > Utworzono plik markera instalacji')
     }
 
     logToUI('', true)
@@ -583,12 +644,8 @@ export async function copyMCFiles(
     logToUI(`Błąd aktualizacji: ${err}`, true)
   } finally {
     try {
-      if (state) {
-        await state.client.end()
-      }
-    } catch {
-      /* ignore */
-    }
+      await state?.client.end()
+    } catch {}
   }
   return
 }

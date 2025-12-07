@@ -8,9 +8,7 @@ interface FTPService {
   currentFileContent: Ref<string>
   currentFolderFiles: Ref<FTPFile[]>
   currentFolder: Ref<string>
-  getFolderContent: () => Promise<void>
-  getHashesForFolder: () => Promise<Record<string, { hash: string; flag?: 'important' | 'ignore' }>>
-  currentHashes: Ref<Record<string, { hash: string; flag?: 'important' | 'ignore' }>>
+  getFolderContent: (folder?: string) => Promise<void>
   changeFolder: (name: string) => Promise<void>
   restoreFolder: (name: string) => Promise<void>
   uploadFile: () => Promise<void>
@@ -20,19 +18,24 @@ interface FTPService {
   openImageFile: (name: string) => Promise<void>
   saveFile: () => Promise<void>
   createFolder: (newFolder: string) => Promise<void>
+  zipFolder: (folderName: string) => Promise<void> // Nowa metoda
   handleDrop: (ev: DragEvent) => Promise<void>
-  isFolderAllImportant?: (folderName: string, manageLoading?: boolean) => Promise<boolean>
   loadingStatuses: Ref<boolean>
   dragActive: Ref<boolean>
 }
 
-interface FTPFile {
+export interface FTPFile {
   name: string
-  type: number
+  type: number // lub string, zależnie od tego co zwraca ssh2-sftp-client (zazwyczaj 'd' lub '-')
   size: number
   modifiedAt: string
   isDirectory: boolean
   isFile: boolean
+  // Nowe pola z Manifestu
+  flag?: 'important' | 'ignore'
+  isZipped?: boolean
+  status?: 'normal' | 'zipped' | 'zipped-dirty'
+  hash?: string
 }
 
 export const useFTP = (
@@ -44,109 +47,39 @@ export const useFTP = (
   const currentFileContent = ref<string>('')
   const currentFolder = ref<string>('')
   const currentFolderFiles = ref<FTPFile[]>([])
-  const currentHashes = ref<Record<string, { hash: string; flag?: 'important' | 'ignore' }>>({})
+  // currentHashes zostało usunięte, bo dane są teraz w currentFolderFiles
   const loadingStatuses = ref<boolean>(false)
 
   const getFolderContent = async (folder: string = ''): Promise<void> => {
+    loadingStatuses.value = true
     const folderPath =
       currentFolder.value.length && !currentFolder.value.endsWith(folder)
         ? currentFolder.value + '/' + folder
         : folder
-    const res = await window.electron.ipcRenderer?.invoke('ftp:list-files', folderPath)
 
-    currentFolder.value = folderPath
-    currentFolderFiles.value = res
     try {
-      const hashesRes = await window.electron.ipcRenderer?.invoke(
-        'ftp:get-hash-entries',
-        folderPath
-      )
-      if (hashesRes) currentHashes.value = hashesRes.entries ?? {}
-    } catch {
-      currentHashes.value = {}
-    }
-  }
+      // Backend zwraca teraz listę wzbogaconą o flagi i statusy zip
+      const res = await window.electron.ipcRenderer?.invoke('ftp:list-files', folderPath)
 
-  const getHashesForFolder = async (): Promise<
-    Record<string, { hash: string; flag?: 'important' | 'ignore' }>
-  > => {
-    try {
-      const hashesRes = await window.electron.ipcRenderer?.invoke(
-        'ftp:get-hash-entries',
-        currentFolder.value
-      )
-      if (hashesRes) {
-        currentHashes.value = hashesRes.entries ?? {}
-        return currentHashes.value
-      }
-    } catch {
-      // ignore
+      currentFolder.value = folderPath
+      // Sortowanie: katalogi najpierw, potem pliki
+      currentFolderFiles.value = res.sort((a: FTPFile, b: FTPFile) => {
+        if (a.isDirectory === b.isDirectory) {
+          return a.name.localeCompare(b.name)
+        }
+        return a.isDirectory ? -1 : 1
+      })
+    } catch (err) {
+      LOGGER.err(err as string)
+      showToast('Nie udało się pobrać zawartości folderu', 'error')
+      currentFolderFiles.value = []
+    } finally {
+      loadingStatuses.value = false
     }
-    return {}
   }
 
   const changeFolder = async (name: string): Promise<void> => {
     await getFolderContent(name)
-  }
-
-  const isFolderAllImportant = async (
-    folderName: string,
-    manageLoading = true
-  ): Promise<boolean> => {
-    if (manageLoading) loadingStatuses.value = true
-    try {
-      const baseFolder = currentFolder.value.length
-        ? `${currentFolder.value}/${folderName}`
-        : folderName
-
-      const checkDir = async (dirPath: string): Promise<boolean> => {
-        try {
-          const list = await window.electron.ipcRenderer?.invoke('ftp:list-files', dirPath)
-          const hashesRes = await window.electron.ipcRenderer?.invoke(
-            'ftp:get-hash-entries',
-            dirPath
-          )
-          const hashes = hashesRes?.entries ?? {}
-
-          let fileCount = 0 // Dodanie licznika plików
-
-          for (const item of list) {
-            const childPath = dirPath.length ? `${dirPath}/${item.name}` : item.name
-            if (item.isDirectory) {
-              const ok = await checkDir(childPath)
-              if (!ok) return false
-            } else {
-              fileCount++ // Zliczaj tylko pliki
-              const entry = hashes[item.name]
-              if (!entry || entry.flag !== 'important') return false
-            }
-          }
-
-          // --- POPRAWKA ---
-          // Jeśli pętla się wykonała i nie zwróciła 'false', ale nie znaleziono ŻADNYCH PLIKÓW
-          // (czyli folder był pusty lub zawierał tylko puste podfoldery), zwracamy false.
-          // Folder 'important' musi mieć co najmniej jeden ważny plik.
-          if (fileCount === 0) {
-            // Uznajemy, że jeśli nie ma plików, to folder nie jest 'all important'
-            // (chyba, że ten folder jest katalogiem bazowym, ale dla pustego folderu to również false)
-            return false
-          }
-          // ------------------
-
-          // Jeśli dotąd doszliśmy, folder ma pliki i wszystkie są "important".
-          return true
-        } catch {
-          return false
-        }
-      }
-
-      const res = await checkDir(baseFolder)
-      if (manageLoading) loadingStatuses.value = false
-      return res
-    } catch {
-      if (manageLoading) loadingStatuses.value = false
-      return false
-    }
   }
 
   const createFolder = async (newFolder: string): Promise<void> => {
@@ -159,11 +92,45 @@ export const useFTP = (
 
       if (res) {
         showToast('Folder pomyślnie utworzony.')
-        await getFolderContent(currentFolder.value)
+        await getFolderContent(currentFolder.value) // odświeżamy ten sam folder
       }
     } catch (err) {
       LOGGER.err(err as string)
       showToast('Wystąpił błąd podczas tworzenia folderu.', 'error')
+    }
+  }
+
+  const zipFolder = async (folderName: string): Promise<void> => {
+    const fullPath = currentFolder.value ? `${currentFolder.value}/${folderName}` : folderName
+
+    // Inicjalizacja toasta z wartością 0/100
+    const progress = showProgressToast(`Rozpoczynam pakowanie ${folderName}...`)
+    progress?.updateProgress(0, 100, 'Inicjalizacja...')
+
+    // Listener postępu
+    const progressHandler = (_event: any, data: { percent: number; message: string }) => {
+      // updateProgress oczekuje (current, total, text)
+      progress?.updateProgress(data.percent, 100, data.message)
+    }
+
+    try {
+      // Podpięcie listenera
+      window.electron.ipcRenderer?.on('ftp:zip-progress', progressHandler)
+
+      await window.electron.ipcRenderer?.invoke('ftp:zip-folder', fullPath)
+
+      // Sukces
+      progress?.updateProgress(100, 100, 'Gotowe!')
+      progress?.close('Folder został spakowany pomyślnie.', 'success')
+
+      await getFolderContent(currentFolder.value)
+    } catch (err) {
+      LOGGER.err(err as string)
+      progress?.close('Błąd podczas pakowania folderu.', 'error')
+    } finally {
+      // Bardzo ważne: odpięcie listenera po zakończeniu (sukces lub błąd)
+      // aby nie dublować eventów przy kolejnym kliknięciu
+      window.electron.ipcRenderer?.removeAllListeners('ftp:zip-progress')
     }
   }
 
@@ -180,7 +147,6 @@ export const useFTP = (
         }))
       )
 
-      // initialize progress bar to 0/N
       progress?.updateProgress(0, resolvedFiles.length, 'Przesyłanie plików...')
 
       window.electron.ipcRenderer?.on('ftp:upload-folder-progress', (_event, completed: number) => {
@@ -198,16 +164,10 @@ export const useFTP = (
         window.electron.ipcRenderer.removeAllListeners('ftp:upload-folder-progress')
 
         if (res) {
-          progress?.updateProgress(
-            resolvedFiles.length,
-            resolvedFiles.length,
-            'Pomyślnie przesłano folder. Status:'
-          )
           progress?.close(`Pomyślnie przesłano folder.`, 'success')
           await getFolderContent(currentFolder.value)
         } else {
           progress?.close('Wystąpił błąd podczas przesyłania folderu.', 'error')
-          showToast('Wystąpił błąd podczas przesyłania folderu.', 'error')
         }
       } catch (err) {
         progress?.close('Wystąpił błąd podczas przesyłania folderu.', 'error')
@@ -215,26 +175,32 @@ export const useFTP = (
       }
     } catch (err) {
       LOGGER.err(err as string)
-      showToast('Wystąpił błąd podczas przesyłania folderu.', 'error')
+      showToast('Wystąpił błąd inicjalizacji przesyłania.', 'error')
     } finally {
-      inputFolder.value.value = ''
+      if (inputFolder.value) inputFolder.value.value = ''
     }
   }
 
   const restoreFolder = async (name: string): Promise<void> => {
+    // Jeśli name jest pusty, idziemy do roota
+    if (!name) {
+      currentFolder.value = ''
+      await getFolderContent('')
+      return
+    }
+
     const prevFolder = currentFolder.value.substring(
       0,
       currentFolder.value.indexOf(name) + name.length
     )
 
-    currentFolder.value = ''
+    currentFolder.value = '' // Reset, żeby getFolderContent użył argumentu poprawnie
     await getFolderContent(prevFolder)
   }
 
   const uploadFile = async (): Promise<void> => {
     if (!inputFile?.value?.files?.length) return
     const files = Array.from(inputFile.value.files)
-
     const progress = showProgressToast(`Wysyłanie plików...`)
 
     try {
@@ -248,114 +214,74 @@ export const useFTP = (
             await file.arrayBuffer(),
             file.name
           )
-
-          if (res) {
-            succeeded++
-            progress?.updateProgress(succeeded, files.length, 'Wysyłanie plików...')
-            showToast('Pomyślnie przesłano plik ' + file.name)
-          }
+          if (res) succeeded++
+          progress?.updateProgress(succeeded, files.length, 'Wysyłanie plików...')
         } catch (err) {
           LOGGER.err(err as string)
-          // continue with next file
-          progress?.updateProgress(succeeded, files.length, 'Wysyłanie plików...')
         }
       }
 
       if (succeeded > 0) await getFolderContent(currentFolder.value)
-
-      progress?.updateProgress(succeeded, files.length, 'Wysyłanie plików...')
       progress?.close(`Wysłano pliki: ${succeeded}/${files.length}`, 'success')
     } catch (err) {
       LOGGER.err(err as string)
-      progress?.close('Wystąpił błąd podczas przesyłania plików.', 'error')
-      showToast('Wystąpił błąd podczas przesyłania plików.', 'error')
+      progress?.close('Błąd przesyłania.', 'error')
     } finally {
-      inputFile.value.value = ''
+      if (inputFile.value) inputFile.value.value = ''
     }
   }
 
   const removeFile = async (name: string): Promise<void> => {
-    const operationId = `remove-${Date.now()}-${Math.floor(Math.random() * 10000)}`
     const progress = showProgressToast(`Usuwanie...`)
-
-    const handler = (
-      _event: any,
-      data: { id?: string; total?: number; deleted?: number; current?: string }
-    ): void => {
-      if (!data || data.id !== operationId) return
-      const total = data.total ?? 0
-      const deleted = data.deleted ?? 0
-      progress?.updateProgress(deleted, total, 'Usuwanie plików...')
-      if (total && deleted >= total) {
-        progress?.close(`Usunięto: ${deleted}/${total}`, 'success')
-        window.electron.ipcRenderer.removeAllListeners('ftp:remove-progress')
-      }
-    }
-
     try {
-      window.electron.ipcRenderer?.on('ftp:remove-progress', handler)
-
+      // Backend obsługuje usuwanie rekurencyjne i manifest
       const res = await window.electron.ipcRenderer?.invoke(
         'ftp:remove-file',
         currentFolder.value,
-        name,
-        operationId
+        name
       )
-
-      window.electron.ipcRenderer.removeAllListeners('ftp:remove-progress')
 
       if (res) {
         progress?.close(`Pomyślnie usunięto ${name}`, 'success')
-        currentFileContent.value = res
         await getFolderContent(currentFolder.value)
       }
     } catch (err) {
       LOGGER.err(err as string)
-      window.electron.ipcRenderer.removeAllListeners('ftp:remove-progress')
       progress?.close('Wystąpił błąd podczas usuwania.', 'error')
-      showToast('Wystąpił błąd podczas usuwania pliku ' + name, 'error')
     }
   }
 
   const openTextFile = async (name: string): Promise<void> => {
     currentFileName.value = name
-
     try {
       const res = await window.electron.ipcRenderer?.invoke(
         'ftp:read-file',
         currentFolder.value,
         name
       )
-      if (res) {
-        currentFileContent.value = res
-      }
+      if (res) currentFileContent.value = res
     } catch (err) {
       LOGGER.err(err as string)
-      showToast('Wystąpił błąd podczas otwierania pliku ' + name, 'error')
+      showToast('Błąd otwierania pliku', 'error')
     }
   }
 
   const openImageFile = async (name: string): Promise<void> => {
     currentFileName.value = name
-
     try {
       const base64Content: string = await window.electron.ipcRenderer?.invoke(
         'ftp:read-image',
         currentFolder.value,
         name
       )
-
       if (base64Content) {
-        const fileExtension = name.split('.').pop()?.toLowerCase() || 'png'
-        const mimeType = `image/${fileExtension === 'jpg' ? 'jpeg' : fileExtension}` // obsługa .jpg -> image/jpeg
-
-        const imageUrl = `data:${mimeType};base64,${base64Content}`
-
-        currentFileContent.value = imageUrl
+        const ext = name.split('.').pop()?.toLowerCase() || 'png'
+        const mime = `image/${ext === 'jpg' ? 'jpeg' : ext}`
+        currentFileContent.value = `data:${mime};base64,${base64Content}`
       }
     } catch (err) {
       LOGGER.err(err as string)
-      showToast('Wystąpił błąd podczas otwierania pliku ' + name, 'error')
+      showToast('Błąd otwierania obrazu', 'error')
     }
   }
 
@@ -363,8 +289,7 @@ export const useFTP = (
     try {
       const fileBlob = new Blob([currentFileContent.value])
       const fileBuffer = await fileBlob.arrayBuffer()
-
-      const progress = showProgressToast(`Zapisuję plik ${currentFileName.value}...`)
+      const progress = showProgressToast(`Zapisuję plik...`)
 
       const res = await window.electron.ipcRenderer?.invoke(
         'ftp:upload-file',
@@ -374,24 +299,20 @@ export const useFTP = (
       )
 
       if (res) {
-        progress?.close(`Pomyślnie zapisano plik ${currentFileName.value}`, 'success')
+        progress?.close('Zapisano pomyślnie.', 'success')
         currentFileContent.value = ''
         currentFileName.value = ''
         await getFolderContent(currentFolder.value)
-      } else {
-        progress?.close('Wystąpił błąd podczas zapisywania pliku.', 'error')
-        showToast('Wystąpił błąd podczas zapisywania pliku ' + currentFileName.value, 'error')
       }
     } catch (err) {
       LOGGER.err(err as string)
-      showToast('Wystąpił błąd podczas zapisywania pliku ' + currentFileName.value, 'error')
+      showToast('Błąd zapisu', 'error')
     }
   }
 
   const handleDrop = async (ev: DragEvent): Promise<void> => {
     ev.preventDefault()
     dragActive.value = false
-
     const dt = ev.dataTransfer
     if (!dt) return
 
@@ -498,9 +419,7 @@ export const useFTP = (
     currentFileName,
     currentFileContent,
     currentFolderFiles,
-    currentHashes,
     getFolderContent,
-    getHashesForFolder,
     currentFolder,
     changeFolder,
     restoreFolder,
@@ -513,7 +432,7 @@ export const useFTP = (
     saveFile,
     dragActive,
     handleDrop,
-    isFolderAllImportant,
+    zipFolder,
     loadingStatuses
   }
 }

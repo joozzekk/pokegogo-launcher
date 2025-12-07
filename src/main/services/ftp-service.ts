@@ -2,13 +2,27 @@
 import Client from 'ssh2-sftp-client'
 import { createHash } from 'crypto'
 import { BrowserWindow, ipcMain } from 'electron'
-import { readFile, unlink, writeFile } from 'fs/promises'
+import { mkdir, readFile, rm, unlink, writeFile } from 'fs/promises'
 import { basename, dirname, join, posix } from 'path'
+import { createWriteStream } from 'fs'
+import archiver from 'archiver'
+
+interface ManifestEntry {
+  type: 'file' | 'dir'
+  hash?: string
+  flag?: 'important' | 'ignore'
+  isZipped?: boolean
+  zipHash?: string
+  lastSynced?: number
+}
+
+type ManifestMap = Record<string, ManifestEntry>
 
 const remoteJoin = (...parts: string[]): string => posix.join(...parts.filter(Boolean))
 
+const normalizePath = (p: string): string => p.replace(/\\/g, '/')
+
 const isSftpDir = (type: string | undefined): boolean => type === 'd'
-const isSftpFile = (type: string | undefined): boolean => type === '-'
 
 export const useFTPService = (): {
   client: Client | null
@@ -18,10 +32,10 @@ export const useFTPService = (): {
   let clientInstance: Client | null = null
   let isConnecting = false
 
+  const MANIFEST_FILE = '.hashes'
+
   const connect = async (): Promise<Client> => {
-    // 1. Sprawdzenie, czy trwa łączenie
     if (isConnecting) {
-      // ... (logika oczekiwania na połączenie)
       let attempts = 0
       while (isConnecting && attempts < 50) {
         await new Promise((r) => setTimeout(r, 100))
@@ -30,19 +44,13 @@ export const useFTPService = (): {
       }
     }
 
-    // 2. Jeśli instancja istnieje, spróbujmy ją zweryfikować
     if (clientInstance) {
       try {
-        // Weryfikacja: Wykonaj lekką operację na serwerze (cwd)
         await clientInstance.cwd()
         return clientInstance
       } catch (e: any) {
-        console.warn(
-          'SFTP: Weryfikacja połączenia nie powiodła się. Wymuszam reconnect.',
-          e.message
-        )
+        console.warn('SFTP: Reconnecting...', e.message)
         try {
-          // Koniec starego klienta (może się nie udać, ale próbujemy)
           await clientInstance.end()
         } catch {
           /* ignore */
@@ -50,7 +58,6 @@ export const useFTPService = (): {
       }
     }
 
-    // 3. Ustanowienie nowego połączenia
     isConnecting = true
     const c = new Client()
 
@@ -60,24 +67,19 @@ export const useFTPService = (): {
         port: 22,
         username: 'ftpclient',
         password: 'PokeAdmin321b!#',
-        ident: 'utf8',
-        readyTimeout: 30000, // Dłuższy czas na handshake
-        keepaliveInterval: 2000, // Ping co 2s (zamiast 5s)
-        keepaliveCountMax: 5 // Więcej prób zanim uznamy zgon
+        readyTimeout: 30000,
+        keepaliveInterval: 2000,
+        keepaliveCountMax: 5
       })
 
       c.on('close', () => {
-        console.log('SFTP: Connection closed')
         clientInstance = null
       })
-
       c.on('end', () => {
-        console.log('SFTP: Connection ended')
         clientInstance = null
       })
-
       c.on('error', (err) => {
-        console.error('SFTP: Connection error', err)
+        console.error('SFTP Error', err)
         clientInstance = null
       })
 
@@ -91,42 +93,110 @@ export const useFTPService = (): {
     }
   }
 
-  const createHandlers = (mainWindow: BrowserWindow): void => {
-    ipcMain.handle('ftp:create-folder', async (_, folder, newFolder: string) => {
-      const client = await connect()
-      const pwd = await client.cwd()
-      const remoteURL = remoteJoin(pwd, folder, newFolder)
+  const ManifestManager = {
+    async load(client: Client, rootPath: string): Promise<ManifestMap> {
+      const tempPath = join(process.cwd(), 'tmp', `manifest_${Date.now()}.json`)
+      const remotePath = remoteJoin(rootPath, MANIFEST_FILE)
 
       try {
-        await client.mkdir(remoteURL, true)
-      } catch (e: any) {
-        // Ignorujemy błąd jeśli folder już istnieje
-        if (e.code !== 4 && e.code !== 'EEXIST') throw e
+        await client.get(remotePath, tempPath)
+        const content = await readFile(tempPath, 'utf-8')
+        await unlink(tempPath)
+        return JSON.parse(content)
+      } catch {
+        try {
+          await unlink(tempPath)
+        } catch {
+          /* ignore */
+        }
+        return {}
+      }
+    },
+
+    async save(client: Client, rootPath: string, map: ManifestMap): Promise<void> {
+      const tempPath = join(process.cwd(), 'tmp', `manifest_save_${Date.now()}.json`)
+      const remotePath = remoteJoin(rootPath, MANIFEST_FILE)
+
+      await writeFile(tempPath, JSON.stringify(map, null, 2))
+      await client.put(tempPath, remotePath)
+      await unlink(tempPath)
+    },
+
+    async updateEntry(
+      client: Client,
+      rootPath: string,
+      path: string,
+      data: Partial<ManifestEntry>
+    ) {
+      const map = await this.load(client, rootPath)
+
+      // Normalizacja klucza (ścieżka relatywna od roota)
+      const key = normalizePath(path)
+
+      map[key] = {
+        ...(map[key] || { type: 'file' }),
+        ...data,
+        lastSynced: Date.now()
       }
 
+      await this.save(client, rootPath, map)
+      return map
+    }
+  }
+
+  const createHandlers = (mainWindow: BrowserWindow): void => {
+    ipcMain.handle('ftp:create-folder', async (_, folder, newFolder) => {
+      const client = await connect()
+      const fullPath = remoteJoin(folder, newFolder)
+      await client.mkdir(fullPath, true)
+      await ManifestManager.updateEntry(client, '.', fullPath, { type: 'dir' })
       return true
     })
 
-    ipcMain.handle('ftp:list-files', async (_, folder) => {
+    ipcMain.handle('ftp:list-files', async (_, folder: string) => {
       const client = await connect()
-      const pwd = await client.cwd()
-      const remoteURL = remoteJoin(pwd, folder)
+      const rootPath = '.'
+      const fullPath = remoteJoin(rootPath, folder)
 
-      const list = await client.list(remoteURL)
+      const [list, manifest] = await Promise.all([
+        client.list(fullPath),
+        ManifestManager.load(client, rootPath)
+      ])
 
-      const mappedList = list.map((file) => {
-        const lastModifiedAt = file.modifyTime ? new Date(file.modifyTime) : null
+      return list.map((file) => {
+        const relativeFilePath = normalizePath(remoteJoin(folder, file.name))
+        const meta = manifest[relativeFilePath] || {}
+
+        let status = 'normal'
+
+        if (file.type === 'd') {
+          if (meta.isZipped) {
+            status = 'zipped'
+
+            const filesInFolder = Object.keys(manifest).filter((k) =>
+              k.startsWith(relativeFilePath + '/')
+            )
+            const hasNewFiles = filesInFolder.some(() => {
+              return true
+            })
+
+            if (hasNewFiles) {
+              status = 'zipped-dirty' // Zippowany, ale zawiera nowe luźne pliki
+            }
+          }
+        }
 
         return {
           name: file.name,
           size: file.size,
-          isDirectory: isSftpDir(file.type),
-          isFile: isSftpFile(file.type),
-          lastModifiedAt
+          isDirectory: file.type === 'd',
+          lastModifiedAt: file.modifyTime ? new Date(file.modifyTime) : null,
+          flag: meta.flag,
+          isZipped: meta.isZipped || false,
+          status: status,
+          hash: meta.hash
         }
       })
-
-      return mappedList
     })
 
     async function computeHash(buffer: ArrayBuffer): Promise<string> {
@@ -176,43 +246,27 @@ export const useFTPService = (): {
     ipcMain.handle(
       'ftp:upload-file',
       async (_, folder: string, buffer: ArrayBuffer, fileName: string) => {
+        const buf = Buffer.from(buffer)
         const tempFilePath = join(process.cwd(), 'tmp', fileName)
-        await writeFile(tempFilePath, Buffer.from(buffer))
+        await writeFile(tempFilePath, buf)
 
         const client = await connect()
+        const rootPath = '.'
         const remotePath = remoteJoin(folder, fileName)
-
-        await client.put(tempFilePath, remotePath)
-
-        const tmpHashesPath = join(process.cwd(), 'tmp', 'hashes.txt')
-        let remoteMissing = false
-        const hashesMap: Record<string, { hash: string; flag?: 'important' | 'ignore' }> = {}
+        const relativePath = normalizePath(remotePath)
 
         try {
-          await client.get(remoteJoin(folder, 'hashes.txt'), tmpHashesPath)
-          const data = await readFile(tmpHashesPath, 'utf-8')
-          Object.assign(hashesMap, parseHashesContent(data))
-        } catch {
-          remoteMissing = true
+          await client.put(tempFilePath, remotePath)
+
+          const hash = await computeHash(buf)
+
+          await ManifestManager.updateEntry(client, rootPath, relativePath, {
+            type: 'file',
+            hash: hash
+          })
+        } finally {
+          await unlink(tempFilePath).catch(() => {})
         }
-
-        const fileHash = await computeHash(buffer)
-        const defaultFlag: 'important' | 'ignore' = remoteMissing ? 'important' : 'ignore'
-
-        hashesMap[fileName] = { hash: fileHash, flag: hashesMap[fileName]?.flag ?? defaultFlag }
-
-        const hashesContent = serializeHashes(hashesMap)
-        await writeFile(tmpHashesPath, hashesContent)
-
-        await client.put(tmpHashesPath, remoteJoin(folder, 'hashes.txt'))
-
-        await unlink(tempFilePath)
-        try {
-          await unlink(tmpHashesPath)
-        } catch {
-          /* ignore */
-        }
-
         return true
       }
     )
@@ -331,125 +385,40 @@ export const useFTPService = (): {
       }
     )
 
-    ipcMain.handle(
-      'ftp:remove-file',
-      async (event, folder: string, fileName: string, operationId?: string) => {
-        const client = await connect()
-        const fullPath = remoteJoin(folder, fileName)
+    ipcMain.handle('ftp:remove-file', async (_, folder: string, fileName: string) => {
+      const client = await connect()
+      const rootPath = '.'
+      const fullPath = remoteJoin(folder, fileName)
+      const relativePath = normalizePath(fullPath)
 
-        const countItems = async (ftpPath: string): Promise<number> => {
-          let total = 0
-          try {
-            const list = await client.list(ftpPath)
-            for (const item of list) {
-              const childPath = remoteJoin(ftpPath, item.name)
-              total += 1
-              if (isSftpDir(item.type)) {
-                total += await countItems(childPath)
-              }
-            }
-          } catch {
-            /* ignore */
-          }
-          return total
-        }
+      // Sprawdź czy to katalog czy plik
+      const isDir = (await client.stat(fullPath)).isDirectory
 
-        let totalToDelete = 1
-        try {
-          const stat = await client.stat(fullPath)
-          if (stat.isDirectory) {
-            totalToDelete = await countItems(fullPath)
-          }
-        } catch {
-          totalToDelete = 1
-        }
-
-        let deletedCount = 0
-
-        async function removeSFTPPathWithProgress(path: string): Promise<void> {
-          let list: any[] = []
-          let isDir = false
-
-          try {
-            const stat = await client.stat(path)
-            isDir = stat.isDirectory
-          } catch {
-            return
-          }
-
-          if (isDir) {
-            try {
-              list = await client.list(path)
-            } catch {
-              /* Empty */
-            }
-
-            for (const item of list) {
-              const childPath = remoteJoin(path, item.name)
-              await removeSFTPPathWithProgress(childPath)
-            }
-
-            try {
-              await client.rmdir(path)
-            } catch (e) {
-              console.error('Błąd usuwania katalogu', path, e)
-            }
-          } else {
-            try {
-              await client.delete(path)
-            } catch (e) {
-              console.error('Błąd usuwania pliku', path, e)
-            }
-          }
-
-          deletedCount++
-          event.sender.send('ftp:remove-progress', {
-            id: operationId,
-            total: totalToDelete,
-            deleted: deletedCount,
-            current: path
-          })
-        }
-
-        // eslint-disable-next-line no-useless-catch
-        try {
-          await removeSFTPPathWithProgress(fullPath)
-
-          try {
-            const tmpHashesPath = join(process.cwd(), 'tmp', 'hashes.txt')
-            await client.get(remoteJoin(folder, 'hashes.txt'), tmpHashesPath)
-            const data = await readFile(tmpHashesPath, 'utf-8')
-            const map = parseHashesContent(data)
-
-            let changed = false
-            for (const key of Object.keys(map)) {
-              if (key === fileName || key.startsWith(fileName + '/')) {
-                delete map[key]
-                changed = true
-              }
-            }
-
-            if (changed) {
-              const hashesContent = serializeHashes(map)
-              await writeFile(tmpHashesPath, hashesContent)
-
-              if (hashesContent.length === 0) {
-                await client.delete(remoteJoin(folder, 'hashes.txt'))
-              } else {
-                await client.put(tmpHashesPath, remoteJoin(folder, 'hashes.txt'))
-              }
-            }
-            await unlink(tmpHashesPath)
-          } catch {
-            /* ignore hash errors */
-          }
-
-          return true
-        } catch (error) {
-          throw error
-        }
+      if (isDir) {
+        await client.rmdir(fullPath, true) // recursive delete
+      } else {
+        await client.delete(fullPath)
       }
-    )
+
+      // Aktualizacja manifestu - usuń wpis i wszystkie dzieci (jeśli folder)
+      const map = await ManifestManager.load(client, rootPath)
+
+      if (map[relativePath]) {
+        delete map[relativePath]
+      }
+
+      // Jeśli to był folder, usuń wszystko co zaczynało się od tej ścieżki
+      if (isDir) {
+        Object.keys(map).forEach((key) => {
+          if (key.startsWith(relativePath + '/')) {
+            delete map[key]
+          }
+        })
+      }
+
+      await ManifestManager.save(client, rootPath, map)
+      return true
+    })
 
     ipcMain.handle('ftp:read-file', async (_, folder: string, name: string) => {
       const tempFilePath = join(process.cwd(), 'tmp', name)
@@ -489,57 +458,133 @@ export const useFTPService = (): {
 
     ipcMain.handle(
       'ftp:set-hash-flag',
-      async (_, folder: string, name: string, flag?: 'important' | 'ignore' | null) => {
+      async (_, folder: string, name: string, flag: 'important' | 'ignore' | null) => {
         const client = await connect()
-        const tmpHashesPath = join(process.cwd(), 'tmp', 'hashes.txt')
-        const tmpFilePath = join(process.cwd(), 'tmp', 'file.temp')
-        const map: Record<string, { hash: string; flag?: 'important' | 'ignore' }> = {}
+        const rootPath = '.'
+        const relativePath = normalizePath(remoteJoin(folder, name))
 
-        try {
-          await client.get(remoteJoin(folder, 'hashes.txt'), tmpHashesPath)
-          const data = await readFile(tmpHashesPath, 'utf-8')
-          Object.assign(map, parseHashesContent(data))
-        } catch {
-          /* ignore */
+        const map = await ManifestManager.load(client, rootPath)
+
+        if (!map[relativePath]) {
+          // Jeśli wpisu nie ma (np. plik wgrany ręcznie poza aplikacją),
+          // musimy go dodać, ale nie mamy hasha bez pobierania.
+          // Można go oznaczyć jako 'pending' lub pobrać hash.
+          // Dla wydajności - tylko dodajemy wpis z flagą.
+          map[relativePath] = { type: 'file' }
         }
 
-        if (!map[name]) {
-          try {
-            await client.get(remoteJoin(folder, name), tmpFilePath)
-            const content = await readFile(tmpFilePath)
-            const h = createHash('sha256')
-            h.update(content)
-            map[name] = { hash: h.digest('hex') }
-            await unlink(tmpFilePath)
-          } catch {
-            try {
-              await unlink(tmpFilePath)
-            } catch {
-              /* ignore */
-            }
-          }
+        if (flag === null) {
+          delete map[relativePath].flag
+        } else {
+          map[relativePath].flag = flag
         }
 
-        if (map[name]) {
-          if (flag === null || flag === undefined) {
-            delete map[name].flag
-          } else {
-            map[name].flag = flag
-          }
-        }
-
-        const content = serializeHashes(map)
-        await writeFile(tmpHashesPath, content)
-        await client.put(tmpHashesPath, remoteJoin(folder, 'hashes.txt'))
-        try {
-          await unlink(tmpHashesPath)
-        } catch {
-          /* ignore */
-        }
-
+        await ManifestManager.save(client, rootPath, map)
         return true
       }
     )
+
+    ipcMain.handle('ftp:zip-folder', async (event, folderPath: string) => {
+      const client = await connect()
+      const rootPath = '.'
+      const fullRemotePath = remoteJoin(rootPath, folderPath)
+
+      const folderName = basename(folderPath)
+      const tempDir = join(process.cwd(), 'tmp', `zip_stage_${Date.now()}`)
+      const zipFileName = `${folderName}.zip`
+      const tempZipPath = join(process.cwd(), 'tmp', zipFileName)
+
+      // Helper do wysyłania postępu
+      const sendProgress = (percent: number, message: string): void => {
+        // Zabezpieczenie przed wysłaniem po zamknięciu okna
+        if (!event.sender.isDestroyed()) {
+          event.sender.send('ftp:zip-progress', { percent, message })
+        }
+      }
+
+      try {
+        // --- FAZA 1: POBIERANIE (0% - 30%) ---
+        sendProgress(0, `Pobieranie plików z folderu ${folderName}...`)
+
+        await mkdir(tempDir, { recursive: true })
+
+        // downloadDir nie ma wbudowanego progress callback w tej wersji biblioteki,
+        // więc symulujemy start.
+        await client.downloadDir(fullRemotePath, tempDir)
+
+        sendProgress(30, 'Pakowanie plików...')
+
+        // --- FAZA 2: PAKOWANIE (30% - 40%) ---
+        await new Promise<void>((resolve, reject) => {
+          const output = createWriteStream(tempZipPath)
+          const archive = archiver('zip', { zlib: { level: 9 } })
+
+          output.on('close', resolve)
+          archive.on('error', reject)
+
+          // Możemy nasłuchiwać postępu pakowania, ale jest to bardzo szybkie
+          archive.on('progress', (progress) => {
+            // Opcjonalnie: mikro-aktualizacje w zakresie 30-40%
+            const percent = 30 + (progress.entries.processed / progress.entries.total) * 10
+            sendProgress(percent, `Pakowanie: ${Math.round(percent)}%`)
+          })
+
+          archive.pipe(output)
+          archive.directory(tempDir, false)
+          archive.finalize()
+        })
+
+        sendProgress(40, 'Przygotowywanie do wysyłki...')
+
+        // --- FAZA 3: UPLOAD ZIPA (40% - 100%) ---
+        const parentRemoteDir = dirname(fullRemotePath)
+        const remoteZipPath = remoteJoin(parentRemoteDir, zipFileName)
+
+        // ZMIANA: Używamy fastPut zamiast put
+        await client.fastPut(tempZipPath, remoteZipPath, {
+          step: (total_transferred, _, total) => {
+            const uploadPercent = total_transferred / total // 0.0 do 1.0
+
+            // Skalujemy to do zakresu 40-100% ogólnego paska
+            const totalPercent = Math.round(40 + uploadPercent * 60)
+
+            sendProgress(totalPercent, `Wysyłanie archiwum: ${Math.round(uploadPercent * 100)}%`)
+          }
+        })
+
+        sendProgress(95, 'Weryfikacja i aktualizacja manifestu...')
+
+        // --- FAZA 4: MANIFEST I CZYSZCZENIE ---
+        const zipBuffer = await readFile(tempZipPath)
+        const zipHash = await computeHash(zipBuffer)
+
+        const manifest = await ManifestManager.load(client, rootPath)
+        const relativeFolderPath = normalizePath(folderPath)
+
+        manifest[relativeFolderPath] = {
+          ...(manifest[relativeFolderPath] || { type: 'dir' }),
+          type: 'dir',
+          isZipped: true,
+          zipHash: zipHash,
+          lastSynced: Date.now()
+        }
+
+        await ManifestManager.save(client, rootPath, manifest)
+
+        sendProgress(100, 'Zakończono!')
+        return true
+      } catch (e) {
+        console.error('Zip error', e)
+        throw e
+      } finally {
+        try {
+          await rm(tempDir, { recursive: true, force: true })
+          await unlink(tempZipPath)
+        } catch {
+          /* ignore */
+        }
+      }
+    })
 
     ipcMain.handle(
       'ftp:set-hash-flag-folder',

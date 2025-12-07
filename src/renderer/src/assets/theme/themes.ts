@@ -404,7 +404,7 @@ export const main = {
   navItemActive: 'rgba(255, 255, 255, 0.1)',
 
   // Login/Form
-  loginTabBtnBg: 'rgba(255, 255, 255, 0.15)', // Białe przezroczyste tło
+  loginTabBtnBg: 'rgba(255, 255, 255, 0.2)', // Białe przezroczyste tło
   loginTabBtnHover: 'rgba(255, 255, 255, 0.3)',
   loginInvalidBg: 'rgba(255, 107, 107, 0.1)',
   loginInvalidBorder: 'rgba(255, 107, 107, 0.3)',

@@ -5,7 +5,6 @@ import useGeneralStore from '@renderer/stores/general-store'
 import useUserStore from '@renderer/stores/user-store'
 import { createParticles, refreshMicrosoftToken, showToast } from '@renderer/utils'
 import { differenceInMilliseconds, intervalToDuration, parseISO } from 'date-fns'
-import { watch } from 'vue'
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 
 const generalStore = useGeneralStore()
@@ -115,12 +114,18 @@ const handleKillGame = async (): Promise<void> => {
   await window.electron?.ipcRenderer?.invoke('launch:exit')
   generalStore.setCurrentState('start')
   generalStore.setIsOpeningGame(false)
+  setTimeout(() => {
+    generalStore.setCurrentLog('')
+  }, 250)
 }
 
 const handleKillVerify = async (): Promise<void> => {
   await window.electron?.ipcRenderer?.invoke('launch:exit-verify')
   generalStore.setCurrentState('start')
   generalStore.setIsOpeningGame(false)
+  setTimeout(() => {
+    generalStore.setCurrentLog('')
+  }, 250)
 }
 
 const now = ref(new Date())
@@ -275,7 +280,7 @@ onUnmounted(() => {
   width: 100%;
   height: 1.5rem;
   position: absolute;
-  bottom: -25%;
+  top: 100%;
   width: 100%;
   display: flex;
   align-items: center;

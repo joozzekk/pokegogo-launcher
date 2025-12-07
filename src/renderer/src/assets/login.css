@@ -195,7 +195,7 @@ body {
 
 .tab-btn {
   flex: 1;
-  background: var(--login-tab-btn-bg);
+  opacity: 0.2;
   border: none;
   padding: 1rem 1.5rem;
   color: var(--text-secondary);
@@ -217,7 +217,7 @@ body {
 .tab-btn:hover,
 .tab-btn:focus {
   color: var(--text-primary);
-  background: var(--login-tab-btn-hover);
+  opacity: 0.4;
 }
 
 .tab-indicator {
