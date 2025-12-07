@@ -16,32 +16,23 @@ const userStore = useUserStore()
 const activeTab = ref<'login' | 'register'>('login')
 const apiURL = import.meta.env.RENDERER_VITE_API_URL
 
-const skinHeadUrls = ref<Partial<IUser & { url: string }>[]>(
-  userStore.prevAccounts.map((user) => ({
-    nickname: user.nickname,
-    password: user.password,
-    type: user.accountType,
-    url: ''
-  }))
-)
-
 const fallbackHeadUrl = (playerName: string): string =>
   `https://mineskin.eu/helm/${playerName}/100.png`
 
 async function loadCustomOrFallbackHead(playerName: string): Promise<void> {
   const customSkinSource = `${apiURL}/skins/image/${playerName}`
-  const index = skinHeadUrls.value.findIndex((user) => user.nickname === playerName)
+  const index = userStore.prevAccounts.findIndex((user) => user.nickname === playerName)
 
   try {
     const base64Head = await extractHead(customSkinSource, 100)
-    skinHeadUrls.value[index].url = base64Head
+    userStore.prevAccounts[index].url = base64Head
   } catch (error) {
     LOGGER.err(
       'Błąd cięcia/ładowania skina z API. Używam fallbacku Minotar.',
       (error as Error)?.message
     )
 
-    skinHeadUrls.value[index].url = fallbackHeadUrl(playerName)
+    userStore.prevAccounts[index].url = fallbackHeadUrl(playerName)
   }
 }
 
@@ -81,6 +72,10 @@ const handleLogin = (
   }
 
   activeTab.value = 'login'
+}
+
+const removeSavedAccount = (user: Partial<IUser & { url: string }>): void => {
+  userStore.removeAccount(user.nickname!)
 }
 
 onMounted(() => {
@@ -124,10 +119,10 @@ onMounted(() => {
     </div>
 
     <div class="flex gap-2 justify-center relative z-200 mb-4">
-      <button
-        v-for="account in skinHeadUrls.filter((_, index) => index <= 2)"
+      <div
+        v-for="account in userStore.prevAccounts.filter((_, index) => index <= 2)"
         :key="account.nickname"
-        class="flex flex-col gap-2 items-center px-8 py-6 border-[var(--border)] hover:bg-[var(--bg-dark)] focus:bg-[var(--bg-dark)] hover:cursor-pointer border-2 min-w-[150px] bg-[var(--bg-card)] rounded-3xl"
+        class="relative flex flex-col gap-2 items-center px-8 py-6 border-[var(--border)] hover:bg-[var(--bg-dark)] focus:bg-[var(--bg-dark)] hover:cursor-pointer border-2 min-w-[150px] bg-[var(--bg-card)] rounded-3xl"
         @click.prevent="handleLogin(account)"
       >
         <img v-if="account.url" :src="account.url" class="rounded-full w-8 h-8" />
@@ -138,10 +133,17 @@ onMounted(() => {
           <i class="fa fa-user" />
         </div>
         <span class="text-xs">{{ account.nickname }}</span>
-      </button>
+
+        <button
+          class="absolute! z-300 nav-item top-2 right-2 w-8 h-8"
+          @click.stop.prevent="removeSavedAccount(account)"
+        >
+          <i class="fa fa-trash" />
+        </button>
+      </div>
     </div>
 
-    <div v-if="skinHeadUrls.length" class="flex relative w-full">
+    <div v-if="userStore.prevAccounts.length" class="flex relative w-full">
       <hr class="my-4 w-full" />
       <span class="mt-[7px] mx-2">lub</span>
       <hr class="my-4 w-full" />

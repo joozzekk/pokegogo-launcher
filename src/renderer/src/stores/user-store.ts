@@ -4,7 +4,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 const useUserStore = defineStore('user', () => {
-  const prevAccounts = ref<Partial<IUser & { password: string; skinURL?: string }>[]>(
+  const prevAccounts = ref<Partial<IUser & { password: string; url?: string }>[]>(
     JSON.parse(localStorage.getItem('prevAccounts') ?? '[]')
   )
   const hwidBanned = ref<boolean>(false)
@@ -18,6 +18,11 @@ const useUserStore = defineStore('user', () => {
 
   const resetUser = (): void => {
     user.value = null
+  }
+
+  const removeAccount = (nickname: string): void => {
+    prevAccounts.value = prevAccounts.value.filter((account) => account.nickname !== nickname)
+    localStorage.setItem('prevAccounts', JSON.stringify(prevAccounts.value))
   }
 
   const logout = async (): Promise<void> => {
@@ -36,7 +41,8 @@ const useUserStore = defineStore('user', () => {
     accountType,
     setUser,
     resetUser,
-    logout
+    logout,
+    removeAccount
   }
 })
 
