@@ -96,7 +96,14 @@ onMounted(async () => {
   if (accountType === 'microsoft') {
     refreshInterval.value = setInterval(
       async () => {
-        await refreshMicrosoftToken(localStorage.getItem('msToken'))
+        const res = await refreshMicrosoftToken(
+          localStorage.getItem(`msToken:${userStore.user?.nickname}`)
+        )
+
+        if (res) {
+          localStorage.setItem(`msToken:${userStore.user?.nickname}`, res.msToken)
+          localStorage.setItem('mcToken', res.mcToken)
+        }
       },
       1000 * 60 * 60
     )

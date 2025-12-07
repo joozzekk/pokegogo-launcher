@@ -74,7 +74,6 @@ api.interceptors.response.use(
             processQueue(err, null)
             localStorage.removeItem('token')
             localStorage.removeItem('refresh_token')
-            localStorage.removeItem('msToken')
             localStorage.removeItem('mcToken')
             router.push('/')
             reject(err)
@@ -88,7 +87,6 @@ api.interceptors.response.use(
     if (!error.response) {
       localStorage.removeItem('token')
       localStorage.removeItem('refresh_token')
-      localStorage.removeItem('msToken')
       localStorage.removeItem('mcToken')
       router.push('/')
       return Promise.reject(new Error('Brak połączenia z siecią. Spróbuj ponownie później'))

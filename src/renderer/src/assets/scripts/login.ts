@@ -3,6 +3,7 @@
 import { fetchLogin, fetchRegister, updateBackendUserFromMicrosoft } from '@renderer/api/endpoints'
 import { router } from '@renderer/router'
 import { LOGGER } from '@renderer/services/logger-service'
+import useUserStore from '@renderer/stores/user-store'
 import { AxiosError } from 'axios'
 
 const CONFIG = {
@@ -291,6 +292,28 @@ export class PokeGoGoLogin {
         localStorage.setItem('token', access_token)
         localStorage.setItem('refresh_token', refresh_token)
         localStorage.setItem('LOGIN_TYPE', 'backend')
+
+        if (document.getElementById('remember-checkbox')?.checked) {
+          const prevAccounts = JSON.parse(localStorage.getItem('prevAccounts') ?? '[]')
+
+          if (
+            !prevAccounts.find(
+              (account) => account.nickname === formData.email && account.accountType === 'backend'
+            )
+          )
+            localStorage.setItem(
+              'prevAccounts',
+              JSON.stringify([
+                ...prevAccounts,
+                {
+                  nickname: formData.email,
+                  password: formData.password,
+                  accountType: 'backend'
+                }
+              ])
+            )
+        }
+
         router.push({
           path: '/app/home'
         })
@@ -331,6 +354,26 @@ export class PokeGoGoLogin {
         localStorage.setItem('token', access_token)
         localStorage.setItem('refresh_token', refresh_token)
         localStorage.setItem('LOGIN_TYPE', 'backend')
+
+        const prevAccounts = JSON.parse(localStorage.getItem('prevAccounts') ?? '[]')
+
+        if (
+          !prevAccounts.find(
+            (account) => account.nickname === formData.email && account.accountType === 'backend'
+          )
+        )
+          localStorage.setItem(
+            'prevAccounts',
+            JSON.stringify([
+              ...prevAccounts,
+              {
+                nickname: formData.email,
+                password: formData.password,
+                accountType: 'backend'
+              }
+            ])
+          )
+
         router.push({
           path: '/app/home'
         })
@@ -374,12 +417,37 @@ export class PokeGoGoLogin {
     return isValid
   }
 
-  async handleMicrosoftLogin(): Promise<void> {
-    try {
-      this.showLoading('Logowanie przez Microsoft...')
-      const { msToken, mcToken }: { mcToken: string; msToken: string } =
-        await window.electron?.ipcRenderer?.invoke('auth:login')
+  async handleMicrosoftLogin(nickname?: string): Promise<void> {
+    this.showLoading('Logowanie do Microsoft...')
 
+    try {
+      let loginData: { msToken: string; mcToken: string } | null = null
+
+      const storedMsToken = localStorage.getItem(`msToken:${nickname}`)
+
+      if (storedMsToken) {
+        try {
+          LOGGER.log('Próba cichego logowania (Refresh Token)...')
+          loginData = await window.electron?.ipcRenderer?.invoke(
+            'auth:refresh-token',
+            storedMsToken
+          )
+        } catch (e) {
+          LOGGER.err(
+            'Ciche logowanie nieudane, token mógł wygasnąć. Przełączanie na zwykłe logowanie.'
+          )
+        }
+      }
+
+      // 3. Jeśli nie udało się odświeżyć (lub nie było tokena), otwieramy okno
+      if (!loginData) {
+        LOGGER.log('Otwieranie okna logowania Microsoft...')
+        loginData = await window.electron?.ipcRenderer?.invoke('auth:login')
+      }
+
+      if (!loginData) throw new Error('Błąd pobierania danych logowania')
+
+      const { msToken, mcToken } = loginData
       const data = JSON.parse(mcToken)
       const profile = data?.profile
 
@@ -390,17 +458,36 @@ export class PokeGoGoLogin {
 
       const { access_token, refresh_token } = await fetchLogin(user.nickname, user.uuid, true)
 
-      localStorage.setItem('msToken', msToken)
+      localStorage.setItem(`msToken:${user.nickname}`, msToken)
       localStorage.setItem('mcToken', mcToken)
       localStorage.setItem('token', access_token)
       localStorage.setItem('refresh_token', refresh_token)
       localStorage.setItem('LOGIN_TYPE', 'microsoft')
+
+      const prevAccounts = JSON.parse(localStorage.getItem('prevAccounts') ?? '[]')
+
+      if (
+        !prevAccounts.find(
+          (account) => account.nickname === user.nickname && account.accountType === 'microsoft'
+        )
+      )
+        localStorage.setItem(
+          'prevAccounts',
+          JSON.stringify([
+            ...prevAccounts,
+            {
+              nickname: user.nickname,
+              accountType: 'microsoft'
+            }
+          ])
+        )
+
       router.push({
         path: '/app/home'
       })
     } catch (_error) {
-      LOGGER.log(_error)
-      this.showToast('Błąd podczas przekierowania', 'error')
+      console.error(_error)
+      this.showToast('Błąd podczas logowania Microsoft: ' + _error.toString(), 'error')
     } finally {
       this.hideLoading()
     }

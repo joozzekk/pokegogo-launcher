@@ -163,12 +163,16 @@ export const calculateValueFromPercentage = (
   return Math.fround(((value - min) / (max - min)) * sliderWidth)
 }
 
-export const refreshMicrosoftToken = async (token: string | null): Promise<void> => {
-  if (!window?.electron?.ipcRenderer || !token) return
+export const refreshMicrosoftToken = async (
+  token: string | null
+): Promise<{
+  msToken: string
+  mcToken: string
+} | null> => {
+  if (!window?.electron?.ipcRenderer || !token) return null
   const { msToken, mcToken } = await window.electron.ipcRenderer.invoke('auth:refresh-token', token)
 
-  localStorage.setItem('msToken', msToken)
-  localStorage.setItem('mcToken', mcToken)
+  return { msToken, mcToken }
 }
 
 export const defaultDatePickerTime: DatePickerPassThroughOptions = {
@@ -209,5 +213,39 @@ export const traverseFileTree = (
     } else {
       resolve([])
     }
+  })
+}
+
+const HEAD_X = 8
+const HEAD_Y = 8
+const HEAD_WIDTH = 8
+const HEAD_HEIGHT = 8
+
+export function extractHead(skinUrl: string, size: number = 100): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+
+    img.onerror = () => {
+      reject(new Error(`Nie udało się załadować skina z URL (HTTP Error/404): ${skinUrl}`))
+    }
+
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+
+      if (!ctx) {
+        return reject(new Error('Błąd inicjalizacji Canvas context.'))
+      }
+
+      canvas.width = size
+      canvas.height = size
+
+      ctx.imageSmoothingEnabled = false
+      ctx.drawImage(img, HEAD_X, HEAD_Y, HEAD_WIDTH, HEAD_HEIGHT, 0, 0, size, size)
+      resolve(canvas.toDataURL('image/png'))
+    }
+
+    img.src = skinUrl
   })
 }

@@ -72,8 +72,16 @@ const handleLaunchGame = async (e: Event): Promise<void> => {
     if (now >= exp) {
       LOGGER.log('Odświeżanie tokenu MC..')
       try {
-        await refreshMicrosoftToken(localStorage.getItem('msToken'))
-        mcToken = localStorage.getItem('mcToken')
+        const res = await refreshMicrosoftToken(
+          localStorage.getItem(`msToken:${userStore.user?.nickname}`)
+        )
+
+        if (res) {
+          localStorage.setItem(`msToken:${userStore.user?.nickname}`, res.msToken)
+          localStorage.setItem('mcToken', res.mcToken)
+
+          mcToken = res.mcToken
+        }
 
         LOGGER.success('MC Token został odświeżony.')
       } catch (err: unknown) {

@@ -2,6 +2,7 @@
 import { LOGGER } from '@renderer/services/logger-service'
 import useGeneralStore from '@renderer/stores/general-store'
 import useUserStore from '@renderer/stores/user-store'
+import { extractHead } from '@renderer/utils'
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
@@ -18,40 +19,6 @@ const handleLogout = async (): Promise<void> => {
   if (generalStore.currentState === 'minecraft-started') {
     await window.electron?.ipcRenderer?.invoke('launch:exit')
   }
-}
-
-const HEAD_X = 8
-const HEAD_Y = 8
-const HEAD_WIDTH = 8
-const HEAD_HEIGHT = 8
-
-function extractHead(skinUrl: string, size: number = 100): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const img = new Image()
-    img.crossOrigin = 'anonymous'
-
-    img.onerror = () => {
-      reject(new Error(`Nie udało się załadować skina z URL (HTTP Error/404): ${skinUrl}`))
-    }
-
-    img.onload = () => {
-      const canvas = document.createElement('canvas')
-      const ctx = canvas.getContext('2d')
-
-      if (!ctx) {
-        return reject(new Error('Błąd inicjalizacji Canvas context.'))
-      }
-
-      canvas.width = size
-      canvas.height = size
-
-      ctx.imageSmoothingEnabled = false
-      ctx.drawImage(img, HEAD_X, HEAD_Y, HEAD_WIDTH, HEAD_HEIGHT, 0, 0, size, size)
-      resolve(canvas.toDataURL('image/png'))
-    }
-
-    img.src = skinUrl
-  })
 }
 
 const handleChangeRoute = (newRoute: string): void => {
