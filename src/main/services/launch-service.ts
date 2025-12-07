@@ -74,10 +74,9 @@ export const useLaunchService = (win: BrowserWindow): void => {
     return false
   })
 
-  ipcMain.handle('launch:remove-libraries-files', async (): Promise<boolean> => {
+  ipcMain.handle('launch:remove-mcfiles', async (): Promise<boolean> => {
     try {
-      await rm(join(app.getPath('userData'), 'mcfiles/mods'), { recursive: true, force: true })
-      await rm(join(app.getPath('userData'), 'mcfiles/libraries'), { recursive: true, force: true })
+      await rm(join(app.getPath('userData'), 'mcfiles'), { recursive: true, force: true })
     } catch (err) {
       Logger.log(err)
 
