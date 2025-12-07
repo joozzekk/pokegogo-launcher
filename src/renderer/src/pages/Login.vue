@@ -125,7 +125,7 @@ onMounted(() => {
 
     <div class="flex gap-2 justify-center relative z-200 mb-4">
       <button
-        v-for="account in skinHeadUrls"
+        v-for="account in skinHeadUrls.filter((_, index) => index <= 2)"
         :key="account.nickname"
         class="flex flex-col gap-2 items-center px-8 py-6 border-[var(--border)] hover:bg-[var(--bg-dark)] focus:bg-[var(--bg-dark)] hover:cursor-pointer border-2 min-w-[150px] bg-[var(--bg-card)] rounded-3xl"
         @click.prevent="handleLogin(account)"
