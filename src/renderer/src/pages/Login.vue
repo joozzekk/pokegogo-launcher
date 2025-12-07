@@ -294,7 +294,7 @@ onMounted(() => {
       </label>
     </div>
 
-    <button class="btn-primary">
+    <button class="btn-primary" @click.prevent="pokeLogin?.handleRegister">
       <span>Utwórz konto</span>
     </button>
 

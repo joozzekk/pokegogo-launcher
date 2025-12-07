@@ -367,7 +367,7 @@ export class PokeGoGoLogin {
             JSON.stringify([
               ...prevAccounts,
               {
-                nickname: formData.email,
+                nickname: formData.nick,
                 password: formData.password,
                 accountType: 'backend'
               }
