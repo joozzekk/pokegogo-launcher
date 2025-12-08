@@ -56,10 +56,8 @@ watch(
   }
 )
 
-const handleLogin = (
-  user: Partial<IUser & { url: string; type: 'microsoft' | 'backend'; password: string }>
-): void => {
-  switch (user.type) {
+const handleLogin = (user: Partial<IUser & { url: string; password: string }>): void => {
+  switch (user.accountType) {
     case 'backend':
       ;(document.getElementById('login-email') as HTMLInputElement).value = user.nickname ?? ''
       ;(document.getElementById('login-password') as HTMLInputElement).value = user.password ?? ''
@@ -123,9 +121,14 @@ onMounted(() => {
         v-for="account in userStore.prevAccounts.filter((_, index) => index <= 2)"
         :key="account.nickname"
         class="relative flex flex-col gap-2 items-center px-8 py-6 border-[var(--border)] hover:bg-[var(--bg-dark)] focus:bg-[var(--bg-dark)] hover:cursor-pointer border-2 min-w-[150px] bg-[var(--bg-card)] rounded-3xl"
-        @click.prevent="handleLogin(account)"
+        @click="handleLogin(account)"
       >
-        <img v-if="account.url" :src="account.url" class="rounded-full w-8 h-8" />
+        <img
+          v-if="account.url"
+          :src="account.url"
+          class="rounded-full w-8 h-8"
+          @dragstart.prevent="null"
+        />
         <div
           v-else
           class="rounded-full border-[var(--border)] border-2 w-8 h-8 flex items-center justify-center"

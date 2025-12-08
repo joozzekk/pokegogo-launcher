@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import Client from 'ssh2-sftp-client'
 import { createHash } from 'crypto'
-import { BrowserWindow, ipcMain } from 'electron'
-import { mkdir, readFile, rm, unlink, writeFile } from 'fs/promises'
+import { app, BrowserWindow, ipcMain } from 'electron'
+import { mkdir, readdir, readFile, rm, unlink, writeFile } from 'fs/promises'
 import { basename, dirname, join, posix } from 'path'
 import { createWriteStream } from 'fs'
 import archiver from 'archiver'
@@ -781,6 +781,31 @@ export const useFTPService = (): {
       } catch (error) {
         throw error
       }
+    })
+
+    ipcMain.handle('ftp:get-logs', async (_, logType: string) => {
+      let path = join(app.getPath('userData'))
+
+      switch (logType) {
+        case 'minecraft':
+          try {
+            const res = await readdir(join(path, 'mcfiles'))
+
+            if (res) {
+              path = join(path, 'mcfiles', 'logs', 'latest.log')
+            }
+          } catch {
+            return null
+          }
+          break
+        default:
+          path = join(path, 'logs', 'main.log')
+          break
+      }
+
+      const fileContent = await readFile(path, 'utf-8')
+
+      return fileContent
     })
   }
 

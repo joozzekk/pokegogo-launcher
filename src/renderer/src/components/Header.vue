@@ -1,12 +1,13 @@
 <script lang="ts" setup>
-import logo from '@renderer/assets/logo.png'
 import { LOGGER } from '@renderer/services/logger-service'
 import useGeneralStore from '@renderer/stores/general-store'
 import { checkUpdate, showToast } from '@renderer/utils'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import UpdateConfirm from './modals/UpdateConfirm.vue'
+import DiscordReportModal from './modals/DiscordReportModal.vue'
 import { useRouter } from 'vue-router'
 import useUserStore from '@renderer/stores/user-store'
+import logo from '@renderer/assets/logo.png'
 
 const userStore = useUserStore()
 const generalStore = useGeneralStore()
@@ -15,8 +16,13 @@ const router = useRouter()
 const updateInterval = ref<any>()
 const isInstallingUpdate = ref<boolean>(false)
 
-const handleOpenHelpDiscordChannel = (): void => {
-  window.open('discord://-/channels/1273592331534340147/1430594826428088430', '_blank')
+const discordReportModalRef = ref()
+const openDiscordReportModal = (): void => {
+  discordReportModalRef.value?.openModal()
+}
+
+const openDiscord = (): void => {
+  window.open('discord://-/invite/pokemongogo', '_blank')
 }
 
 const hasMod = computed(() =>
@@ -131,7 +137,11 @@ onUnmounted(() => {
     <div class="flex ml-auto mr-[6rem] items-center gap-2">
       <div class="applogo-badge">{{ generalStore.settings.updateChannel }}</div>
 
-      <button class="nav-icon" @click="handleOpenHelpDiscordChannel">
+      <button class="nav-icon" @click="openDiscord">
+        <i class="fab fa-discord" />
+      </button>
+
+      <button class="nav-icon" @click="openDiscordReportModal">
         <i class="fa fa-question" />
       </button>
 
@@ -158,6 +168,7 @@ onUnmounted(() => {
     </div>
 
     <UpdateConfirm ref="confirmModalRef" @accept="handleInstallUpdate" />
+    <DiscordReportModal ref="discordReportModalRef" />
   </header>
 </template>
 
