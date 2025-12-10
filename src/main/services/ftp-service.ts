@@ -176,12 +176,16 @@ export const useFTPService = (): {
             const filesInFolder = Object.keys(manifest).filter((k) =>
               k.startsWith(relativeFilePath + '/')
             )
-            const hasNewFiles = filesInFolder.some(() => {
-              return true
+
+            const folderLastSynced = meta.lastSynced || 0
+
+            const hasNewFiles = filesInFolder.some((fileKey) => {
+              const fileEntry = manifest[fileKey]
+              return (fileEntry.lastSynced || 0) > folderLastSynced
             })
 
             if (hasNewFiles) {
-              status = 'zipped-dirty' // Zippowany, ale zawiera nowe luźne pliki
+              status = 'zipped-dirty'
             }
           }
         }
