@@ -259,6 +259,7 @@ async function executeSyncPlan(
 
 export async function copyMCFiles(
   isDev: boolean,
+  gameMode: string,
   mainWindow: BrowserWindow,
   signal: AbortSignal,
   logHandlerName: string = 'launch:show-log'
@@ -276,7 +277,8 @@ export async function copyMCFiles(
     const isFirstInstall = !(await fileExists(markerFile))
     state = { client: await ftpService.connect() }
 
-    const currentVersionFolder = isDev ? 'dev-mc' : 'mc'
+    const currentVersionFolder =
+      gameMode === 'Pokemons' ? (isDev ? 'dev-mc' : 'mc') : gameMode.toLowerCase()
 
     const globalProgress: GlobalProgress = {
       totalFiles: 0,
@@ -286,7 +288,7 @@ export async function copyMCFiles(
       startTime: 0
     }
 
-    logToUI(`Weryfikacja plików (${isDev ? 'DEV' : 'PROD'})...`)
+    logToUI(`Weryfikacja plików${isDev ? ' (DEV)' : ''}...`)
 
     const globalHashes = await fetchGlobalManifest(state, localRoot)
     const plan: SyncPlan = { downloads: [], deletes: [], totalSize: 0 }

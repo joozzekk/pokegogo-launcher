@@ -33,15 +33,33 @@ const nonPremiumToMCLC = async (json: string): Promise<unknown> => {
   }
 }
 
+const getGameVersionByMode = (mode: string): string => {
+  switch (mode.toLowerCase()) {
+    case 'minigames':
+      return '1.21.6'
+    default:
+      return '1.21.1-fabric'
+  }
+}
+
+const getVersionNumberByMode = (mode: string): string => {
+  switch (mode.toLowerCase()) {
+    case 'minigames':
+      return '1.21.6'
+    default:
+      return '1.21.1'
+  }
+}
+
 export async function launchMinecraft(
   win: BrowserWindow,
-  version: string,
   token: string,
   accessToken: string,
   settings: {
     ram: number
     resolution: string
     displayMode: string
+    gameMode: string
   },
   accountType: string
 ): Promise<void> {
@@ -65,9 +83,9 @@ export async function launchMinecraft(
     root: minecraftDir,
     javaPath,
     version: {
-      number: version,
+      number: getVersionNumberByMode(settings.gameMode),
       type: 'release',
-      custom: '1.21.1-fabric'
+      custom: getGameVersionByMode(settings.gameMode)
     },
     window: {
       width,

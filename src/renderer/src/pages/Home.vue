@@ -3,7 +3,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import LaunchButton from '@renderer/components/buttons/LaunchButton.vue'
 import useGeneralStore from '@renderer/stores/general-store'
-import { getEvents, getServerStatus } from '@renderer/api/endpoints'
+import { getServerStatus } from '@renderer/api/endpoints'
 import { LOGGER } from '@renderer/services/logger-service'
 import { format, parseISO } from 'date-fns'
 import useUserStore from '@renderer/stores/user-store'
@@ -14,22 +14,24 @@ const generalStore = useGeneralStore()
 const time = ref<number>(0)
 const serverStatus = ref<{ players: { online: number } } | null>(null)
 
+const props = defineProps<{
+  events: any[]
+}>()
+
 const playerName = computed(() => {
   return userStore.user?.nickname ?? 'Guest'
 })
 
-const events = ref<any[]>([])
-
 const serverStatusInterval = ref<unknown>()
 
 const normalEvents = computed(() => {
-  return events.value
+  return props.events
     .filter((event) => event.type === 'normal')
     ?.sort((a, b) => (parseISO(a.startDate).getTime() < parseISO(b.startDate).getTime() ? 1 : -1))
 })
 
 const megaEvent = computed(() => {
-  return events.value.find((event) => event.type === 'mega')
+  return props.events.find((event) => event?.type === 'mega')
 })
 
 const setServerStatus = async (): Promise<void> => {
@@ -112,8 +114,6 @@ watch(
 onMounted(async () => {
   await setServerStatus()
 
-  events.value = await getEvents()
-
   serverStatusInterval.value = setInterval(
     async () => {
       await setServerStatus()
@@ -137,8 +137,8 @@ onMounted(async () => {
       <div class="quick-setting">
         <i class="fas fa-microchip"></i>
         <div>
-          Wersja: <strong>1.21.1</strong>
-          <span class="text-[var(--text-secondary)] opacity-60 ml-1">(Fabric)</span>
+          Tryb:
+          <strong>{{ generalStore.settings.gameMode }}</strong>
         </div>
       </div>
       <div class="quick-setting">

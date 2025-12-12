@@ -36,6 +36,7 @@ const verifyFiles = async (): Promise<void> => {
   await window.electron?.ipcRenderer?.invoke('launch:remove-mcfiles')
   await window.electron?.ipcRenderer?.invoke('launch:check-files', {
     isDev: generalStore.settings.updateChannel === 'dev',
+    gameMode: generalStore.settings.gameMode,
     event: 'verify:log'
   })
 }

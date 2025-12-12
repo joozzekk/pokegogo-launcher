@@ -179,6 +179,17 @@ const setNewTheme = (newTheme: string): void => {
   saveSettings()
 }
 
+const changeGameMode = async (newMode: string): Promise<void> => {
+  try {
+    await window.electron?.ipcRenderer?.invoke('launch:remove-markfile')
+  } catch {
+    /* ignore */
+  }
+  generalStore.settings.gameMode = newMode
+
+  saveSettings()
+}
+
 onUnmounted(() => {
   generalStore.saveSettings()
 })
@@ -195,6 +206,26 @@ onUnmounted(() => {
             </div>
             <h2>Ustawienia gry</h2>
             <span class="applogo-badge">{{ generalStore.appVersion?.split('-')[0] }}</span>
+          </div>
+        </div>
+
+        <div class="setting-group">
+          <label>Tryb gry</label>
+          <div class="toggle-group">
+            <button
+              class="toggle-option !py-[0.25rem]"
+              :class="{ active: generalStore.settings.gameMode === 'Pokemons' }"
+              @click="changeGameMode('Pokemons')"
+            >
+              Pokemony
+            </button>
+            <button
+              class="toggle-option !py-[0.25rem]"
+              :class="{ active: generalStore.settings.gameMode === 'MiniGames' }"
+              @click="changeGameMode('MiniGames')"
+            >
+              MiniGamesy
+            </button>
           </div>
         </div>
 

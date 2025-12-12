@@ -16,12 +16,12 @@ const useGeneralStore = defineStore('general', () => {
     ram: MIN_RAM,
     maxRAM: 16,
     javaVersion: 21,
-    version: 'PokemonGoGo.pl',
     displayMode: 'Okno',
     theme: 'main',
     autoUpdate: true,
     updateChannel: 'beta',
-    isSidebarCollapsed: false
+    isSidebarCollapsed: false,
+    gameMode: 'Pokemons'
   }
 
   const savedSettings = localStorage.getItem('launcherSettings')

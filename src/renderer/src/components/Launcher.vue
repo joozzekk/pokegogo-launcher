@@ -1,5 +1,6 @@
+<!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <script lang="ts" setup>
-import { onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { initAnimations } from '@renderer/assets/scripts/animations'
 import Header from '@renderer/components/Header.vue'
 import Sidebar from '@renderer/components/Sidebar.vue'
@@ -7,6 +8,7 @@ import useUserStore from '@renderer/stores/user-store'
 import {
   checkMachineID,
   fetchProfile,
+  getEvents,
   updateMachineData,
   updateProfileData
 } from '@renderer/api/endpoints'
@@ -18,13 +20,19 @@ import api from '@renderer/utils/client'
 import { LOGGER } from '@renderer/services/logger-service'
 import choinka from '@renderer/assets/img/choinka.png'
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const refreshInterval = ref<any>(null)
 const generalStore = useGeneralStore()
 const accountType = localStorage.getItem('LOGIN_TYPE')
 const userStore = useUserStore()
-
 const socket = useSocket()
+
+const events = ref<any[]>([])
+
+const apiURL = import.meta.env.RENDERER_VITE_API_URL
+
+const megaEvent = computed(() => {
+  return events.value.find((event) => event.type === 'mega')
+})
 
 const fetchProfileData = async (): Promise<void> => {
   const profile = await fetchProfile()
@@ -91,6 +99,8 @@ socket.on('player:update-profile', async (data) => {
 })
 
 onMounted(async () => {
+  events.value = await getEvents()
+
   initAnimations()
 
   if (accountType === 'microsoft') {
@@ -137,7 +147,7 @@ onUnmounted(() => {
   <div>
     <div class="animated-bg">
       <img
-        :src="choinka"
+        :src="megaEvent?.uuid ? `${apiURL}/events/image/${megaEvent?.uuid}` : choinka"
         alt="background"
         class="absolute !h-[100vh] z-[0]"
         @dragstart.prevent="null"
@@ -153,7 +163,9 @@ onUnmounted(() => {
       <Sidebar />
 
       <main class="main-content">
-        <RouterView />
+        <RouterView v-slot="{ Component }">
+          <component :is="Component" :events="events" />
+        </RouterView>
       </main>
     </div>
 

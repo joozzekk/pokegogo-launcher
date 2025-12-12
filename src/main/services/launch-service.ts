@@ -22,19 +22,12 @@ export const useLaunchService = (win: BrowserWindow): void => {
     await installJava(data.javaVersion)
     win.webContents.send('launch:change-state', JSON.stringify('files-verify'))
 
-    const res = await copyMCFiles(data.isDev, win, signal)
+    const res = await copyMCFiles(data.isDev, data.settings.gameMode, win, signal)
 
     currentAbortController = null
 
     if (res !== 'stop') {
-      await launchMinecraft(
-        win,
-        data.mcVersion,
-        data.token,
-        data.accessToken,
-        data.settings,
-        data.accountType
-      )
+      await launchMinecraft(win, data.token, data.accessToken, data.settings, data.accountType)
     }
   })
 
@@ -47,7 +40,7 @@ export const useLaunchService = (win: BrowserWindow): void => {
     const signal = currentAbortController.signal
 
     try {
-      const res = await copyMCFiles(data.isDev, win, signal, data.event)
+      const res = await copyMCFiles(data.isDev, data.gameMode, win, signal, data.event)
       currentAbortController = null
 
       if (res !== 'stop') {
