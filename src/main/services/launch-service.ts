@@ -57,7 +57,9 @@ export const useLaunchService = (win: BrowserWindow): void => {
 
   ipcMain.handle('launch:remove-markfile', async (_, gameMode: string): Promise<boolean> => {
     try {
-      await unlink(join(app.getPath('userData'), `.${gameMode.toLowerCase()}_installed`))
+      await unlink(
+        join(app.getPath('userData'), 'instances', `.${gameMode.toLowerCase()}_installed`)
+      )
     } catch (err) {
       Logger.log(err)
 

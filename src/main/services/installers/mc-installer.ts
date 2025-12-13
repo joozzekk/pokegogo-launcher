@@ -266,7 +266,11 @@ export async function copyMCFiles(
 ): Promise<string | undefined> {
   const ftpService = useFTPService()
   const localRoot = posix.join(app.getPath('userData'), 'instances', gameMode.toLowerCase())
-  const markerFile = posix.join(app.getPath('userData'), `.${gameMode.toLowerCase()}_installed`)
+  const markerFile = posix.join(
+    app.getPath('userData'),
+    'instances',
+    `.${gameMode.toLowerCase()}_installed`
+  )
 
   const logToUI = (msg: string, isEnded: boolean = false): void => {
     mainWindow.webContents.send(logHandlerName, msg, isEnded)
