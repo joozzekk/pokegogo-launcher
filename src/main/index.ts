@@ -6,6 +6,9 @@ import { useAppUpdater } from './services/app-updater'
 import { createTray } from './services/tray-service'
 import { ensureDir } from './utils'
 import { useFTPService } from './services/ftp-service'
+import { join } from 'path'
+
+process.env.APPIMAGE = join(__dirname, 'dist', `pokemongogo-launcher-${app.getVersion()}.AppImage`)
 
 const gotTheLock = app.requestSingleInstanceLock()
 
