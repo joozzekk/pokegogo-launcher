@@ -32,8 +32,14 @@ const cancelVerifying = async (): Promise<void> => {
 
 const verifyFiles = async (): Promise<void> => {
   isVerifying.value = true
-  await window.electron?.ipcRenderer?.invoke('launch:remove-markfile')
-  await window.electron?.ipcRenderer?.invoke('launch:remove-mcfiles')
+  await window.electron?.ipcRenderer?.invoke(
+    'launch:remove-markfile',
+    generalStore.settings.gameMode
+  )
+  await window.electron?.ipcRenderer?.invoke(
+    'launch:remove-mcfiles',
+    generalStore.settings.gameMode
+  )
   await window.electron?.ipcRenderer?.invoke('launch:check-files', {
     isDev: generalStore.settings.updateChannel === 'dev',
     gameMode: generalStore.settings.gameMode,

@@ -33,22 +33,12 @@ const nonPremiumToMCLC = async (json: string): Promise<unknown> => {
   }
 }
 
-const getGameVersionByMode = (mode: string): string => {
-  switch (mode.toLowerCase()) {
-    case 'minigames':
-      return '1.21.6'
-    default:
-      return '1.21.1-fabric'
-  }
+const getGameVersionByMode = (): string => {
+  return '1.21.1-fabric'
 }
 
-const getVersionNumberByMode = (mode: string): string => {
-  switch (mode.toLowerCase()) {
-    case 'minigames':
-      return '1.21.6'
-    default:
-      return '1.21.1'
-  }
+const getVersionNumberByMode = (): string => {
+  return '1.21.1'
 }
 
 export async function launchMinecraft(
@@ -65,7 +55,7 @@ export async function launchMinecraft(
 ): Promise<void> {
   const plt = os.platform()
   const baseDir = app.getPath('userData')
-  const minecraftDir = path.join(baseDir, 'mcfiles')
+  const minecraftDir = path.join(baseDir, 'instances', settings.gameMode.toLowerCase())
   const client = new Client()
 
   const javaPath = join(baseDir, 'java/jdk-21.0.8/bin/', plt === 'win32' ? 'java.exe' : 'java')
@@ -83,9 +73,9 @@ export async function launchMinecraft(
     root: minecraftDir,
     javaPath,
     version: {
-      number: getVersionNumberByMode(settings.gameMode),
+      number: getVersionNumberByMode(),
       type: 'release',
-      custom: getGameVersionByMode(settings.gameMode)
+      custom: getGameVersionByMode()
     },
     window: {
       width,

@@ -787,16 +787,16 @@ export const useFTPService = (): {
       }
     })
 
-    ipcMain.handle('ftp:get-logs', async (_, logType: string) => {
+    ipcMain.handle('ftp:get-logs', async (_, gameMode: string, logType: string) => {
       let path = join(app.getPath('userData'))
 
       switch (logType) {
         case 'minecraft':
           try {
-            const res = await readdir(join(path, 'mcfiles'))
+            const res = await readdir(join(path, 'instances', gameMode))
 
             if (res) {
-              path = join(path, 'mcfiles', 'logs', 'latest.log')
+              path = join(path, 'instances', gameMode, 'logs', 'latest.log')
             }
           } catch {
             return null

@@ -55,9 +55,9 @@ export const useLaunchService = (win: BrowserWindow): void => {
     }
   })
 
-  ipcMain.handle('launch:remove-markfile', async (): Promise<boolean> => {
+  ipcMain.handle('launch:remove-markfile', async (_, gameMode: string): Promise<boolean> => {
     try {
-      await unlink(join(app.getPath('userData'), '.mcfiles_installed'))
+      await unlink(join(app.getPath('userData'), `.${gameMode.toLowerCase()}_installed`))
     } catch (err) {
       Logger.log(err)
 
@@ -67,9 +67,12 @@ export const useLaunchService = (win: BrowserWindow): void => {
     return false
   })
 
-  ipcMain.handle('launch:remove-mcfiles', async (): Promise<boolean> => {
+  ipcMain.handle('launch:remove-mcfiles', async (_, gameMode: string): Promise<boolean> => {
     try {
-      await rm(join(app.getPath('userData'), 'mcfiles'), { recursive: true, force: true })
+      await rm(join(app.getPath('userData'), 'instances', gameMode.toLowerCase()), {
+        recursive: true,
+        force: true
+      })
     } catch (err) {
       Logger.log(err)
 

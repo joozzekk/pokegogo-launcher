@@ -265,8 +265,8 @@ export async function copyMCFiles(
   logHandlerName: string = 'launch:show-log'
 ): Promise<string | undefined> {
   const ftpService = useFTPService()
-  const localRoot = posix.join(app.getPath('userData'), 'mcfiles')
-  const markerFile = posix.join(app.getPath('userData'), '.mcfiles_installed')
+  const localRoot = posix.join(app.getPath('userData'), 'instances', gameMode.toLowerCase())
+  const markerFile = posix.join(app.getPath('userData'), `.${gameMode.toLowerCase()}_installed`)
 
   const logToUI = (msg: string, isEnded: boolean = false): void => {
     mainWindow.webContents.send(logHandlerName, msg, isEnded)
@@ -303,7 +303,7 @@ export async function copyMCFiles(
     // === GŁÓWNA PĘTLA ANALIZY (POPRAWIONA) ===
     for (const file of remoteList) {
       // 1. Pomiń pliki systemowe i manifesty
-      if (['.', '..', '.hashes', '.meta.json', '.ziphash'].includes(file.name)) continue
+      if (['.', '..', '.hashes', '.ziphash'].includes(file.name)) continue
 
       remoteFilesSet.add(file.name)
 
@@ -359,10 +359,26 @@ export async function copyMCFiles(
               if (entry.zipHash) {
                 try {
                   const localH = await fs.promises.readFile(marker, 'utf8')
-                  if (localH.trim() === entry.zipHash.trim()) need = false
-                  else Logger.log(`[UPDATE] Zmiana hasha dla zipa: ${extractedDirName}`)
+                  if (localH.trim() === entry.zipHash.trim()) {
+                    need = false // Hash zgodny, nic nie robimy
+                  } else {
+                    Logger.log(
+                      `[UPDATE] Zmiana hasha dla zipa: ${extractedDirName} - usuwanie starej wersji.`
+                    )
+
+                    // --- ZMIANA TUTAJ ---
+                    // Dodajemy folder do listy usuwania, aby wyczyścić go przed nowym rozpakowaniem
+                    plan.deletes.push({ localPath: extractedFolderPath })
+
+                    need = true
+                  }
                 } catch {
-                  need = true // Brak markera = ponowne pobranie
+                  // Folder jest, ale brak pliku .ziphash - dla bezpieczeństwa usuwamy i pobieramy
+                  Logger.log(
+                    `[FIX] Folder ${extractedDirName} uszkodzony (brak hash) - naprawianie.`
+                  )
+                  plan.deletes.push({ localPath: extractedFolderPath })
+                  need = true
                 }
               } else {
                 need = false // Brak hasha w manifeście = zakładamy że jest ok
