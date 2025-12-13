@@ -1,14 +1,16 @@
 <script lang="ts" setup>
 import Header from '@renderer/components/Header.vue'
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { PokeGoGoLogin } from '@renderer/assets/scripts/login'
-import dynia from '@renderer/assets/img/dynia.png'
-import ghost from '@renderer/assets/img/ghost.png'
-import choinka from '@renderer/assets/img/choinka.png'
+import firstFloating from '@renderer/assets/img/firstFloating.png'
+import secondFloating from '@renderer/assets/img/secondFloating.png'
+import background from '@renderer/assets/img/choinka.png'
 import useUserStore from '@renderer/stores/user-store'
 import { LOGGER } from '@renderer/services/logger-service'
 import { IUser } from '@renderer/env'
 import { extractHead } from '@renderer/utils'
+import useGeneralStore from '@renderer/stores/general-store'
+import { themes } from '@renderer/assets/theme/themes'
 
 const pokeLogin = ref<PokeGoGoLogin | null>(null)
 const userStore = useUserStore()
@@ -76,6 +78,26 @@ const removeSavedAccount = (user: Partial<IUser & { url: string }>): void => {
   userStore.removeAccount(user.nickname!)
 }
 
+const generalStore = useGeneralStore()
+
+const bgImage = computed(() => {
+  return (
+    themes.find((theme) => theme.name === generalStore.getTheme())?.backgroundImage ?? background
+  )
+})
+
+const firstFloatingBlock = computed(() => {
+  return (
+    themes.find((theme) => theme.name === generalStore.getTheme())?.firstFloating ?? firstFloating
+  )
+})
+
+const secondFloatingBlock = computed(() => {
+  return (
+    themes.find((theme) => theme.name === generalStore.getTheme())?.secondFloating ?? secondFloating
+  )
+})
+
 onMounted(() => {
   pokeLogin.value = new PokeGoGoLogin()
 })
@@ -84,9 +106,9 @@ onMounted(() => {
 <template>
   <div class="animated-bg">
     <img
-      :src="choinka"
+      :src="bgImage"
       alt="background"
-      class="absolute !h-[100vh] z-[0]"
+      class="absolute !h-[100vh] w-full !object-cover z-[0]"
       @dragstart.prevent="null"
     />
 
@@ -96,12 +118,12 @@ onMounted(() => {
   <div class="background">
     <div class="bg-gradient"></div>
     <div class="floating-blocks">
-      <img :src="dynia" class="block-1" @dragstart.prevent="null" />
-      <img :src="dynia" class="block-2" @dragstart.prevent="null" />
-      <img :src="dynia" class="block-3" @dragstart.prevent="null" />
-      <img :src="ghost" class="ghost-1" @dragstart.prevent="null" />
-      <img :src="ghost" class="ghost-2" @dragstart.prevent="null" />
-      <img :src="ghost" class="ghost-3" @dragstart.prevent="null" />
+      <img :src="firstFloatingBlock" class="block-1" @dragstart.prevent="null" />
+      <img :src="firstFloatingBlock" class="block-2" @dragstart.prevent="null" />
+      <img :src="firstFloatingBlock" class="block-3" @dragstart.prevent="null" />
+      <img :src="secondFloatingBlock" class="ghost-1" @dragstart.prevent="null" />
+      <img :src="secondFloatingBlock" class="ghost-2" @dragstart.prevent="null" />
+      <img :src="secondFloatingBlock" class="ghost-3" @dragstart.prevent="null" />
     </div>
   </div>
 

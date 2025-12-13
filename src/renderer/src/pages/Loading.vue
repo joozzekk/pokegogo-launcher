@@ -1,9 +1,9 @@
 <script lang="ts" setup>
 import logo from '@renderer/assets/logo.png'
-import { ref, onMounted } from 'vue'
-import dynia from '@renderer/assets/img/dynia.png'
-import ghost from '@renderer/assets/img/ghost.png'
-import { applyTheme } from '@renderer/assets/theme/themes'
+import { ref, onMounted, computed } from 'vue'
+import firstFloating from '@renderer/assets/img/firstFloating.png'
+import secondFloating from '@renderer/assets/img/secondFloating.png'
+import { applyTheme, themes } from '@renderer/assets/theme/themes'
 import { checkUpdate } from '@renderer/utils'
 import useGeneralStore from '@renderer/stores/general-store'
 
@@ -17,6 +17,18 @@ const statuses = {
   updating: 'Aktualizowanie..',
   starting: 'Witamy!'
 }
+
+const firstFloatingBlock = computed(() => {
+  return (
+    themes.find((theme) => theme.name === generalStore.getTheme())?.firstFloating ?? firstFloating
+  )
+})
+
+const secondFloatingBlock = computed(() => {
+  return (
+    themes.find((theme) => theme.name === generalStore.getTheme())?.secondFloating ?? secondFloating
+  )
+})
 
 onMounted(() => {
   generalStore.loadSettings()
@@ -62,12 +74,24 @@ onMounted(() => {
     <div class="background">
       <div class="bg-gradient"></div>
       <div class="floating-blocks">
-        <img :src="dynia" class="block-1" @dragstart.prevent="null" />
-        <img :src="dynia" class="block-2" @dragstart.prevent="null" />
-        <img :src="dynia" class="block-3" @dragstart.prevent="null" />
-        <img :src="ghost" class="ghost-1" @dragstart.prevent="null" />
-        <img :src="ghost" class="ghost-2" @dragstart.prevent="null" />
-        <img :src="ghost" class="ghost-3" @dragstart.prevent="null" />
+        <div class="block-1" @dragstart.prevent="null">
+          {{ firstFloatingBlock }}
+        </div>
+        <div class="block-2" @dragstart.prevent="null">
+          {{ firstFloatingBlock }}
+        </div>
+        <div class="block-3" @dragstart.prevent="null">
+          {{ firstFloatingBlock }}
+        </div>
+        <div class="ghost-1" @dragstart.prevent="null">
+          {{ secondFloatingBlock }}
+        </div>
+        <div class="ghost-2" @dragstart.prevent="null">
+          {{ secondFloatingBlock }}
+        </div>
+        <div class="ghost-3" @dragstart.prevent="null">
+          {{ secondFloatingBlock }}
+        </div>
       </div>
     </div>
     <div class="loading-container">

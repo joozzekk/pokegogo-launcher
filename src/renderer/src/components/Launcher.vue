@@ -18,7 +18,12 @@ import BannedModal from '@renderer/components/modals/BannedModal.vue'
 import { useSocket } from '@renderer/services/socket-service'
 import api from '@renderer/utils/client'
 import { LOGGER } from '@renderer/services/logger-service'
+import { themes } from '@renderer/assets/theme/themes'
 import choinka from '@renderer/assets/img/choinka.png'
+
+const bgImage = computed(() => {
+  return themes.find((theme) => theme.name === generalStore.getTheme())?.backgroundImage ?? choinka
+})
 
 const refreshInterval = ref<any>(null)
 const generalStore = useGeneralStore()
@@ -27,12 +32,6 @@ const userStore = useUserStore()
 const socket = useSocket()
 
 const events = ref<any[]>([])
-
-const apiURL = import.meta.env.RENDERER_VITE_API_URL
-
-const megaEvent = computed(() => {
-  return events.value.find((event) => event.type === 'mega')
-})
 
 const fetchProfileData = async (): Promise<void> => {
   const profile = await fetchProfile()
@@ -147,9 +146,9 @@ onUnmounted(() => {
   <div>
     <div class="animated-bg">
       <img
-        :src="megaEvent?.uuid ? `${apiURL}/events/image/${megaEvent?.uuid}` : choinka"
+        :src="bgImage"
         alt="background"
-        class="absolute !h-[100vh] z-[0]"
+        class="absolute !h-[100vh] z-[0] w-full !object-cover"
         @dragstart.prevent="null"
       />
 

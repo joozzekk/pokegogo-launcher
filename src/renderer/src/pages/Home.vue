@@ -131,7 +131,7 @@ onMounted(async () => {
         <i class="fas fa-memory"></i>
         <div>
           RAM: <strong id="quickRam">{{ generalStore.settings.ram }}GB</strong>
-          <span class="text-[var(--text-secondary)] opacity-60 ml-1">(Min. 4GB)</span>
+          <span class="opacity-60 ml-1">(Min. 4GB)</span>
         </div>
       </div>
       <div class="quick-setting">
@@ -144,22 +144,22 @@ onMounted(async () => {
       <div class="quick-setting">
         <i class="fas fa-users"></i>
         <div class="flex justify-between w-full">
-          <span class="text-[var(--text-secondary)] opacity-60 ml-1">Graczy Online</span>
-          <span id="playerCount">{{ serverStatus?.players?.online }}</span>
+          <span class="ml-1">Graczy Online</span>
+          <strong id="playerCount">{{ serverStatus?.players?.online ?? '--' }}</strong>
         </div>
       </div>
       <div class="quick-setting">
         <i class="fas fa-signal"></i>
         <div class="flex justify-between w-full">
-          <span class="text-[var(--text-secondary)] opacity-60 ml-1">Ping</span>
-          <span id="serverPing">{{ time.toFixed(0) }}ms</span>
+          <span class="ml-1">Ping</span>
+          <strong id="serverPing">{{ time.toFixed(0) }}ms</strong>
         </div>
       </div>
       <div class="quick-setting">
         <i class="fas fa-clock"></i>
         <div class="flex justify-between w-full">
-          <span class="text-[var(--text-secondary)] opacity-60 ml-1">Uptime</span>
-          <span>24/7</span>
+          <span class="ml-1">Uptime</span>
+          <strong>24/7</strong>
         </div>
       </div>
     </div>

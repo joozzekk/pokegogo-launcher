@@ -296,7 +296,7 @@ onUnmounted(() => {
   background: var(--bg-dark);
   padding: 0.1rem;
   font-size: 0.6rem;
-  color: var(--text-secondary);
+  color: var(--text-primary);
   text-align: center;
   border-radius: 0 0 15px 15px;
 }
@@ -369,12 +369,7 @@ onUnmounted(() => {
 
 .launch-button:hover,
 .launch-button:focus {
-  transform: translateY(-3px);
   box-shadow: 0 0.25rem 1rem var(--border);
-}
-
-.launch-button:active {
-  transform: translateY(-1px);
 }
 
 .slide-down-enter-active,

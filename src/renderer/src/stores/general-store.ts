@@ -1,3 +1,4 @@
+import { themes } from '@renderer/assets/theme/themes'
 import { MIN_RAM } from '@renderer/utils'
 import { defineStore } from 'pinia'
 import { reactive, ref } from 'vue'
@@ -40,9 +41,7 @@ const useGeneralStore = defineStore('general', () => {
   const currentLog = ref<string>('')
 
   const getTheme = (): string => {
-    return ['main', 'rose', 'violet', 'grayscale', 'blue', 'green', 'red'].includes(settings.theme)
-      ? settings.theme
-      : 'main'
+    return themes.map(({ name }) => name).includes(settings.theme) ? settings.theme : 'main'
   }
 
   const setTheme = (newTheme: string): void => {
@@ -50,7 +49,6 @@ const useGeneralStore = defineStore('general', () => {
     saveSettings()
   }
 
-  // Funkcje do aktualizacji tych stanów
   const setIsOpeningGame = (value: boolean): void => {
     isOpeningGame.value = value
   }

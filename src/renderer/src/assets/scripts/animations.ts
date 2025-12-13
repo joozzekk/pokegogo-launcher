@@ -1,3 +1,6 @@
+import useGeneralStore from '@renderer/stores/general-store'
+import { themes } from '../theme/themes'
+
 export function initAnimations(): void {
   document.querySelectorAll<HTMLElement>('button, .nav-item, .news-item').forEach((element) => {
     element.addEventListener('mouseenter', () => {
@@ -38,12 +41,15 @@ export function initAnimations(): void {
 }
 
 function createBackgroundParticles(): void {
+  const generalStore = useGeneralStore()
+
   const particlesContainer = document.querySelector<HTMLElement>('.particles')
   if (!particlesContainer) return
 
   for (let i = 0; i < 50; i += 1) {
     const particle = document.createElement('div')
-    particle.textContent = '❄'
+    particle.textContent =
+      themes.find((theme) => generalStore.getTheme() === theme.name)?.firstFloating ?? '❄️'
     particle.style.position = 'absolute'
     particle.style.color = 'white'
     particle.style.fontSize = `${10 + Math.random() * 15}px`
