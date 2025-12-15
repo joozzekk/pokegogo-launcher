@@ -239,6 +239,7 @@ onMounted(() => {
   position: absolute;
   width: 90px;
   height: 90px;
+  font-size: 90px;
   top: 20%;
   left: 10%;
   animation: float 20s linear infinite;
@@ -249,6 +250,7 @@ onMounted(() => {
   position: absolute;
   width: 60px;
   height: 60px;
+  font-size: 60px;
   top: 60%;
   left: 80%;
   animation: float 18s linear infinite;
@@ -261,6 +263,7 @@ onMounted(() => {
   position: absolute;
   width: 30px;
   height: 30px;
+  font-size: 30px;
   top: 80%;
   left: 20%;
   animation-delay: -15s;
@@ -279,6 +282,7 @@ onMounted(() => {
 .ghost-2 {
   animation: sway 2s ease-in-out infinite;
   width: 80px;
+  font-size: 80px;
   position: absolute;
   top: 70%;
   left: 50%;
@@ -288,6 +292,7 @@ onMounted(() => {
 .ghost-3 {
   animation: sway 4s ease-in-out infinite;
   width: 40px;
+  font-size: 40px;
   position: absolute;
   top: 50%;
   left: 10%;
@@ -314,23 +319,23 @@ onMounted(() => {
 
 @keyframes float {
   0% {
-    transform: translateY(0px) rotate(0deg);
+    transform: translateY(0px);
   }
 
   25% {
-    transform: translateY(-20px) rotate(90deg);
+    transform: translateY(-20px);
   }
 
   50% {
-    transform: translateY(-10px) rotate(180deg);
+    transform: translateY(-10px);
   }
 
   75% {
-    transform: translateY(-30px) rotate(270deg);
+    transform: translateY(-30px);
   }
 
   100% {
-    transform: translateY(0px) rotate(360deg);
+    transform: translateY(0px);
   }
 }
 </style>

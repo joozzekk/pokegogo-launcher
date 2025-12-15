@@ -92,7 +92,7 @@ onMounted(async () => {
               <th>Cena</th>
               <th>Opis</th>
               <th>
-                <div class="relative flex flex-row-reverse gap-2">
+                <div class="relative flex flex-row-reverse gap-2 z-300">
                   <button class="info-btn" @click="fetchItems">
                     <i :class="'fas fa-refresh'"></i>
                   </button>
@@ -124,9 +124,10 @@ onMounted(async () => {
                   {{ item?.price ? Number(item.price).toFixed(2) + ' PLN' : 'Brak' }}
                 </td>
                 <td>
-                  <pre class="px-4 py-2 border-dashed border-[var(--border)] border rounded-xl">{{
-                    item.desc
-                  }}</pre>
+                  <pre
+                    class="px-4 py-2 border-dashed border-[var(--border)] border rounded-xl max-w-3xl text-wrap"
+                    >{{ item.desc }}</pre
+                  >
                 </td>
                 <td>
                   <div class="reverse">

@@ -231,8 +231,8 @@ export const main = {
 
   vignetteColor: 'rgba(0, 0, 0, 0.9)',
   backgroundImage: null,
-  firstFloating: '🎄',
-  secondFloating: '❄️'
+  firstFloating: '❄️',
+  secondFloating: '🎄'
 }
 
 export const themes = [main, hellokitty, kuromi]

@@ -1,5 +1,6 @@
 import useGeneralStore from '@renderer/stores/general-store'
 import { themes } from '../theme/themes'
+import { watch } from 'vue'
 
 export function initAnimations(): void {
   document.querySelectorAll<HTMLElement>('button, .nav-item, .news-item').forEach((element) => {
@@ -62,4 +63,12 @@ function createBackgroundParticles(): void {
 
     particlesContainer.appendChild(particle)
   }
+
+  watch(
+    () => generalStore.getTheme(),
+    () => {
+      particlesContainer.innerHTML = ''
+      createBackgroundParticles()
+    }
+  )
 }

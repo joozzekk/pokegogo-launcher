@@ -118,12 +118,24 @@ onMounted(() => {
   <div class="background">
     <div class="bg-gradient"></div>
     <div class="floating-blocks">
-      <img :src="firstFloatingBlock" class="block-1" @dragstart.prevent="null" />
-      <img :src="firstFloatingBlock" class="block-2" @dragstart.prevent="null" />
-      <img :src="firstFloatingBlock" class="block-3" @dragstart.prevent="null" />
-      <img :src="secondFloatingBlock" class="ghost-1" @dragstart.prevent="null" />
-      <img :src="secondFloatingBlock" class="ghost-2" @dragstart.prevent="null" />
-      <img :src="secondFloatingBlock" class="ghost-3" @dragstart.prevent="null" />
+      <div class="block-1" @dragstart.prevent="null">
+        {{ firstFloatingBlock }}
+      </div>
+      <div class="block-2" @dragstart.prevent="null">
+        {{ firstFloatingBlock }}
+      </div>
+      <div class="block-3" @dragstart.prevent="null">
+        {{ firstFloatingBlock }}
+      </div>
+      <div class="ghost-1" @dragstart.prevent="null">
+        {{ secondFloatingBlock }}
+      </div>
+      <div class="ghost-2" @dragstart.prevent="null">
+        {{ secondFloatingBlock }}
+      </div>
+      <div class="ghost-3" @dragstart.prevent="null">
+        {{ secondFloatingBlock }}
+      </div>
     </div>
   </div>
 
