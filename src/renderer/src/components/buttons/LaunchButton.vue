@@ -174,11 +174,13 @@ window.electron?.ipcRenderer?.on('launch:change-state', async (_event, state: st
   generalStore.setCurrentState(parsedState)
 
   if (parsedState === 'minecraft-start') {
+    window.discord.setActivity(`W PokeGoGo Launcher`, 'Uruchamiam grę..')
     generalStore.setIsOpeningGame(true)
   }
 
   if (parsedState === 'minecraft-started') {
     LOGGER.log('Minecraft is running..')
+    window.discord.setActivity(`W PokeGoGo Launcher`, 'Gram..')
     await connectPlayer()
   }
 
@@ -186,6 +188,7 @@ window.electron?.ipcRenderer?.on('launch:change-state', async (_event, state: st
     generalStore.setCurrentState('start')
     generalStore.setIsOpeningGame(false)
     generalStore.setCurrentLog('')
+    window.discord.setActivity(`W PokeGoGo Launcher`, 'Przeglądam..')
     LOGGER.log('Minecraft is closed.')
     await disconnectPlayer()
   }
@@ -216,6 +219,7 @@ onMounted(async () => {
       generalStore.setIsOpeningGame(true)
       generalStore.setCurrentState('minecraft-started')
       LOGGER.log('Minecraft is running..')
+      window.discord.setActivity(`W PokeGoGo Launcher`, 'Gram..')
     }
   } catch {
     LOGGER.log('Minecraft is not running.')

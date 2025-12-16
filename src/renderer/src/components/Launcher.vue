@@ -135,6 +135,8 @@ onMounted(async () => {
 
     await isMachineIDBanned()
   }
+
+  window.discord.setActivity(`W PokeGoGo Launcher`, 'Przeglądam..')
 })
 
 onUnmounted(() => {

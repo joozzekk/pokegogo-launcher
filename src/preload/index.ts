@@ -1,12 +1,16 @@
-import { contextBridge } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
-const api = {}
+const api = {
+  setActivity: (details: string, state: string) => {
+    ipcRenderer.send('discord:update-activity', { details, state })
+  }
+}
 
 if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electron', electronAPI)
-    contextBridge.exposeInMainWorld('api', api)
+    contextBridge.exposeInMainWorld('discord', api)
   } catch (error) {
     console.error(error)
   }
@@ -14,5 +18,5 @@ if (process.contextIsolated) {
   // @ts-ignore (define in dts)
   window.electron = electronAPI
   // @ts-ignore (define in dts)
-  window.api = api
+  window.discord = api
 }

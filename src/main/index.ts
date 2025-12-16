@@ -7,6 +7,28 @@ import { createTray } from './services/tray-service'
 import { ensureDir } from './utils'
 import { useFTPService } from './services/ftp-service'
 import { join } from 'path'
+import discordRpc, { type RP } from 'discord-rich-presence' // <-- Import biblioteki
+import Logger from 'electron-log'
+
+// Twój Client ID
+const CLIENT_ID = '1429151369172090960'
+let rpc: RP | null = null
+
+function initDiscord(): void {
+  try {
+    rpc = discordRpc(CLIENT_ID)
+
+    rpc.on('error', (err: any) => {
+      Logger.warn('Discord RPC napotkał błąd (może Discord jest wyłączony?):', err.message)
+    })
+
+    rpc.on('connected', () => {
+      Logger.log('Połączono z Discordem!')
+    })
+  } catch (err) {
+    Logger.warn('Inicjalizacja Discord RPC nieudana:', err)
+  }
+}
 
 process.env.APPIMAGE = join(__dirname, 'dist', `pokemongogo-launcher-${app.getVersion()}.AppImage`)
 
@@ -32,6 +54,20 @@ if (!gotTheLock) {
     createTray(mainWindow)
     await installExtension(VUEJS_DEVTOOLS)
     createHandlers(mainWindow)
+
+    initDiscord()
+
+    ipcMain.on('discord:update-activity', (_, activity) => {
+      if (rpc) {
+        rpc.updatePresence({
+          state: activity.state,
+          details: activity.details,
+          largeImageKey: 'logo',
+          startTimestamp: Date.now(),
+          instance: true
+        })
+      }
+    })
   })
 
   app.on('activate', async () => {
