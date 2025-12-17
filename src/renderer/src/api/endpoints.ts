@@ -234,3 +234,13 @@ export const changeUpdateChannel = async (
 
   return res.data
 }
+
+export const changeCustomSkin = async (body: any): Promise<any> => {
+  const res = await api.post(`/skins`, body, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+
+  return res.data
+}

@@ -33,21 +33,29 @@ const nonPremiumToMCLC = async (json: string): Promise<unknown> => {
   }
 }
 
+const getGameVersionByMode = (): string => {
+  return '1.21.1-fabric'
+}
+
+const getVersionNumberByMode = (): string => {
+  return '1.21.1'
+}
+
 export async function launchMinecraft(
   win: BrowserWindow,
-  version: string,
   token: string,
   accessToken: string,
   settings: {
     ram: number
     resolution: string
     displayMode: string
+    gameMode: string
   },
   accountType: string
 ): Promise<void> {
   const plt = os.platform()
   const baseDir = app.getPath('userData')
-  const minecraftDir = path.join(baseDir, 'mcfiles')
+  const minecraftDir = path.join(baseDir, 'instances', settings.gameMode.toLowerCase())
   const client = new Client()
 
   const javaPath = join(baseDir, 'java/jdk-21.0.8/bin/', plt === 'win32' ? 'java.exe' : 'java')
@@ -57,7 +65,6 @@ export async function launchMinecraft(
   const [width, height] = isFullScreen
     ? [fullWidth, fullHeight]
     : settings.resolution.split('x').map((v: string) => parseInt(v))
-  // const maxRAM = getMaxRAMInGB()
 
   const process = await client.launch({
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -66,9 +73,9 @@ export async function launchMinecraft(
     root: minecraftDir,
     javaPath,
     version: {
-      number: version,
+      number: getVersionNumberByMode(),
       type: 'release',
-      custom: '1.21.1-fabric'
+      custom: getGameVersionByMode()
     },
     window: {
       width,
@@ -89,6 +96,7 @@ export async function launchMinecraft(
     client.emit('close', 1)
     process?.kill('SIGTERM')
     Logger.log('PokeGoGo Launcher > Killed minecraft.')
+    win.webContents.send('launch:change-state', JSON.stringify('minecraft-closed'))
   })
 
   ipcMain.removeHandler('launch:check-state')
@@ -105,6 +113,7 @@ export async function launchMinecraft(
   })
   client.on('data', (data) => {
     Logger.log('PokeGoGo Launcher > MC Data > ', data)
+    if (!mcOpened) win.webContents.send('launch:change-state', JSON.stringify('minecraft-start'))
 
     if (data.includes('Initializing Client')) {
       win.webContents.send('launch:change-state', JSON.stringify('minecraft-started'))

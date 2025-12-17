@@ -118,7 +118,7 @@ onMounted(async () => {
         />
       </div>
 
-      <div class="flex gap-2">
+      <div class="flex gap-2 relative z-400">
         <button
           class="nav-icon"
           :class="{ active: selectedType === 'server' }"

@@ -1,10 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { app, type BrowserWindow, ipcMain } from 'electron'
 import { installJava } from './installers/java-installer'
 import { copyMCFiles } from './installers/mc-installer'
 import { launchMinecraft } from './mc-launcher'
 import Logger from 'electron-log'
 import { join } from 'path'
-import { unlink } from 'fs/promises'
+import { rm, unlink } from 'fs/promises'
 
 export const useLaunchService = (win: BrowserWindow): void => {
   let currentAbortController: AbortController | null = null
@@ -21,19 +22,12 @@ export const useLaunchService = (win: BrowserWindow): void => {
     await installJava(data.javaVersion)
     win.webContents.send('launch:change-state', JSON.stringify('files-verify'))
 
-    const res = await copyMCFiles(data.isDev, win, signal)
+    const res = await copyMCFiles(data.isDev, data.settings.gameMode, win, signal)
 
     currentAbortController = null
 
     if (res !== 'stop') {
-      await launchMinecraft(
-        win,
-        data.mcVersion,
-        data.token,
-        data.accessToken,
-        data.settings,
-        data.accountType
-      )
+      await launchMinecraft(win, data.token, data.accessToken, data.settings, data.accountType)
     }
   })
 
@@ -46,7 +40,7 @@ export const useLaunchService = (win: BrowserWindow): void => {
     const signal = currentAbortController.signal
 
     try {
-      const res = await copyMCFiles(data.isDev, win, signal, data.event)
+      const res = await copyMCFiles(data.isDev, data.gameMode, win, signal, data.event)
       currentAbortController = null
 
       if (res !== 'stop') {
@@ -61,9 +55,26 @@ export const useLaunchService = (win: BrowserWindow): void => {
     }
   })
 
-  ipcMain.handle('launch:remove-markfile', async (): Promise<boolean> => {
+  ipcMain.handle('launch:remove-markfile', async (_, gameMode: string): Promise<boolean> => {
     try {
-      await unlink(join(app.getPath('userData'), '.mcfiles_installed'))
+      await unlink(
+        join(app.getPath('userData'), 'instances', `.${gameMode.toLowerCase()}_installed`)
+      )
+    } catch (err) {
+      Logger.log(err)
+
+      return false
+    }
+
+    return false
+  })
+
+  ipcMain.handle('launch:remove-mcfiles', async (_, gameMode: string): Promise<boolean> => {
+    try {
+      await rm(join(app.getPath('userData'), 'instances', gameMode.toLowerCase()), {
+        recursive: true,
+        force: true
+      })
     } catch (err) {
       Logger.log(err)
 

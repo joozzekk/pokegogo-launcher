@@ -3,7 +3,7 @@ import App from './App.vue'
 import { router } from './router'
 import { createPinia } from 'pinia'
 import PrimeVue from 'primevue/config'
-import { HalloweenPreset } from './assets/theme/Halloween'
+import { MainPreset } from './assets/theme/preset'
 
 const app = createApp(App)
 
@@ -11,7 +11,7 @@ app.use(router)
 app.use(createPinia())
 app.use(PrimeVue, {
   theme: {
-    preset: HalloweenPreset,
+    preset: MainPreset,
     options: {
       darkModeSelector: 'my-app-dark',
       cssLayer: false

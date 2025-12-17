@@ -6,7 +6,7 @@ import { IUser } from '@renderer/env'
 import useUserStore from '@renderer/stores/user-store'
 import { showToast } from '@renderer/utils'
 import { format } from 'date-fns'
-import { ref, onMounted, watch, onUnmounted } from 'vue'
+import { ref, onMounted, watch, onUnmounted, computed } from 'vue'
 
 const userStore = useUserStore()
 
@@ -33,20 +33,47 @@ async function loadPlayerData(): Promise<void> {
   }
 }
 
-watch(searchQuery, () => {
-  filteredPlayers.value = allPlayers.value.filter(
-    (p) =>
-      p.nickname.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      getPlayerID(p).includes(searchQuery.value.toLowerCase()) ||
-      p.machineId?.includes(searchQuery.value.toLowerCase()) ||
-      p.macAddress?.includes(searchQuery.value.toLowerCase())
-  )
+const currentPage = ref(1)
+const itemsPerPage = ref(11) // Liczba graczy na stronę
 
-  if (!filteredPlayers.value?.length) {
-    noResultsVisible.value = true
+// Obliczamy całkowitą liczbę stron
+const totalPages = computed(() => Math.ceil(filteredPlayers.value.length / itemsPerPage.value))
+
+// Wycinamy fragment listy dla aktualnej strony
+const paginatedPlayers = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value
+  const end = start + itemsPerPage.value
+  return filteredPlayers.value.slice(start, end)
+})
+
+watch(searchQuery, () => {
+  currentPage.value = 1
+  const query = searchQuery.value.toLowerCase().trim()
+
+  let players = [...allPlayers.value]
+
+  if (query === 'banned') {
+    players = players.filter((p) => p.isBanned)
+  } else if (query === 'premium') {
+    players = players.filter((p) => p.mcid && p.mcid.length > 0)
+  } else if (query === 'nohwid') {
+    players = players.filter((p) => !p.machineId)
+  } else if (query.startsWith('role:')) {
+    const roleName = query.split(':')[1]
+    players = players.filter((p) => p.role?.toLowerCase() === roleName)
   } else {
-    noResultsVisible.value = false
+    players = players.filter(
+      (p) =>
+        p.nickname.toLowerCase().includes(query) ||
+        getPlayerID(p).includes(query) ||
+        p.machineId?.toLowerCase().includes(query) ||
+        p.macAddress?.toLowerCase().includes(query)
+    )
   }
+
+  // 4. Przypisanie wyników i obsługa komunikatu o braku danych
+  filteredPlayers.value = players
+  noResultsVisible.value = players.length === 0
 })
 
 function togglePlayerDetails(uuid: string): void {
@@ -102,7 +129,7 @@ const getUserRole = (player: IUser): string => {
     case 'admin':
       return 'Admin'
     case 'mod':
-      return 'Moderator'
+      return 'Mod'
     case 'technik':
       return 'Technik'
     default:
@@ -129,7 +156,7 @@ onUnmounted(() => {
         v-model="searchQuery"
         type="text"
         class="search-input !p-2 !py-1 !pl-8 !text-[0.8rem]"
-        placeholder="Wyszukaj gracza po nicku, UUID/MCID, Machine ID lub Mac adresie..."
+        placeholder="Wyszukaj gracza po nicku, UUID/MCID, Machine ID lub Mac adresie (lub słowach kluczowych: banned, premium, nohwi', role:(nazwa roli)..."
       />
     </div>
 
@@ -172,7 +199,7 @@ onUnmounted(() => {
             </tr>
           </thead>
           <tbody id="logsTableBody">
-            <template v-for="player in filteredPlayers" :key="getPlayerID(player)">
+            <template v-for="player in paginatedPlayers" :key="getPlayerID(player)">
               <tr>
                 <td>
                   <div class="flex items-center gap-2">
@@ -367,7 +394,21 @@ onUnmounted(() => {
           </tbody>
         </table>
       </template>
+      <div v-if="totalPages > 1" class="pagination-controls">
+        <button :disabled="currentPage === 1" class="pag-btn" @click="currentPage--">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+
+        <span class="pag-info">
+          Strona <strong>{{ currentPage }}</strong> z {{ totalPages }}
+        </span>
+
+        <button :disabled="currentPage === totalPages" class="pag-btn" @click="currentPage++">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
     </div>
+
     <BanPlayerModal ref="banPlayerModalRef" @refresh-data="loadPlayerData" />
     <PasswordResetConfirm ref="passwordResetModalRef" />
   </div>
@@ -384,7 +425,7 @@ onUnmounted(() => {
 }
 .users-container {
   width: 100%;
-  height: calc(100vh - 125px);
+  height: calc(100vh - 112.5px);
   backdrop-filter: blur(20px);
   border-radius: var(--border-radius);
   animation: fadeInUp 0.8s ease-out 0.2s both;
@@ -412,7 +453,7 @@ onUnmounted(() => {
   border-collapse: collapse;
 }
 .logs-table th {
-  background: var(--bg-light);
+  background: var(--bg-body);
   padding: 0.5rem 1rem;
   text-align: left;
   font-weight: 600;
@@ -550,5 +591,47 @@ onUnmounted(() => {
   .player-details-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--bg-body);
+  border-top: 1px solid var(--border);
+  position: sticky;
+  bottom: 0;
+}
+
+.pag-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pag-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.pag-btn:not(:disabled):hover {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.pag-info {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.pag-info strong {
+  color: var(--text-primary);
 }
 </style>

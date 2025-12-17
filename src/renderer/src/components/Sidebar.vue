@@ -1,13 +1,18 @@
 <script setup lang="ts">
+import { LOGGER } from '@renderer/services/logger-service'
 import useGeneralStore from '@renderer/stores/general-store'
 import useUserStore from '@renderer/stores/user-store'
-import { computed } from 'vue'
+import { extractHead } from '@renderer/utils'
+import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 const userStore = useUserStore()
 const generalStore = useGeneralStore()
 const router = useRouter()
 const playerName = computed(() => userStore.user?.nickname ?? 'Guest')
+const skinHeadUrl = ref<string | undefined>(undefined)
+
+const apiURL = import.meta.env.RENDERER_VITE_API_URL
 
 const handleLogout = async (): Promise<void> => {
   await userStore.logout()
@@ -15,10 +20,6 @@ const handleLogout = async (): Promise<void> => {
     await window.electron?.ipcRenderer?.invoke('launch:exit')
   }
 }
-
-const userRole = computed(() => {
-  return userStore.user?.role ?? 'Gracz'
-})
 
 const handleChangeRoute = (newRoute: string): void => {
   router.push(newRoute)
@@ -28,31 +29,51 @@ const handleSupDev = (): void => {
   window.open('https://tipply.pl/@joozzekk', '_blank')
 }
 
-const collapseSidebar = (): void => {
-  generalStore.settings.isSidebarCollapsed = !generalStore.settings.isSidebarCollapsed
-  generalStore.saveSettings()
+const fallbackHeadUrl = computed(() => `https://mineskin.eu/helm/${playerName.value}/100.png`)
+
+async function loadCustomOrFallbackHead(): Promise<void> {
+  const currentName = playerName.value
+  const customSkinSource = `${apiURL}/skins/image/${currentName}`
+
+  try {
+    const base64Head = await extractHead(customSkinSource, 100)
+    skinHeadUrl.value = base64Head
+    LOGGER.with('SkinAPI').success(`Custom skin is loaded for ${currentName}.`)
+  } catch (error) {
+    LOGGER.with('SkinAPI').err('Error during skin load.', (error as Error)?.message)
+
+    skinHeadUrl.value = fallbackHeadUrl.value
+  }
 }
+
+watch(
+  playerName,
+  (newPlayerName, oldPlayerName) => {
+    if (oldPlayerName?.length) {
+      LOGGER.with('SkinAPI').log(`Nickname has changed to ${newPlayerName}. Loading skin...`)
+
+      loadCustomOrFallbackHead()
+    }
+  },
+  {
+    immediate: true
+  }
+)
 </script>
 
 <template>
-  <aside class="sidebar my-2" :class="{ collapsed: generalStore.settings.isSidebarCollapsed }">
-    <div class="player-profile mx-3">
+  <aside class="sidebar" :class="{ collapsed: generalStore.settings.isSidebarCollapsed }">
+    <div class="player-profile mx-3 my-3">
       <div class="player-fullinfo">
         <div class="player-avatar">
           <img
             id="playerSkin"
-            :src="`https://mineskin.eu/helm/${playerName}/100.png`"
+            :src="skinHeadUrl"
             class="player-skin"
             alt="Player Skin"
             @dragstart.prevent="null"
           />
           <div class="status-dot"></div>
-        </div>
-        <div class="player-info">
-          <span class="player-name">
-            {{ playerName }}
-          </span>
-          <span class="player-label">{{ userRole }}</span>
         </div>
       </div>
     </div>
@@ -116,22 +137,17 @@ const collapseSidebar = (): void => {
     </div>
 
     <div class="flex flex-col mx-2" :class="{ 'mx-4': !generalStore.settings.isSidebarCollapsed }">
-      <button class="nav-item hover:cursor-pointer select-none" @click="collapseSidebar">
-        <i
-          class="nav-icon fa-solid"
-          :class="generalStore.settings.isSidebarCollapsed ? 'fa-chevron-right' : 'fa-chevron-left'"
-        ></i>
-        <label for="collapse" class="hover:cursor-pointer">
-          {{ generalStore.settings.isSidebarCollapsed ? 'Rozwiń panel' : 'Zwiń panel' }}
-        </label>
-      </button>
       <button id="support" class="nav-item hover:cursor-pointer select-none" @click="handleSupDev">
         <i class="nav-icon fa fa-coffee" />
-        <label for="support" class="hover:cursor-pointer">Kup kawusie 🥰</label>
+        <label for="support" class="hover:cursor-pointer text-[0.5rem] mt-[0.3rem]"
+          >Kup kawusie 🥰</label
+        >
       </button>
       <button id="logout" class="nav-item hover:cursor-pointer select-none" @click="handleLogout">
         <i class="nav-icon fa-solid fa-door-open"></i>
-        <label for="logout" class="hover:cursor-pointer">Wyloguj się</label>
+        <label for="logout" class="hover:cursor-pointer text-[0.5rem] mt-[0.3rem]"
+          >Wyloguj się</label
+        >
       </button>
     </div>
   </aside>

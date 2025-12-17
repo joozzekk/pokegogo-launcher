@@ -1,11 +1,36 @@
 import { installExtension, VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 import { app, BrowserWindow, ipcMain } from 'electron'
-import { electronApp, optimizer } from '@electron-toolkit/utils'
+import { electronApp } from '@electron-toolkit/utils'
 import useWindowService from './services/window-service'
 import { useAppUpdater } from './services/app-updater'
 import { createTray } from './services/tray-service'
 import { ensureDir } from './utils'
 import { useFTPService } from './services/ftp-service'
+import { join } from 'path'
+import discordRpc, { type RP } from 'discord-rich-presence' // <-- Import biblioteki
+import Logger from 'electron-log'
+
+// Twój Client ID
+const CLIENT_ID = '1429151369172090960'
+let rpc: RP | null = null
+
+function initDiscord(): void {
+  try {
+    rpc = discordRpc(CLIENT_ID)
+
+    rpc.on('error', (err: any) => {
+      Logger.warn('Discord RPC napotkał błąd (może Discord jest wyłączony?):', err.message)
+    })
+
+    rpc.on('connected', () => {
+      Logger.log('Połączono z Discordem!')
+    })
+  } catch (err) {
+    Logger.warn('Inicjalizacja Discord RPC nieudana:', err)
+  }
+}
+
+process.env.APPIMAGE = join(__dirname, 'dist', `pokemongogo-launcher-${app.getVersion()}.AppImage`)
 
 const gotTheLock = app.requestSingleInstanceLock()
 
@@ -28,10 +53,20 @@ if (!gotTheLock) {
     await startApp(mainWindow)
     createTray(mainWindow)
     await installExtension(VUEJS_DEVTOOLS)
-    createHandlers()
+    createHandlers(mainWindow)
 
-    app.on('browser-window-created', (_, window) => {
-      optimizer.watchWindowShortcuts(window)
+    initDiscord()
+
+    ipcMain.on('discord:update-activity', (_, activity) => {
+      if (rpc) {
+        rpc.updatePresence({
+          state: activity.state,
+          details: activity.details,
+          largeImageKey: 'logo',
+          startTimestamp: Date.now(),
+          instance: true
+        })
+      }
     })
   })
 

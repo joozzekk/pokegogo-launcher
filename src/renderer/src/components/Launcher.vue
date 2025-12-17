@@ -1,107 +1,46 @@
+<!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <script lang="ts" setup>
-import { onMounted, onUnmounted, ref } from 'vue'
-import { initAnimations } from '@renderer/assets/scripts/animations'
 import Header from '@renderer/components/Header.vue'
 import Sidebar from '@renderer/components/Sidebar.vue'
 import useUserStore from '@renderer/stores/user-store'
-import {
-  checkMachineID,
-  fetchProfile,
-  updateMachineData,
-  updateProfileData
-} from '@renderer/api/endpoints'
+import { getEvents, updateMachineData, updateProfileData } from '@renderer/api/endpoints'
 import useGeneralStore from '@renderer/stores/general-store'
-import { refreshMicrosoftToken } from '@renderer/utils'
 import BannedModal from '@renderer/components/modals/BannedModal.vue'
-import { useSocket } from '@renderer/services/socket-service'
-import api from '@renderer/utils/client'
-import { LOGGER } from '@renderer/services/logger-service'
-import superEvent from '@renderer/assets/img/superEvent.png'
+import Background from './Background.vue'
+import { isMachineIDBanned, refreshMicrosoftToken } from '@renderer/utils'
+import { useSocketService } from '@renderer/services/socket-service'
+import { onMounted, onUnmounted, ref } from 'vue'
+import { initAnimations } from '@renderer/assets/scripts/animations'
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const refreshInterval = ref<any>(null)
 const generalStore = useGeneralStore()
 const accountType = localStorage.getItem('LOGIN_TYPE')
 const userStore = useUserStore()
+const { connect } = useSocketService()
 
-const socket = useSocket()
-
-const fetchProfileData = async (): Promise<void> => {
-  const profile = await fetchProfile()
-
-  userStore.setUser(profile)
-}
-
-const loadProfile = async (): Promise<void> => {
-  await fetchProfileData()
-}
-
-const isMachineIDBanned = async (): Promise<void> => {
-  const res = await checkMachineID(generalStore.settings.machineId)
-
-  userStore.hwidBanned = res
-}
-
-const refreshToken = async (): Promise<void> => {
-  const refreshToken = localStorage.getItem('refresh_token')
-
-  api
-    .post('/auth/refresh', { refreshToken })
-    .then(({ data }) => {
-      localStorage.setItem('token', data.access_token)
-      localStorage.setItem('refresh_token', data.refresh_token)
-    })
-    .catch((err) => {
-      LOGGER.log(err)
-    })
-}
-
-socket.on('player:banned', async (data) => {
-  await isMachineIDBanned()
-  const isCurrentPlayerBanned =
-    userStore.user?.machineId === data.uuid || userStore.user?.uuid === data.uuid
-
-  if (isCurrentPlayerBanned) {
-    await refreshToken()
-    await fetchProfileData()
-    location.reload()
-  }
-})
-
-socket.on('player:unbanned', async (data) => {
-  await isMachineIDBanned()
-  const isCurrentPlayerUnbanned =
-    userStore.user?.machineId === data.uuid || userStore.user?.uuid === data.uuid
-
-  if (isCurrentPlayerUnbanned) {
-    await refreshToken()
-    await fetchProfileData()
-    location.reload()
-  }
-})
-
-socket.on('player:update-profile', async (data) => {
-  const isCurrentPlayer = userStore.user?.uuid === data.uuid
-
-  if (isCurrentPlayer) {
-    await refreshToken()
-    await fetchProfileData()
-    location.reload()
-  }
-})
+const events = ref<any[]>([])
 
 onMounted(async () => {
+  events.value = await getEvents()
+
   initAnimations()
 
   if (accountType === 'microsoft') {
     refreshInterval.value = setInterval(
       async () => {
-        await refreshMicrosoftToken(localStorage.getItem('msToken'))
+        const res = await refreshMicrosoftToken(
+          localStorage.getItem(`msToken:${userStore.user?.nickname}`)
+        )
+
+        if (res) {
+          localStorage.setItem(`msToken:${userStore.user?.nickname}`, res.msToken)
+          localStorage.setItem('mcToken', res.mcToken)
+        }
       },
-      1000 * 60 * 60
+      1000 * 60 * 60 // Every 1 hour
     )
   }
-  await loadProfile()
+  await userStore.updateProfile()
 
   const machineData = await window.electron?.ipcRenderer?.invoke('data:machine')
   generalStore.setMachineData(machineData.machineId, machineData.macAddress, machineData.ipAddress)
@@ -118,7 +57,11 @@ onMounted(async () => {
     })
 
     await isMachineIDBanned()
+
+    connect(userStore.user.uuid)
   }
+
+  window.discord.setActivity(`W PokeGoGo Launcher`, 'Przeglądam..')
 })
 
 onUnmounted(() => {
@@ -127,17 +70,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="animated-bg">
-    <img
-      :src="superEvent"
-      alt="background"
-      class="absolute !h-[100vh] z-[0] opacity-15"
-      @dragstart.prevent="null"
-    />
-
-    <!-- <div class="gradient-overlay"></div> -->
-    <div class="particles"></div>
-  </div>
+  <Background />
 
   <Header />
 
@@ -145,7 +78,9 @@ onUnmounted(() => {
     <Sidebar />
 
     <main class="main-content">
-      <RouterView />
+      <RouterView v-slot="{ Component }">
+        <component :is="Component" :events="events" />
+      </RouterView>
     </main>
   </div>
 

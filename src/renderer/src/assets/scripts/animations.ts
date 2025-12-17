@@ -1,3 +1,7 @@
+import useGeneralStore from '@renderer/stores/general-store'
+import { themes } from '../theme/themes'
+import { watch } from 'vue'
+
 export function initAnimations(): void {
   document.querySelectorAll<HTMLElement>('button, .nav-item, .news-item').forEach((element) => {
     element.addEventListener('mouseenter', () => {
@@ -38,22 +42,33 @@ export function initAnimations(): void {
 }
 
 function createBackgroundParticles(): void {
+  const generalStore = useGeneralStore()
+
   const particlesContainer = document.querySelector<HTMLElement>('.particles')
   if (!particlesContainer) return
 
   for (let i = 0; i < 50; i += 1) {
     const particle = document.createElement('div')
+    particle.textContent =
+      themes.find((theme) => generalStore.getTheme() === theme.name)?.firstFloating ?? '❄️'
     particle.style.position = 'absolute'
-    particle.style.width = '2px'
-    particle.style.height = '2px'
-    particle.style.background = 'var(--primary)'
-    particle.style.borderRadius = '50%'
+    particle.style.color = 'white'
+    particle.style.fontSize = `${10 + Math.random() * 15}px`
     particle.style.left = `${Math.random() * 100}%`
-    particle.style.top = `${Math.random() * 100}%`
-    particle.style.animation = `float ${1 + Math.random() * 10}s linear infinite`
-    particle.style.animationDelay = `${Math.random() * 5}s`
-    particle.style.boxShadow = '0 0 10px var(--primary)'
+    particle.style.top = `${Math.random() * -100}%`
+    particle.style.animation = `snowfall ${8 + Math.random() * 8}s linear infinite`
+    particle.style.animationDelay = `${Math.random() * 10}s`
+    particle.style.textShadow = '0 0 10px white'
+    particle.style.opacity = `${0.7 + Math.random() * 0.3}`
 
     particlesContainer.appendChild(particle)
   }
+
+  watch(
+    () => generalStore.getTheme(),
+    () => {
+      particlesContainer.innerHTML = ''
+      createBackgroundParticles()
+    }
+  )
 }

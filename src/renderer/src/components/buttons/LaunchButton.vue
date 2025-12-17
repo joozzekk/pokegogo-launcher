@@ -50,7 +50,7 @@ const handleToggleGame = async (e: Event): Promise<void> => {
         break
     }
   } catch (err) {
-    console.error(err)
+    LOGGER.with('Launch State').err((err as Error).toString())
     showToast('Wystąpił błąd podczas uruchamiania gry.', 'error')
     generalStore.setIsOpeningGame(false)
   }
@@ -63,21 +63,29 @@ const handleLaunchGame = async (e: Event): Promise<void> => {
   let mcToken = localStorage.getItem('mcToken')
 
   if (accountType === 'microsoft' && mcToken?.includes('exp')) {
-    LOGGER.log('Weryfikacja tokenu MC..')
+    LOGGER.with('Launch State').log('Weryfikacja tokenu MC..')
     const exp = parseInt(JSON.parse(mcToken as string).exp)
     const now = new Date().getTime()
 
-    LOGGER.log(`${now} ${exp}`)
+    LOGGER.with('Launch State').log(`${now} ${exp}`)
 
     if (now >= exp) {
-      LOGGER.log('Odświeżanie tokenu MC..')
+      LOGGER.with('Launch State').log('Odświeżanie tokenu MC..')
       try {
-        await refreshMicrosoftToken(localStorage.getItem('msToken'))
-        mcToken = localStorage.getItem('mcToken')
+        const res = await refreshMicrosoftToken(
+          localStorage.getItem(`msToken:${userStore.user?.nickname}`)
+        )
 
-        LOGGER.success('MC Token został odświeżony.')
+        if (res) {
+          localStorage.setItem(`msToken:${userStore.user?.nickname}`, res.msToken)
+          localStorage.setItem('mcToken', res.mcToken)
+
+          mcToken = res.mcToken
+        }
+
+        LOGGER.with('Launch State').success('MC Token został odświeżony.')
       } catch (err: unknown) {
-        LOGGER.err('Błąd odświażania tokenu.', `${err}`)
+        LOGGER.with('Launch State').err('Błąd odświażania tokenu.', `${err}`)
         showToast('Błąd odświeżania tokenu MC. Spróbuj ponownie za chwilę.')
 
         generalStore.setIsOpeningGame(false)
@@ -90,13 +98,13 @@ const handleLaunchGame = async (e: Event): Promise<void> => {
   const res = await window.electron?.ipcRenderer?.invoke('launch:game', {
     token: accountType === 'microsoft' ? mcToken : JSON.stringify(userStore.user),
     accessToken: localStorage.getItem('token'),
-    mcVersion: '1.21.1',
     javaVersion: '21',
     isDev: generalStore.settings.updateChannel === 'dev',
     settings: {
       resolution: generalStore.settings.resolution,
       ram: generalStore.settings.ram,
-      displayMode: generalStore.settings.displayMode
+      displayMode: generalStore.settings.displayMode,
+      gameMode: generalStore.settings.gameMode
     },
     accountType
   })
@@ -114,12 +122,18 @@ const handleKillGame = async (): Promise<void> => {
   await window.electron?.ipcRenderer?.invoke('launch:exit')
   generalStore.setCurrentState('start')
   generalStore.setIsOpeningGame(false)
+  setTimeout(() => {
+    generalStore.setCurrentLog('')
+  }, 250)
 }
 
 const handleKillVerify = async (): Promise<void> => {
   await window.electron?.ipcRenderer?.invoke('launch:exit-verify')
   generalStore.setCurrentState('start')
   generalStore.setIsOpeningGame(false)
+  setTimeout(() => {
+    generalStore.setCurrentLog('')
+  }, 250)
 }
 
 const now = ref(new Date())
@@ -159,17 +173,23 @@ window.electron?.ipcRenderer?.on('launch:change-state', async (_event, state: st
   const parsedState = JSON.parse(state)
   generalStore.setCurrentState(parsedState)
 
+  if (parsedState === 'minecraft-start') {
+    window.discord.setActivity(`W PokeGoGo Launcher`, 'Uruchamiam grę..')
+    generalStore.setIsOpeningGame(true)
+  }
+
   if (parsedState === 'minecraft-started') {
-    LOGGER.log('Minecraft is running..')
+    LOGGER.with('Launch State').log('Minecraft is running..')
+    window.discord.setActivity(`W PokeGoGo Launcher`, 'Gram..')
     await connectPlayer()
   }
 
   if (parsedState === 'minecraft-closed') {
-    setTimeout(() => {
-      generalStore.setCurrentState('start')
-      generalStore.setIsOpeningGame(false)
-    }, 500)
-    LOGGER.log('Minecraft is closed.')
+    generalStore.setCurrentState('start')
+    generalStore.setIsOpeningGame(false)
+    generalStore.setCurrentLog('')
+    window.discord.setActivity(`W PokeGoGo Launcher`, 'Przeglądam..')
+    LOGGER.with('Launch State').log('Minecraft is closed.')
     await disconnectPlayer()
   }
 })
@@ -183,6 +203,10 @@ window.electron?.ipcRenderer?.on('launch:show-log', (_event, data: string, ended
   generalStore.setCurrentLog('')
 })
 
+const currentState = computed(() => {
+  return generalStore.currentState
+})
+
 onMounted(async () => {
   timerInterval = window.setInterval(() => {
     now.value = new Date()
@@ -194,10 +218,11 @@ onMounted(async () => {
     if (isRunning) {
       generalStore.setIsOpeningGame(true)
       generalStore.setCurrentState('minecraft-started')
-      LOGGER.log('Minecraft is running..')
+      LOGGER.with('Launch State').log('Minecraft is running..')
+      window.discord.setActivity(`W PokeGoGo Launcher`, 'Gram..')
     }
   } catch {
-    LOGGER.log('Minecraft is not running.')
+    LOGGER.with('Launch State').log('Minecraft is not running.')
   }
 })
 
@@ -209,14 +234,13 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div
-    class="launch-button-container"
-    :class="{ 'margin-36': generalStore.currentState === 'files-verify' }"
-  >
+  <div class="relative">
     <button
-      id="launchBtn"
       class="launch-button"
-      :class="{ banned: isBanned }"
+      :class="{
+        banned: isBanned,
+        'mb-7': generalStore.currentLog.length
+      }"
       :disabled="isBanned"
       @click="(e) => handleToggleGame(e)"
     >
@@ -250,18 +274,13 @@ onUnmounted(() => {
           <i v-if="generalStore.isOpeningGame" class="fas fa-spinner fa-spin"></i>
           <span>{{ state }}</span>
         </div>
-        <span
-          v-if="generalStore.isOpeningGame && generalStore.currentState !== 'java-install'"
-          class="info"
+        <span v-if="generalStore.isOpeningGame && currentState !== 'java-install'" class="info"
           >Kliknij, aby przerwać</span
         >
       </div>
     </button>
     <Transition name="slide-down">
-      <div
-        v-if="generalStore.currentState === 'files-verify' && generalStore.currentLog.length"
-        class="launch-button-info"
-      >
+      <div v-if="generalStore.currentLog.length" class="launch-button-info">
         {{ generalStore.currentLog }}
       </div>
     </Transition>
@@ -269,25 +288,19 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-.launch-button-container {
-  position: relative;
-}
-
-.margin-36 {
-  margin-bottom: 2.5rem;
-}
-
 .launch-button-info {
   width: 100%;
-  height: 2rem;
+  height: 1.5rem;
   position: absolute;
-  top: 90%;
+  top: 100%;
   width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: var(--bg-dark);
-  padding: 0.25rem 0.5rem;
-  padding-top: 0.75rem;
+  padding: 0.1rem;
   font-size: 0.6rem;
-  color: var(--text-secondary);
+  color: var(--text-primary);
   text-align: center;
   border-radius: 0 0 15px 15px;
 }
@@ -317,7 +330,6 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   gap: 12px;
-  margin-bottom: 20px;
   z-index: 2;
 }
 
@@ -361,12 +373,7 @@ onUnmounted(() => {
 
 .launch-button:hover,
 .launch-button:focus {
-  transform: translateY(-3px);
   box-shadow: 0 0.25rem 1rem var(--border);
-}
-
-.launch-button:active {
-  transform: translateY(-1px);
 }
 
 .slide-down-enter-active,

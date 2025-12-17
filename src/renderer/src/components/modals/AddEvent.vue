@@ -1,3 +1,4 @@
+<!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <script lang="ts" setup>
 import { createEvent, updateEvent } from '@renderer/api/endpoints'
 import { showToast } from '@renderer/utils'
@@ -41,9 +42,13 @@ const rules = computed(() => {
     startDate: {
       required: helpers.withMessage('Pole jest wymagane', required)
     },
-    endDate: {
-      required: helpers.withMessage('Pole jest wymagane', required)
-    }
+    ...(state.type !== 'mega'
+      ? {
+          endDate: {
+            required: helpers.withMessage('Pole jest wymagane', required)
+          }
+        }
+      : {})
   }
 })
 
@@ -79,7 +84,7 @@ const addEvent = async (): Promise<void> => {
   if (preview.value)
     uploadResult = await window.electron.ipcRenderer?.invoke(
       'ftp:upload-file',
-      'items',
+      'events',
       await photoFile.value.arrayBuffer(),
       photoFile.value.name
     )
@@ -105,7 +110,7 @@ const editEvent = async (): Promise<void> => {
   if (preview.value)
     await window.electron.ipcRenderer?.invoke(
       'ftp:upload-file',
-      'items',
+      'events',
       await photoFile.value.arrayBuffer(),
       photoFile.value.name
     )
@@ -186,13 +191,7 @@ defineExpose({
                 @click="fileInputRef?.click()"
               >
                 <img
-                  :src="
-                    preview?.length
-                      ? preview
-                      : state.photo.includes('https://')
-                        ? state.photo
-                        : `${url}/events/image/${uuid}`
-                  "
+                  :src="preview?.length ? preview : `${url}/events/image/${uuid}`"
                   class="h-[4rem]"
                   @dragstart.prevent="null"
                 />
@@ -304,12 +303,13 @@ defineExpose({
                   placeholder="Wybierz datę"
                   class="w-full"
                   input-class="!text-[0.8rem] w-full"
-                  :class="{ invalid: v$.endDate.$error }"
+                  :class="{ invalid: v$.endDate?.$error }"
                   required
+                  show-clear
                   aria-required="true"
                 />
-                <div class="error-message" :class="{ show: v$.endDate.$error }">
-                  {{ v$.endDate.$errors[0]?.$message }}
+                <div class="error-message" :class="{ show: v$.endDate?.$error }">
+                  {{ v$.endDate?.$errors[0]?.$message }}
                 </div>
               </div>
             </div>

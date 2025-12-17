@@ -1,237 +1,521 @@
+<!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <script lang="ts" setup>
 import Header from '@renderer/components/Header.vue'
-import { onMounted } from 'vue'
-import { PokeGoGoLogin } from '@renderer/assets/scripts/login'
-import dynia from '@renderer/assets/img/dynia.png'
-import ghost from '@renderer/assets/img/ghost.png'
+import Background from '@renderer/components/Background.vue'
+import useUserStore from '@renderer/stores/user-store'
+import { computed, reactive, watch } from 'vue'
+import { IUser } from '@renderer/env'
+import { extractHead } from '@renderer/utils'
+import { LOGGER } from '@renderer/services/logger-service'
+import { fetchLogin, fetchRegister, updateBackendUserFromMicrosoft } from '@renderer/api/endpoints'
+import { useRouter } from 'vue-router'
+import { useVuelidate } from '@vuelidate/core'
+import { email, helpers, required } from '@vuelidate/validators'
+import { Message } from 'primevue'
 
-const handleDiscordLink = (): void => {
-  window.open('https://discord.com/invite/pokemongogo', '_blank')
+const apiURL = import.meta.env.RENDERER_VITE_API_URL
+
+const userStore = useUserStore()
+const router = useRouter()
+
+enum ActiveTab {
+  LOGIN = 'login',
+  REGISTER = 'register'
 }
 
-const handleRulesLink = (): void => {
-  window.open('https://www.pokemongogo.pl/#regulamin', '_blank')
-}
-
-const handleHelpLink = (): void => {
-  window.open('https://www.pokemongogo.pl/#faq', '_blank')
-}
-
-onMounted(() => {
-  new PokeGoGoLogin()
+const appState = reactive({
+  loading: false,
+  loadingMessage: '',
+  activeTab: ActiveTab.LOGIN as ActiveTab
 })
+
+const formState = reactive({
+  nick: '',
+  email: '',
+  password: '',
+  repeatPassword: ''
+})
+
+const loginRules = computed(() => {
+  return {
+    nick: {
+      required: helpers.withMessage('Pole jest wymagane', required)
+    },
+    password: {
+      required: helpers.withMessage('Pole jest wymagane', required),
+      ...(appState.activeTab === ActiveTab.REGISTER
+        ? {
+            sameAs: helpers.withMessage(
+              'Pola nie są takie same.',
+              (value) => value === formState.repeatPassword
+            )
+          }
+        : {})
+    },
+    ...(appState.activeTab === ActiveTab.REGISTER
+      ? {
+          email: {
+            required: helpers.withMessage('Pole jest wymagane', required),
+            email: helpers.withMessage('Pole nie jest prawidłowym emailem.', email)
+          },
+          repeatPassword: {
+            required: helpers.withMessage('Pole jest wymagane', required),
+            sameAs: helpers.withMessage(
+              'Pola nie są takie same.',
+              (value) => value === formState.password
+            )
+          }
+        }
+      : {})
+  }
+})
+
+const login$ = useVuelidate(loginRules, formState)
+
+const fallbackHeadUrl = (playerName: string): string =>
+  `https://mineskin.eu/helm/${playerName}/100.png`
+
+async function loadCustomOrFallbackHead(playerName: string): Promise<void> {
+  const customSkinSource = `${apiURL}/skins/image/${playerName}`
+  const index = userStore.prevAccounts.findIndex((user) => user.nickname === playerName)
+
+  try {
+    const base64Head = await extractHead(customSkinSource, 100)
+    userStore.prevAccounts[index].url = base64Head
+  } catch (error) {
+    LOGGER.err(
+      'Błąd cięcia/ładowania skina z API. Używam fallbacku Minotar.',
+      (error as Error)?.message
+    )
+
+    userStore.prevAccounts[index].url = fallbackHeadUrl(playerName)
+  }
+}
+
+watch(
+  userStore.prevAccounts,
+  (newValue) => {
+    newValue.forEach((user) => {
+      loadCustomOrFallbackHead(user.nickname!)
+    })
+  },
+  {
+    immediate: true
+  }
+)
+
+const handleBackendLogin = async (): Promise<void> => {
+  const { access_token, refresh_token } = await fetchLogin(formState.nick, formState.password)
+
+  if (access_token && refresh_token) {
+    localStorage.setItem('token', access_token)
+    localStorage.setItem('refresh_token', refresh_token)
+    localStorage.setItem('LOGIN_TYPE', 'backend')
+
+    const prevAccounts = JSON.parse(localStorage.getItem('prevAccounts') ?? '[]')
+
+    if (
+      !prevAccounts.find(
+        (savedAccount: any) =>
+          savedAccount.nickname === formState.nick && savedAccount.accountType === 'backend'
+      )
+    )
+      localStorage.setItem(
+        'prevAccounts',
+        JSON.stringify([
+          ...prevAccounts,
+          {
+            nickname: formState.nick,
+            password: formState.password,
+            accountType: 'backend'
+          }
+        ])
+      )
+
+    router.push({
+      path: '/app/home'
+    })
+  }
+}
+
+const handleRegister = async (): Promise<void> => {
+  const isValid = await login$.value.$validate()
+  if (!isValid) return
+
+  const { access_token, refresh_token } = await fetchRegister(
+    formState.nick,
+    formState.email,
+    formState.password
+  )
+
+  if (access_token && refresh_token) {
+    localStorage.setItem('token', access_token)
+    localStorage.setItem('refresh_token', refresh_token)
+    localStorage.setItem('LOGIN_TYPE', 'backend')
+
+    const prevAccounts = JSON.parse(localStorage.getItem('prevAccounts') ?? '[]')
+
+    if (
+      !prevAccounts.find(
+        (savedAccount: any) =>
+          savedAccount.nickname === formState.email && savedAccount.accountType === 'backend'
+      )
+    )
+      localStorage.setItem(
+        'prevAccounts',
+        JSON.stringify([
+          ...prevAccounts,
+          {
+            nickname: formState.nick,
+            password: formState.password,
+            accountType: 'backend'
+          }
+        ])
+      )
+
+    router.push({
+      path: '/app/home'
+    })
+  }
+}
+
+const handleMicrosoftLogin = async (accountName?: string): Promise<void> => {
+  let loginData: { msToken: string; mcToken: string } | null = null
+
+  if (accountName?.length) {
+    const storedMsToken = localStorage.getItem(`msToken:${accountName?.toLowerCase()}`)
+
+    if (storedMsToken) {
+      try {
+        LOGGER.log('Próba cichego logowania (Refresh Token)...')
+        loginData = await window.electron?.ipcRenderer?.invoke('auth:refresh-token', storedMsToken)
+      } catch {
+        LOGGER.err(
+          'Ciche logowanie nieudane, token mógł wygasnąć. Przełączanie na zwykłe logowanie.'
+        )
+      }
+    }
+  }
+
+  if (!loginData) {
+    LOGGER.log('Otwieranie okna logowania Microsoft...')
+    loginData = await window.electron?.ipcRenderer?.invoke('auth:login')
+  }
+
+  if (!loginData) throw new Error('Błąd pobierania danych logowania')
+
+  const { msToken, mcToken } = loginData
+  const data = JSON.parse(mcToken)
+  const profile = data?.profile
+
+  const user = await updateBackendUserFromMicrosoft({
+    nickname: profile?.name,
+    mcid: profile?.id
+  })
+
+  const { access_token, refresh_token } = await fetchLogin(user.nickname, user.uuid, true)
+
+  localStorage.setItem(`msToken:${user.nickname?.toLowerCase()}`, msToken)
+  localStorage.setItem('mcToken', mcToken)
+  localStorage.setItem('token', access_token)
+  localStorage.setItem('refresh_token', refresh_token)
+  localStorage.setItem('LOGIN_TYPE', 'microsoft')
+
+  const prevAccounts = JSON.parse(localStorage.getItem('prevAccounts') ?? '[]')
+
+  if (
+    !prevAccounts.find(
+      (savedAccount: any) =>
+        savedAccount.nickname === user.nickname && savedAccount.accountType === 'microsoft'
+    )
+  )
+    localStorage.setItem(
+      'prevAccounts',
+      JSON.stringify([
+        ...prevAccounts,
+        {
+          nickname: user.nickname,
+          accountType: 'microsoft'
+        }
+      ])
+    )
+
+  router.push({
+    path: '/app/home'
+  })
+}
+
+const handleLogin = async (
+  savedAccount: Partial<IUser & { url: string; password: string }> | null = {} // Dajemy domyślną wartość
+): Promise<void> => {
+  // ---------------------------------------------------------
+  // SCENARIUSZ 1: LOGOWANIE Z ZAPISANEGO KONTA (Szybka ścieżka)
+  // ---------------------------------------------------------
+  if (savedAccount?.nickname) {
+    // Nadpisujemy state, aby UI pokazywało kogo logujemy
+    formState.nick = savedAccount.nickname
+    if (savedAccount.password) formState.password = savedAccount.password
+
+    // Obsługa Microsoft
+    if (savedAccount.accountType === 'microsoft') {
+      appState.loading = true
+      appState.loadingMessage = 'Logowanie przez Microsoft...'
+      await handleMicrosoftLogin(savedAccount.nickname)
+      return // WAŻNE: Kończymy funkcję tutaj!
+    }
+
+    // Obsługa Backend (zapisane konto)
+    if (savedAccount.accountType === 'backend') {
+      appState.loading = true
+      appState.loadingMessage = `Logowanie do ${savedAccount.nickname}..`
+      await handleBackendLogin()
+      return // WAŻNE: Kończymy funkcję tutaj!
+    }
+  }
+
+  // ---------------------------------------------------------
+  // SCENARIUSZ 2: LOGOWANIE RĘCZNE (Formularz)
+  // ---------------------------------------------------------
+  // Jeśli kod dotarł tutaj, to znaczy, że użytkownik wpisał dane ręcznie i kliknął przycisk.
+
+  // 1. Uruchamiamy walidację Vuelidate
+  const isValid = await login$.value.$validate()
+
+  if (!isValid) {
+    // DIAGNOSTYKA: Wypisz błędy w konsoli, żebyś widział co jest nie tak
+    console.warn('Walidacja nieudana. Błędy:', login$.value.$errors)
+    return
+  }
+
+  // 2. Jeśli walidacja OK, logujemy
+  appState.loading = true
+  appState.loadingMessage = `Logowanie..`
+
+  try {
+    await handleBackendLogin()
+  } catch (error: any) {
+    LOGGER.err('Błąd podczas ręcznego logowania', error)
+  } finally {
+    appState.loading = false
+    appState.activeTab = ActiveTab.LOGIN
+  }
+}
+
+const removeSavedAccount = (user: Partial<IUser & { url: string }>): void => {
+  userStore.removeSavedAccount(user.nickname!)
+}
 </script>
 
 <template>
-  <div class="background">
-    <div class="bg-gradient"></div>
-    <div class="floating-blocks">
-      <img :src="dynia" class="block-1" @dragstart.prevent="null" />
-      <img :src="dynia" class="block-2" @dragstart.prevent="null" />
-      <img :src="dynia" class="block-3" @dragstart.prevent="null" />
-      <img :src="ghost" class="ghost-1" @dragstart.prevent="null" />
-      <img :src="ghost" class="ghost-2" @dragstart.prevent="null" />
-      <img :src="ghost" class="ghost-3" @dragstart.prevent="null" />
-    </div>
-  </div>
-
   <Header />
+  <Background />
 
-  <div class="login-container">
-    <div class="auth-card">
-      <div class="tab-nav">
-        <button class="tab-btn active" data-tab="login">
-          <i class="fas fa-sign-in-alt"></i>
-          <span>Logowanie</span>
-        </button>
-        <button class="tab-btn" data-tab="register">
-          <i class="fas fa-user-plus"></i>
-          <span>Rejestracja</span>
-        </button>
-        <div class="tab-indicator"></div>
-      </div>
-
-      <div class="forms-wrapper">
-        <div id="login-form" class="form-container active">
-          <div class="form-header">
-            <h2>Witaj ponownie!</h2>
-            <p>Zaloguj się do swojego konta</p>
-          </div>
-
-          <form id="loginForm" class="auth-form">
-            <div class="form-group">
-              <div class="input-wrapper">
-                <i class="fas fa-user input-icon"></i>
-                <input
-                  id="login-email"
-                  type="text"
-                  class="form-input"
-                  placeholder="Nick lub Email"
-                  required
-                />
-                <div class="input-line"></div>
-              </div>
-              <div id="login-email-error" class="error-message"></div>
-            </div>
-
-            <div class="form-group">
-              <div class="input-wrapper">
-                <i class="fas fa-lock input-icon"></i>
-                <input
-                  id="login-password"
-                  type="password"
-                  class="form-input"
-                  placeholder="Hasło"
-                  required
-                />
-                <button id="login-toggle" type="button" class="password-toggle">
-                  <i class="far fa-eye"></i>
-                </button>
-                <div class="input-line"></div>
-              </div>
-              <div id="login-password-error" class="error-message"></div>
-            </div>
-
-            <button class="btn-primary">
-              <span>Zaloguj się</span>
-            </button>
-
-            <div class="divider"><span>lub</span></div>
-
-            <button id="microsoft-login" type="button" class="btn-microsoft">
-              <i class="fab fa-microsoft"></i>
-              <span>Zaloguj przez Microsoft</span>
-            </button>
-          </form>
-        </div>
-
-        <div id="register-form" class="form-container">
-          <div class="form-header">
-            <h2>Dołącz do nas!</h2>
-            <p>Utwórz nowe konto gracza</p>
-          </div>
-
-          <form id="registerForm" class="auth-form">
-            <div class="form-group">
-              <div class="input-wrapper">
-                <i class="fas fa-gamepad input-icon"></i>
-                <input
-                  id="register-nick"
-                  type="text"
-                  class="form-input"
-                  placeholder="Nick gracza"
-                  required
-                  minlength="3"
-                  maxlength="16"
-                />
-                <div class="input-line"></div>
-              </div>
-              <div id="register-nick-error" class="error-message"></div>
-            </div>
-
-            <div class="form-group">
-              <div class="input-wrapper">
-                <i class="fas fa-envelope input-icon"></i>
-                <input
-                  id="register-email"
-                  type="email"
-                  class="form-input"
-                  placeholder="Adres email"
-                  required
-                />
-                <div class="input-line"></div>
-              </div>
-              <div id="register-email-error" class="error-message"></div>
-            </div>
-
-            <div class="form-group">
-              <div class="input-wrapper">
-                <i class="fas fa-key input-icon"></i>
-                <input
-                  id="register-password"
-                  type="password"
-                  class="form-input"
-                  placeholder="Hasło"
-                  required
-                  minlength="6"
-                />
-                <button id="register-toggle" type="button" class="password-toggle">
-                  <i class="far fa-eye"></i>
-                </button>
-                <div class="input-line"></div>
-              </div>
-              <div id="register-password-error" class="error-message"></div>
-            </div>
-
-            <div class="form-group">
-              <div class="input-wrapper">
-                <i class="fas fa-shield-alt input-icon"></i>
-                <input
-                  id="register-confirm"
-                  type="password"
-                  class="form-input"
-                  placeholder="Potwierdź hasło"
-                  required
-                />
-                <div class="input-line"></div>
-                <button id="register-toggle" type="button" class="password-toggle">
-                  <i class="far fa-eye"></i>
-                </button>
-                <div class="input-line"></div>
-              </div>
-              <div id="register-confirm-error" class="error-message"></div>
-            </div>
-
-            <div class="form-group">
-              <label for="terms-checkbox" class="checkbox-wrapper">
-                <input id="terms-checkbox" type="checkbox" required />
-                <span class="checkmark"></span>
-                <span class="checkbox-text">Akceptuję regulamin</span>
-              </label>
-            </div>
-
-            <button class="btn-primary">
-              <span>Utwórz konto</span>
-            </button>
-
-            <div class="form-switch">
-              <span>Masz już konto? </span>
-              <button type="button" class="switch-btn" data-tab="login">Zaloguj się</button>
-            </div>
-          </form>
-        </div>
-      </div>
+  <footer class="absolute z-200 bottom-2 w-full text-center">
+    <div class="text-[10px] text-[var(--text-muted)] text-center">
+      <p>&copy; 2024-2025 Pokemongogo.pl. Wszystkie prawa zastrzeżone.</p>
     </div>
-    <footer class="footer">
-      <div class="footer-links">
-        <a href="#" class="footer-link" @click="handleDiscordLink" @dragstart.prevent="null">
-          <i class="fab fa-discord"></i>
-          <span>Discord</span>
-        </a>
-        <a href="#" class="footer-link" @click="handleRulesLink" @dragstart.prevent="null">
-          <i class="fas fa-file-contract"></i>
-          <span>Regulamin</span>
-        </a>
-        <a href="#" class="footer-link" @click="handleHelpLink" @dragstart.prevent="null">
-          <i class="fas fa-question-circle"></i>
-          <span>Pomoc</span>
-        </a>
+  </footer>
+
+  <div
+    class="border-[var(--primary)]/20 border w-1/3 mx-auto my-10 p-10 rounded-xl h-[calc(100vh-130px)] backdrop-blur-md overflow-hidden"
+  >
+    <template v-if="appState.activeTab === ActiveTab.LOGIN">
+      <h1 class="text-2xl w-full text-center mb-2">Logowanie do PokemonGoGo</h1>
+      <p class="text-center mb-4">
+        Zaloguj się do launchera korzystając z jednego z dostępnych sposobów.
+      </p>
+
+      <div class="flex gap-2">
+        <div
+          v-for="savedAccount in userStore.prevAccounts"
+          :key="savedAccount.nickname"
+          class="relative px-4 py-2 flex items-center flex-col gap-1 border border-[var(--primary)]/20 rounded-md backdrop-blur-2xl w-1/3 hover:bg-[var(--primary-shop)] hover:text-white hover:cursor-pointer"
+          @click="handleLogin(savedAccount)"
+        >
+          <button
+            class="absolute top-2 right-2 hover:cursor-pointer"
+            @click.stop="removeSavedAccount(savedAccount)"
+          >
+            <i class="fa fa-trash" />
+          </button>
+          <img
+            v-if="savedAccount.url"
+            :src="savedAccount.url"
+            class="rounded-full w-8 h-8"
+            @dragstart.prevent="null"
+          />
+          <div
+            v-else
+            class="rounded-full border-[var(--border)] border-2 w-8 h-8 flex items-center justify-center"
+          >
+            <i class="fa fa-user" />
+          </div>
+          <p class="text-[10px] text-[var(--text-muted)]">
+            {{ savedAccount.nickname }}
+          </p>
+        </div>
       </div>
-      <div class="footer-text">
-        <p>&copy; 2024-2025 Pokemongogo.pl. Wszystkie prawa zastrzeżone.</p>
+
+      <div v-if="userStore.prevAccounts.length" class="flex relative w-full">
+        <hr class="my-4 w-full border-[var(--primary)]" />
+        <span class="mt-[7px] mx-2">lub</span>
+        <hr class="my-4 w-full border-[var(--primary)]" />
       </div>
-    </footer>
+
+      <div class="flex relative flex-col w-full">
+        <div class="form-group h-full" :class="{ '!mb-5': login$.nick.$error }">
+          <div class="input-wrapper flex">
+            <input
+              v-model="formState.nick"
+              type="text"
+              placeholder="Podaj nick.."
+              class="form-input !pl-[1rem] group"
+              :class="{ invalid: login$.nick.$error }"
+            />
+          </div>
+          <div class="error-message" :class="{ show: login$.nick.$error }">
+            {{ login$.nick.$errors[0]?.$message }}
+          </div>
+        </div>
+
+        <div class="form-group h-full" :class="{ '!mb-5': login$.password.$error }">
+          <div class="input-wrapper flex">
+            <input
+              v-model="formState.password"
+              type="password"
+              placeholder="Podaj hasło.."
+              class="form-input !pl-[1rem] group"
+              :class="{ invalid: login$.password.$error }"
+            />
+          </div>
+          <div class="error-message" :class="{ show: login$.password.$error }">
+            {{ login$.password.$errors[0]?.$message }}
+          </div>
+        </div>
+
+        <button class="btn-primary mt-2" @click="handleLogin(null)">Zaloguj się</button>
+      </div>
+
+      <div class="flex relative w-full">
+        <hr class="my-4 w-full border-[var(--primary)]" />
+        <span class="mt-[7px] mx-2">lub</span>
+        <hr class="my-4 w-full border-[var(--primary)]" />
+      </div>
+
+      <button class="btn-microsoft" @click="handleLogin({ accountType: 'microsoft' })">
+        <i class="fab fa-microsoft"></i>
+        <span>Zaloguj przez Microsoft</span>
+      </button>
+
+      <p class="text-xs text-center">
+        Nie masz konta?
+        <span
+          class="text-[var(--primary)] hover:cursor-pointer hover:underline"
+          @click="appState.activeTab = ActiveTab.REGISTER"
+          >Zarejestruj się</span
+        >
+      </p>
+    </template>
+    <template v-else>
+      <h1 class="text-2xl w-full text-center mb-2">Rejestracja PokemonGoGo</h1>
+      <p class="text-center mb-4">
+        Załóż konto, aby móc korzystać z aplikacji i wejść na serwer PokemonGoGo.pl
+      </p>
+
+      <Message
+        severity="info"
+        class="!bg-blue-400/20 !text-blue-500 !outline !outline-blue-700 !mb-4"
+      >
+        <span class="text-[10px]">
+          Pamiętaj, że rejestrować się powinny tylko konta non-premium. Gdy masz konto premium,
+          zaloguj się przez Microsoft.
+        </span>
+      </Message>
+
+      <div class="flex relative flex-col w-full">
+        <div class="form-group h-full" :class="{ '!mb-5': login$.nick.$error }">
+          <div class="input-wrapper flex">
+            <input
+              v-model="formState.nick"
+              type="text"
+              placeholder="Podaj nick.."
+              class="form-input !pl-[1rem] group"
+              :class="{ invalid: login$.nick.$error }"
+            />
+          </div>
+          <div class="error-message" :class="{ show: login$.nick.$error }">
+            {{ login$.nick.$errors[0]?.$message }}
+          </div>
+        </div>
+
+        <div class="form-group h-full" :class="{ '!mb-5': login$.email?.$error }">
+          <div class="input-wrapper flex">
+            <input
+              v-model="formState.email"
+              type="text"
+              placeholder="Podaj email.."
+              class="form-input !pl-[1rem] group"
+              :class="{ invalid: login$.email?.$error }"
+            />
+          </div>
+          <div class="error-message" :class="{ show: login$.email?.$error }">
+            {{ login$.email?.$errors[0]?.$message }}
+          </div>
+        </div>
+
+        <div class="form-group h-full" :class="{ '!mb-5': login$.password.$error }">
+          <div class="input-wrapper flex">
+            <input
+              v-model="formState.password"
+              type="password"
+              placeholder="Podaj hasło.."
+              class="form-input !pl-[1rem] group"
+              :class="{ invalid: login$.password.$error }"
+            />
+          </div>
+          <div class="error-message" :class="{ show: login$.password.$error }">
+            {{ login$.password.$errors[0]?.$message }}
+          </div>
+        </div>
+
+        <div class="form-group h-full" :class="{ '!mb-5': login$.repeatPassword?.$error }">
+          <div class="input-wrapper flex">
+            <input
+              v-model="formState.repeatPassword"
+              type="password"
+              placeholder="Potwórz hasło.."
+              class="form-input !pl-[1rem] group"
+              :class="{ invalid: login$.repeatPassword?.$error }"
+            />
+          </div>
+          <div class="error-message" :class="{ show: login$.repeatPassword?.$error }">
+            {{ login$.repeatPassword?.$errors[0]?.$message }}
+          </div>
+        </div>
+
+        <button class="btn-primary my-2" @click="handleRegister">Zarejestruj się</button>
+
+        <p class="text-xs text-center">
+          Masz już konto?
+          <span
+            class="text-[var(--primary)] hover:cursor-pointer hover:underline"
+            @click="appState.activeTab = ActiveTab.LOGIN"
+            >Zaloguj się</span
+          >
+        </p>
+      </div>
+    </template>
   </div>
 
-  <div id="toast-container" class="toast-container"></div>
-  <div id="loading-overlay" class="loading-overlay">
+  <div class="toast-container"></div>
+  <div v-if="appState.loading" class="loading-overlay">
     <div class="loading-content">
       <div class="loading-spinner">
         <div class="spinner-ring"></div>
         <div class="spinner-ring"></div>
       </div>
       <div class="loading-text">
-        <span id="loading-message">Ładowanie...</span>
+        <span id="loading-message">{{ appState.loadingMessage ?? 'Ładowanie..' }}</span>
       </div>
     </div>
   </div>

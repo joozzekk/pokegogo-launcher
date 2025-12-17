@@ -1,7 +1,9 @@
 <script lang="ts" setup>
 import { changeEmail, changePassword } from '@renderer/api/endpoints'
-import { applyTheme, themes } from '@renderer/assets/theme/official'
+import { applyTheme, themes } from '@renderer/assets/theme/themes'
+import ChangeSkinModal from '@renderer/components/modals/ChangeSkinModal.vue'
 import VerifyFilesModal from '@renderer/components/modals/VerifyFilesModal.vue'
+import SkinViewer from '@renderer/components/SkinViewer.vue'
 import useGeneralStore from '@renderer/stores/general-store'
 import useUserStore from '@renderer/stores/user-store'
 import { calculateValueFromPercentage, checkUpdate, MIN_RAM, showToast } from '@renderer/utils'
@@ -117,12 +119,16 @@ const handleChangePassword = async (): Promise<void> => {
       state.repeatNew = ''
       v$.value.$reset()
     }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (_) {
+  } catch {
     showToast('Nie udało się zmienić hasła', 'error')
     return
   }
 }
+
+const apiURL = import.meta.env.RENDERER_VITE_API_URL
+const skinUrl = computed(() => {
+  return `${apiURL}/skins/image/${userStore.user?.nickname}`
+})
 
 watch(
   () => userStore.user,
@@ -143,8 +149,7 @@ const handleChangeEmail = async (): Promise<void> => {
       emailV$.value.$reset()
       await userStore.logout()
     }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (_) {
+  } catch {
     showToast('Nie udało się zmienić email', 'error')
     return
   }
@@ -154,12 +159,35 @@ const handleChangeUpdateChannel = async (channel: string): Promise<void> => {
   generalStore.settings.updateChannel = channel
   generalStore.saveSettings()
   await checkUpdate()
+  await window.electron?.ipcRenderer?.invoke('launch:remove-markfile')
   showToast(generalStore.isUpdateAvailable ? 'Update available.' : 'App is up-to-date.')
 }
 
 const verifyFilesModalRef = ref()
 const openVerifyFilesModal = (): void => {
   verifyFilesModalRef.value?.openModal()
+}
+
+const changeSkinModalRef = ref()
+const openChangeSkinModal = (): void => {
+  changeSkinModalRef.value?.openModal()
+}
+
+const setNewTheme = (newTheme: string): void => {
+  applyTheme(newTheme)
+  generalStore.setTheme(newTheme)
+  saveSettings()
+}
+
+const changeGameMode = async (newMode: string): Promise<void> => {
+  try {
+    await window.electron?.ipcRenderer?.invoke('launch:remove-markfile')
+  } catch {
+    /* ignore */
+  }
+  generalStore.settings.gameMode = newMode
+
+  saveSettings()
 }
 
 onUnmounted(() => {
@@ -178,6 +206,26 @@ onUnmounted(() => {
             </div>
             <h2>Ustawienia gry</h2>
             <span class="applogo-badge">{{ generalStore.appVersion?.split('-')[0] }}</span>
+          </div>
+        </div>
+
+        <div class="setting-group">
+          <label>Tryb gry</label>
+          <div class="toggle-group">
+            <button
+              class="toggle-option !py-[0.25rem]"
+              :class="{ active: generalStore.settings.gameMode === 'Pokemons' }"
+              @click="changeGameMode('Pokemons')"
+            >
+              Pokemony
+            </button>
+            <button
+              class="toggle-option !py-[0.25rem]"
+              :class="{ active: generalStore.settings.gameMode === 'MiniGames' }"
+              @click="changeGameMode('MiniGames')"
+            >
+              MiniGamesy
+            </button>
           </div>
         </div>
 
@@ -274,7 +322,7 @@ onUnmounted(() => {
               v-for="theme in themes"
               :key="theme.primary"
               class="nav-icon !w-[2rem] !h-[2rem] !text-[1rem]"
-              @click="applyTheme(theme)"
+              @click="setNewTheme(theme.name)"
             >
               <i class="fa fa-home" :style="{ color: theme.primary }" />
             </button>
@@ -406,6 +454,19 @@ onUnmounted(() => {
           </div>
         </div>
 
+        <div v-if="userStore.user" class="setting-group mb-2!">
+          <label>Customowy skin</label>
+          <p class="text-[var(--text-secondary)] mb-2 text-[0.7rem]">
+            Zmiana skina jest możliwa tylko dla użytkwników non-premium!
+          </p>
+          <div
+            class="flex w-[100px] h-[100px] player-profile rounded-2xl! hover:bg-[var(--bg-light)]/40! hover:cursor-pointer"
+            @click="openChangeSkinModal()"
+          >
+            <SkinViewer :skin="skinUrl" />
+          </div>
+        </div>
+
         <div class="setting-group !w-full">
           <label>Zmiana emaila</label>
           <div class="flex gap-2 !w-full items-center">
@@ -529,5 +590,6 @@ onUnmounted(() => {
       </div>
     </div>
     <VerifyFilesModal ref="verifyFilesModalRef" />
+    <ChangeSkinModal ref="changeSkinModalRef" />
   </div>
 </template>

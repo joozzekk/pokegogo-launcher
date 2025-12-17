@@ -2,7 +2,7 @@
 import { showToast } from './utils'
 import useGeneralStore from './stores/general-store'
 import { onMounted } from 'vue'
-import { applyTheme, halloween } from './assets/theme/official'
+import { applyTheme } from './assets/theme/themes'
 
 const generalStore = useGeneralStore()
 
@@ -19,11 +19,9 @@ window.electron?.ipcRenderer?.on('change:max-ram', (_, ram: string) => {
 })
 
 onMounted(() => {
-  applyTheme(
-    localStorage.getItem('selectedTheme')
-      ? JSON.parse(localStorage.getItem('selectedTheme')!)
-      : halloween
-  )
+  generalStore.loadSettings()
+
+  applyTheme(generalStore.getTheme())
 })
 </script>
 

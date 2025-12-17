@@ -1,9 +1,9 @@
 <script lang="ts" setup>
 import logo from '@renderer/assets/logo.png'
-import { ref, onMounted } from 'vue'
-import dynia from '@renderer/assets/img/dynia.png'
-import ghost from '@renderer/assets/img/ghost.png'
-import { applyTheme, halloween } from '@renderer/assets/theme/official'
+import { ref, onMounted, computed } from 'vue'
+import firstFloating from '@renderer/assets/img/firstFloating.png'
+import secondFloating from '@renderer/assets/img/secondFloating.png'
+import { applyTheme, themes } from '@renderer/assets/theme/themes'
 import { checkUpdate } from '@renderer/utils'
 import useGeneralStore from '@renderer/stores/general-store'
 
@@ -18,36 +18,53 @@ const statuses = {
   starting: 'Witamy!'
 }
 
+const firstFloatingBlock = computed(() => {
+  return (
+    themes.find((theme) => theme.name === generalStore.getTheme())?.firstFloating ?? firstFloating
+  )
+})
+
+const secondFloatingBlock = computed(() => {
+  return (
+    themes.find((theme) => theme.name === generalStore.getTheme())?.secondFloating ?? secondFloating
+  )
+})
+
 onMounted(() => {
   generalStore.loadSettings()
 
-  applyTheme(
-    localStorage.getItem('selectedTheme')
-      ? JSON.parse(localStorage.getItem('selectedTheme')!)
-      : halloween
-  )
+  applyTheme(generalStore.getTheme())
 
-  window.electron?.ipcRenderer?.on('load:status', async (_, currentStatus: string) => {
-    let val = 0
-    const parsedStatus = JSON.parse(currentStatus)
+  const runLoadingFlow = async (): Promise<void> => {
+    try {
+      status.value = statuses['check-for-update']
+      await checkUpdate()
+      progress.value = 25
 
-    switch (parsedStatus) {
-      case 'check-for-update':
-        await checkUpdate()
-        val = 25
-        break
-      case 'updating':
-        if (generalStore.isUpdateAvailable && generalStore.settings.autoUpdate)
-          await window.electron?.ipcRenderer?.invoke('update:start')
-        val = 60
-        break
-      case 'starting':
-        val = 100
-        break
+      status.value = statuses['updating']
+      if (generalStore.isUpdateAvailable && generalStore.settings.autoUpdate) {
+        await window.electron?.ipcRenderer?.invoke('update:start')
+      }
+      progress.value = 60
+
+      await window.electron?.ipcRenderer?.invoke('load:start-services')
+
+      status.value = statuses['starting']
+      progress.value = 100
+
+      setTimeout(() => {
+        window.electron?.ipcRenderer?.send('load:finish')
+      }, 600)
+    } catch {
+      status.value = 'Wystąpił błąd'
+      progress.value = 100
+      setTimeout(() => {
+        window.electron?.ipcRenderer?.send('load:finish')
+      }, 1500)
     }
-    status.value = statuses[parsedStatus]
-    progress.value = val
-  })
+  }
+
+  runLoadingFlow()
 })
 </script>
 
@@ -56,12 +73,24 @@ onMounted(() => {
     <div class="background">
       <div class="bg-gradient"></div>
       <div class="floating-blocks">
-        <img :src="dynia" class="block-1" @dragstart.prevent="null" />
-        <img :src="dynia" class="block-2" @dragstart.prevent="null" />
-        <img :src="dynia" class="block-3" @dragstart.prevent="null" />
-        <img :src="ghost" class="ghost-1" @dragstart.prevent="null" />
-        <img :src="ghost" class="ghost-2" @dragstart.prevent="null" />
-        <img :src="ghost" class="ghost-3" @dragstart.prevent="null" />
+        <div class="block-1" @dragstart.prevent="null">
+          {{ firstFloatingBlock }}
+        </div>
+        <div class="block-2" @dragstart.prevent="null">
+          {{ firstFloatingBlock }}
+        </div>
+        <div class="block-3" @dragstart.prevent="null">
+          {{ firstFloatingBlock }}
+        </div>
+        <div class="ghost-1" @dragstart.prevent="null">
+          {{ secondFloatingBlock }}
+        </div>
+        <div class="ghost-2" @dragstart.prevent="null">
+          {{ secondFloatingBlock }}
+        </div>
+        <div class="ghost-3" @dragstart.prevent="null">
+          {{ secondFloatingBlock }}
+        </div>
       </div>
     </div>
     <div class="loading-container">
@@ -209,6 +238,7 @@ onMounted(() => {
   position: absolute;
   width: 90px;
   height: 90px;
+  font-size: 90px;
   top: 20%;
   left: 10%;
   animation: float 20s linear infinite;
@@ -219,6 +249,7 @@ onMounted(() => {
   position: absolute;
   width: 60px;
   height: 60px;
+  font-size: 60px;
   top: 60%;
   left: 80%;
   animation: float 18s linear infinite;
@@ -231,6 +262,7 @@ onMounted(() => {
   position: absolute;
   width: 30px;
   height: 30px;
+  font-size: 30px;
   top: 80%;
   left: 20%;
   animation-delay: -15s;
@@ -249,6 +281,7 @@ onMounted(() => {
 .ghost-2 {
   animation: sway 2s ease-in-out infinite;
   width: 80px;
+  font-size: 80px;
   position: absolute;
   top: 70%;
   left: 50%;
@@ -258,6 +291,7 @@ onMounted(() => {
 .ghost-3 {
   animation: sway 4s ease-in-out infinite;
   width: 40px;
+  font-size: 40px;
   position: absolute;
   top: 50%;
   left: 10%;
@@ -284,23 +318,23 @@ onMounted(() => {
 
 @keyframes float {
   0% {
-    transform: translateY(0px) rotate(0deg);
+    transform: translateY(0px);
   }
 
   25% {
-    transform: translateY(-20px) rotate(90deg);
+    transform: translateY(-20px);
   }
 
   50% {
-    transform: translateY(-10px) rotate(180deg);
+    transform: translateY(-10px);
   }
 
   75% {
-    transform: translateY(-30px) rotate(270deg);
+    transform: translateY(-30px);
   }
 
   100% {
-    transform: translateY(0px) rotate(360deg);
+    transform: translateY(0px);
   }
 }
 </style>
