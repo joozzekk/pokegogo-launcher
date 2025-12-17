@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import useUserStore from '@renderer/stores/user-store'
-import useVuelidate from '@vuelidate/core'
+import { useVuelidate } from '@vuelidate/core'
 import { computed, reactive, ref } from 'vue'
 import SkinViewer from '../SkinViewer.vue'
 import { changeCustomSkin } from '@renderer/api/endpoints'

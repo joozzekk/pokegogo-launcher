@@ -20,7 +20,7 @@ const useUserStore = defineStore('user', () => {
     user.value = null
   }
 
-  const removeAccount = (nickname: string): void => {
+  const removeSavedAccount = (nickname: string): void => {
     prevAccounts.value = prevAccounts.value.filter((account) => account.nickname !== nickname)
     localStorage.setItem('prevAccounts', JSON.stringify(prevAccounts.value))
   }
@@ -42,7 +42,7 @@ const useUserStore = defineStore('user', () => {
     setUser,
     resetUser,
     logout,
-    removeAccount
+    removeSavedAccount
   }
 })
 

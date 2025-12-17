@@ -1,6 +1,6 @@
 <!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <script lang="ts" setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { initAnimations } from '@renderer/assets/scripts/animations'
 import Header from '@renderer/components/Header.vue'
 import Sidebar from '@renderer/components/Sidebar.vue'
@@ -18,12 +18,7 @@ import BannedModal from '@renderer/components/modals/BannedModal.vue'
 import { useSocket } from '@renderer/services/socket-service'
 import api from '@renderer/utils/client'
 import { LOGGER } from '@renderer/services/logger-service'
-import { themes } from '@renderer/assets/theme/themes'
-import choinka from '@renderer/assets/img/choinka.png'
-
-const bgImage = computed(() => {
-  return themes.find((theme) => theme.name === generalStore.getTheme())?.backgroundImage ?? choinka
-})
+import Background from './Background.vue'
 
 const refreshInterval = ref<any>(null)
 const generalStore = useGeneralStore()
@@ -145,32 +140,20 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div>
-    <div class="animated-bg">
-      <img
-        :src="bgImage"
-        alt="background"
-        class="absolute !h-[100vh] z-[0] w-full !object-cover"
-        @dragstart.prevent="null"
-      />
+  <Background />
 
-      <div class="particles"></div>
-    </div>
-    <div class="vignette"></div>
+  <Header />
 
-    <Header />
+  <div class="container">
+    <Sidebar />
 
-    <div class="container">
-      <Sidebar />
-
-      <main class="main-content">
-        <RouterView v-slot="{ Component }">
-          <component :is="Component" :events="events" />
-        </RouterView>
-      </main>
-    </div>
-
-    <div id="toastContainer" class="toast-container"></div>
-    <BannedModal />
+    <main class="main-content">
+      <RouterView v-slot="{ Component }">
+        <component :is="Component" :events="events" />
+      </RouterView>
+    </main>
   </div>
+
+  <div id="toastContainer" class="toast-container"></div>
+  <BannedModal />
 </template>

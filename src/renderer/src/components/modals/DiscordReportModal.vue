@@ -2,9 +2,9 @@
 import useGeneralStore from '@renderer/stores/general-store'
 import useUserStore from '@renderer/stores/user-store'
 import { showToast } from '@renderer/utils'
-import useVuelidate from '@vuelidate/core'
+import { useVuelidate } from '@vuelidate/core'
 import { helpers, maxLength, minLength, required } from '@vuelidate/validators'
-import { reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 
 const userStore = useUserStore()
 const generalStore = useGeneralStore()
@@ -20,16 +20,19 @@ const openModal = (): void => {
   modalVisible.value = true
 }
 
-const v$ = useVuelidate(
-  {
-    description: {
-      required: helpers.withMessage('Nazwa jest wymagana', required),
-      minLength: helpers.withMessage('Nazwa musi mieć co najmniej 2 znaki', minLength(2)),
-      maxLength: helpers.withMessage('Nazwa może mieć maksymalnie 50 znaków', maxLength(50))
-    }
-  },
-  state
-)
+const rules = computed(() => {
+  return modalVisible.value
+    ? {
+        description: {
+          required: helpers.withMessage('Nazwa jest wymagana', required),
+          minLength: helpers.withMessage('Nazwa musi mieć co najmniej 2 znaki', minLength(2)),
+          maxLength: helpers.withMessage('Nazwa może mieć maksymalnie 50 znaków', maxLength(50))
+        }
+      }
+    : {}
+})
+
+const v$ = useVuelidate(rules, state)
 
 const handleExit = async (): Promise<void> => {
   modalVisible.value = false
@@ -119,15 +122,15 @@ const handleSubmit = async (): Promise<void> => {
                   v-model="state.description"
                   class="form-input !pl-[1rem] resize-none"
                   placeholder="Treść zgłoszenia.."
-                  :class="{ invalid: v$.description.$error }"
+                  :class="{ invalid: v$.description?.$error }"
                   rows="5"
                   aria-required="true"
                   required
                 />
                 <div class="input-line"></div>
               </div>
-              <div class="error-message" :class="{ show: v$.description.$error }">
-                {{ v$.description.$errors[0]?.$message }}
+              <div class="error-message" :class="{ show: v$.description?.$error }">
+                {{ v$.description?.$errors[0]?.$message }}
               </div>
             </div>
           </div>

@@ -127,36 +127,46 @@ onMounted(async () => {
 <template>
   <div class="w-full relative h-full">
     <div class="flex gap-2 w-full mb-2">
-      <div class="quick-setting">
-        <i class="fas fa-memory"></i>
-        <div>
-          RAM: <strong id="quickRam">{{ generalStore.settings.ram }}GB</strong>
-          <span class="opacity-60 ml-1">(Min. 4GB)</span>
+      <div
+        class="backdrop-blur-xl bg-[var(--primary)]/2 border rounded-xl px-4 py-3 border-[var(--primary)]/10 w-full flex justify-between items-center"
+      >
+        <i class="fas fa-memory text-[var(--primary)]"></i>
+        <div class="flex justify-between w-full">
+          <span class="ml-1">RAM</span>
+          <strong id="playerCount">{{ generalStore.settings.ram }}GB</strong>
         </div>
       </div>
-      <div class="quick-setting">
-        <i class="fas fa-microchip"></i>
-        <div>
-          Tryb:
-          <strong>{{ generalStore.settings.gameMode }}</strong>
+      <div
+        class="backdrop-blur-xl bg-[var(--primary)]/2 border rounded-xl px-4 py-3 border-[var(--primary)]/10 w-full flex justify-between items-center"
+      >
+        <i class="fas fa-microchip text-[var(--primary)]"></i>
+        <div class="flex justify-between w-full">
+          <span class="ml-1">Tryb</span>
+          <strong id="playerCount">{{ generalStore.settings.gameMode }}</strong>
         </div>
       </div>
-      <div class="quick-setting">
-        <i class="fas fa-users"></i>
+      <div
+        class="backdrop-blur-xl bg-[var(--primary)]/2 border rounded-xl px-4 py-3 border-[var(--primary)]/10 w-full flex justify-between items-center"
+      >
+        <i class="fas fa-users text-[var(--primary)]"></i>
         <div class="flex justify-between w-full">
           <span class="ml-1">Graczy Online</span>
-          <strong id="playerCount">{{ serverStatus?.players?.online ?? '--' }}</strong>
+          <strong id="playerCount">{{ serverStatus?.players?.online ?? '0' }}</strong>
         </div>
       </div>
-      <div class="quick-setting">
-        <i class="fas fa-signal"></i>
+      <div
+        class="backdrop-blur-xl bg-[var(--primary)]/2 border rounded-xl px-4 py-3 border-[var(--primary)]/10 w-full flex justify-between items-center"
+      >
+        <i class="fas fa-signal text-[var(--primary)]"></i>
         <div class="flex justify-between w-full">
           <span class="ml-1">Ping</span>
           <strong id="serverPing">{{ time.toFixed(0) }}ms</strong>
         </div>
       </div>
-      <div class="quick-setting">
-        <i class="fas fa-clock"></i>
+      <div
+        class="backdrop-blur-xl bg-[var(--primary)]/2 border rounded-xl px-4 py-3 border-[var(--primary)]/10 w-full flex justify-between items-center"
+      >
+        <i class="fas fa-clock text-[var(--primary)]"></i>
         <div class="flex justify-between w-full">
           <span class="ml-1">Uptime</span>
           <strong>24/7</strong>
@@ -166,9 +176,9 @@ onMounted(async () => {
 
     <div class="flex flex-col">
       <div class="mx-auto featured-tag">
-        {{ megaEvent?.startDate ? format(megaEvent.startDate, 'dd MMMM') : '' }}
+        {{ megaEvent?.startDate ? format(megaEvent.startDate, 'dd MMMM yyyy') : '' }}
         {{ megaEvent?.endDate ? ' - ' : '' }}
-        {{ megaEvent?.endDate ? format(megaEvent.endDate, 'dd MMMM') : '' }}
+        {{ megaEvent?.endDate ? format(megaEvent.endDate, 'dd MMMM yyyy') : '' }}
       </div>
       <h1 class="text-3xl font-black uppercase text-center mb-2">
         {{ megaEvent?.name }}
@@ -184,7 +194,7 @@ onMounted(async () => {
         <article
           v-for="event in normalEvents.filter((_, i) => i < 2)"
           :key="event.uuid"
-          class="news-item w-full!"
+          class="flex gap-2 backdrop-blur-xl bg-[var(--primary)]/2 border rounded-xl px-4 py-3 border-[var(--primary)]/10 w-full!"
         >
           <div class="news-thumbnail">
             <img
@@ -198,9 +208,9 @@ onMounted(async () => {
             />
           </div>
           <div class="news-info">
-            <span class="news-date">
+            <span class="text-[var(--primary)] text-[10px]">
               {{ event?.startDate ? format(event.startDate, 'dd MMMM') : '' }} -
-              {{ event?.endDate ? format(event.endDate, 'dd MMMM') : '' }}
+              {{ event?.endDate ? format(event.endDate, 'dd MMMM yyyy') : '' }}
             </span>
             <h4>{{ event.name }}</h4>
             <p class="text-[var(--text-secondary)]!">{{ event.desc }}</p>
