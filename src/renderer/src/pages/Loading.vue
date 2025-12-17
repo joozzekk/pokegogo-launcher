@@ -55,8 +55,7 @@ onMounted(() => {
       setTimeout(() => {
         window.electron?.ipcRenderer?.send('load:finish')
       }, 600)
-    } catch (err) {
-      console.error(err)
+    } catch {
       status.value = 'Wystąpił błąd'
       progress.value = 100
       setTimeout(() => {

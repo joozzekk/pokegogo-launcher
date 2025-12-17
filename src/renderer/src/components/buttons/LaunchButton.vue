@@ -50,7 +50,7 @@ const handleToggleGame = async (e: Event): Promise<void> => {
         break
     }
   } catch (err) {
-    console.error(err)
+    LOGGER.with('Launch State').err((err as Error).toString())
     showToast('Wystąpił błąd podczas uruchamiania gry.', 'error')
     generalStore.setIsOpeningGame(false)
   }
@@ -63,14 +63,14 @@ const handleLaunchGame = async (e: Event): Promise<void> => {
   let mcToken = localStorage.getItem('mcToken')
 
   if (accountType === 'microsoft' && mcToken?.includes('exp')) {
-    LOGGER.log('Weryfikacja tokenu MC..')
+    LOGGER.with('Launch State').log('Weryfikacja tokenu MC..')
     const exp = parseInt(JSON.parse(mcToken as string).exp)
     const now = new Date().getTime()
 
-    LOGGER.log(`${now} ${exp}`)
+    LOGGER.with('Launch State').log(`${now} ${exp}`)
 
     if (now >= exp) {
-      LOGGER.log('Odświeżanie tokenu MC..')
+      LOGGER.with('Launch State').log('Odświeżanie tokenu MC..')
       try {
         const res = await refreshMicrosoftToken(
           localStorage.getItem(`msToken:${userStore.user?.nickname}`)
@@ -83,9 +83,9 @@ const handleLaunchGame = async (e: Event): Promise<void> => {
           mcToken = res.mcToken
         }
 
-        LOGGER.success('MC Token został odświeżony.')
+        LOGGER.with('Launch State').success('MC Token został odświeżony.')
       } catch (err: unknown) {
-        LOGGER.err('Błąd odświażania tokenu.', `${err}`)
+        LOGGER.with('Launch State').err('Błąd odświażania tokenu.', `${err}`)
         showToast('Błąd odświeżania tokenu MC. Spróbuj ponownie za chwilę.')
 
         generalStore.setIsOpeningGame(false)
@@ -179,7 +179,7 @@ window.electron?.ipcRenderer?.on('launch:change-state', async (_event, state: st
   }
 
   if (parsedState === 'minecraft-started') {
-    LOGGER.log('Minecraft is running..')
+    LOGGER.with('Launch State').log('Minecraft is running..')
     window.discord.setActivity(`W PokeGoGo Launcher`, 'Gram..')
     await connectPlayer()
   }
@@ -189,7 +189,7 @@ window.electron?.ipcRenderer?.on('launch:change-state', async (_event, state: st
     generalStore.setIsOpeningGame(false)
     generalStore.setCurrentLog('')
     window.discord.setActivity(`W PokeGoGo Launcher`, 'Przeglądam..')
-    LOGGER.log('Minecraft is closed.')
+    LOGGER.with('Launch State').log('Minecraft is closed.')
     await disconnectPlayer()
   }
 })
@@ -218,11 +218,11 @@ onMounted(async () => {
     if (isRunning) {
       generalStore.setIsOpeningGame(true)
       generalStore.setCurrentState('minecraft-started')
-      LOGGER.log('Minecraft is running..')
+      LOGGER.with('Launch State').log('Minecraft is running..')
       window.discord.setActivity(`W PokeGoGo Launcher`, 'Gram..')
     }
   } catch {
-    LOGGER.log('Minecraft is not running.')
+    LOGGER.with('Launch State').log('Minecraft is not running.')
   }
 })
 

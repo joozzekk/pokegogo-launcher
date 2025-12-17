@@ -2,20 +2,22 @@
 import { LOGGER } from './services/logger-service'
 import useGeneralStore from './stores/general-store'
 import { DatePickerPassThroughOptions } from 'primevue'
+import useUserStore from './stores/user-store'
+import { checkMachineID } from './api/endpoints'
 
 const TOAST_DURATION = 5000
 
 export const checkUpdate = async (): Promise<void> => {
   const generalStore = useGeneralStore()
 
-  LOGGER.log('Checking for update..')
+  LOGGER.with('Updater').log('Checking for update..')
   const res = await window.electron?.ipcRenderer?.invoke(
     'update:check',
     generalStore.settings.updateChannel,
     generalStore.settings.showNotifications
   )
 
-  LOGGER.success(res ? 'Update available.' : 'App is up-to-date.')
+  LOGGER.with('Updater').success(res ? 'Update available.' : 'App is up-to-date.')
   generalStore.setUpdateAvailable(res)
 }
 
@@ -248,4 +250,15 @@ export function extractHead(skinUrl: string, size: number = 100): Promise<string
 
     img.src = skinUrl
   })
+}
+
+export const isMachineIDBanned = async (): Promise<void> => {
+  const userStore = useUserStore()
+  const generalStore = useGeneralStore()
+
+  const res = await checkMachineID(generalStore.settings.machineId)
+
+  LOGGER.log(res ? 'Machine ID is banned.' : 'Machine ID is not banned.')
+
+  userStore.hwidBanned = res
 }

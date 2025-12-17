@@ -108,7 +108,7 @@ export const useFTP = (
     progress?.updateProgress(0, 100, 'Inicjalizacja...')
 
     // Listener postępu
-    const progressHandler = (_event: any, data: { percent: number; message: string }) => {
+    const progressHandler = (_event: any, data: { percent: number; message: string }): void => {
       // updateProgress oczekuje (current, total, text)
       progress?.updateProgress(data.percent, 100, data.message)
     }
@@ -369,10 +369,10 @@ export const useFTP = (
             }
           } catch (err) {
             progress?.close('Wystąpił błąd podczas przesyłania folderu.', 'error')
-            console.error(err)
+            LOGGER.with('FTP').err((err as Error).message ?? err)
           }
         } catch (err) {
-          console.error(err)
+          LOGGER.with('FTP').err((err as Error).message ?? err)
         }
 
         return
@@ -400,7 +400,7 @@ export const useFTP = (
               showToast(`Plik ${file.name} został przesłany pomyślnie.`)
             }
           } catch (err) {
-            console.error(err)
+            LOGGER.with('FTP').err((err as Error).message ?? err)
             progress?.updateProgress(succeeded, files.length)
           }
         }
@@ -409,7 +409,7 @@ export const useFTP = (
         progress?.updateProgress(succeeded, files.length)
         progress?.close(`Wysłano pliki: ${succeeded}/${files.length}`, 'success')
       } catch (err) {
-        console.error(err)
+        LOGGER.with('FTP').err((err as Error).message ?? err)
         progress?.close('Wystąpił błąd podczas przesyłania plików.', 'error')
       }
     }

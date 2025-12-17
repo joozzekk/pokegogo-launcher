@@ -1,3 +1,4 @@
+import { fetchProfile } from '@renderer/api/endpoints'
 import { type IUser } from '@renderer/env'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
@@ -34,6 +35,12 @@ const useUserStore = defineStore('user', () => {
     router.push('/')
   }
 
+  const updateProfile = async (): Promise<void> => {
+    const profile = await fetchProfile()
+
+    setUser(profile)
+  }
+
   return {
     user,
     hwidBanned,
@@ -42,7 +49,8 @@ const useUserStore = defineStore('user', () => {
     setUser,
     resetUser,
     logout,
-    removeSavedAccount
+    removeSavedAccount,
+    updateProfile
   }
 })
 

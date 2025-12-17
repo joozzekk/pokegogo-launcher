@@ -36,15 +36,11 @@ async function loadCustomOrFallbackHead(): Promise<void> {
   const customSkinSource = `${apiURL}/skins/image/${currentName}`
 
   try {
-    LOGGER.log(`Próbuję wyciąć głowę z niestandardowego API dla gracza: ${currentName}`)
-
     const base64Head = await extractHead(customSkinSource, 100)
     skinHeadUrl.value = base64Head
+    LOGGER.with('SkinAPI').success(`Custom skin is loaded for ${currentName}.`)
   } catch (error) {
-    LOGGER.err(
-      'Błąd cięcia/ładowania skina z API. Używam fallbacku Minotar.',
-      (error as Error)?.message
-    )
+    LOGGER.with('SkinAPI').err('Error during skin load.', (error as Error)?.message)
 
     skinHeadUrl.value = fallbackHeadUrl.value
   }
@@ -53,11 +49,11 @@ async function loadCustomOrFallbackHead(): Promise<void> {
 watch(
   playerName,
   (newPlayerName, oldPlayerName) => {
-    LOGGER.log(
-      `Zauważono zmianę nazwy gracza z "${oldPlayerName}" na "${newPlayerName}". Ładuję skina...`
-    )
+    if (oldPlayerName?.length) {
+      LOGGER.with('SkinAPI').log(`Nickname has changed to ${newPlayerName}. Loading skin...`)
 
-    loadCustomOrFallbackHead()
+      loadCustomOrFallbackHead()
+    }
   },
   {
     immediate: true

@@ -1,15 +1,13 @@
 <!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <script lang="ts" setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import LaunchButton from '@renderer/components/buttons/LaunchButton.vue'
 import useGeneralStore from '@renderer/stores/general-store'
 import { getServerStatus } from '@renderer/api/endpoints'
 import { LOGGER } from '@renderer/services/logger-service'
 import { format, parseISO } from 'date-fns'
-import useUserStore from '@renderer/stores/user-store'
 
 const url = import.meta.env.RENDERER_VITE_API_URL
-const userStore = useUserStore()
 const generalStore = useGeneralStore()
 const time = ref<number>(0)
 const serverStatus = ref<{ players: { online: number } } | null>(null)
@@ -17,10 +15,6 @@ const serverStatus = ref<{ players: { online: number } } | null>(null)
 const props = defineProps<{
   events: any[]
 }>()
-
-const playerName = computed(() => {
-  return userStore.user?.nickname ?? 'Guest'
-})
 
 const serverStatusInterval = ref<unknown>()
 
@@ -38,86 +32,13 @@ const setServerStatus = async (): Promise<void> => {
   serverStatus.value = await getServerStatus(time)
 }
 
-const skinHeadUrl = ref<string | undefined>(undefined)
-
-const apiURL = import.meta.env.RENDERER_VITE_API_URL
-
-const HEAD_X = 8
-const HEAD_Y = 8
-const HEAD_WIDTH = 8
-const HEAD_HEIGHT = 8
-
-function extractHead(skinUrl: string, size: number = 100): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const img = new Image()
-    img.crossOrigin = 'anonymous'
-
-    img.onerror = () => {
-      reject(new Error(`Nie udało się załadować skina z URL (HTTP Error/404): ${skinUrl}`))
-    }
-
-    img.onload = () => {
-      const canvas = document.createElement('canvas')
-      const ctx = canvas.getContext('2d')
-
-      if (!ctx) {
-        return reject(new Error('Błąd inicjalizacji Canvas context.'))
-      }
-
-      canvas.width = size
-      canvas.height = size
-
-      ctx.imageSmoothingEnabled = false
-      ctx.drawImage(img, HEAD_X, HEAD_Y, HEAD_WIDTH, HEAD_HEIGHT, 0, 0, size, size)
-      resolve(canvas.toDataURL('image/png'))
-    }
-
-    img.src = skinUrl
-  })
-}
-
-const fallbackHeadUrl = computed(() => `https://mineskin.eu/helm/${playerName.value}/100.png`)
-
-async function loadCustomOrFallbackHead(): Promise<void> {
-  const currentName = playerName.value
-  const customSkinSource = `${apiURL}/skins/image/${currentName}`
-
-  try {
-    LOGGER.log(`Próbuję wyciąć głowę z niestandardowego API dla gracza: ${currentName}`)
-
-    const base64Head = await extractHead(customSkinSource, 100)
-    skinHeadUrl.value = base64Head
-  } catch (error) {
-    LOGGER.err(
-      'Błąd cięcia/ładowania skina z API. Używam fallbacku Minotar.',
-      (error as Error)?.message
-    )
-
-    skinHeadUrl.value = fallbackHeadUrl.value
-  }
-}
-
-watch(
-  playerName,
-  (newPlayerName, oldPlayerName) => {
-    LOGGER.log(
-      `Zauważono zmianę nazwy gracza z "${oldPlayerName}" na "${newPlayerName}". Ładuję skina...`
-    )
-
-    loadCustomOrFallbackHead()
-  },
-  {
-    immediate: true
-  }
-)
-
 onMounted(async () => {
   await setServerStatus()
 
   serverStatusInterval.value = setInterval(
     async () => {
       await setServerStatus()
-      LOGGER.log('Refreshed server status')
+      LOGGER.with('ServerStatus').log('Refreshed server status')
     },
     1000 * 60 * 5
   )

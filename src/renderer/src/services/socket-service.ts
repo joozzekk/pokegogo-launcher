@@ -1,20 +1,84 @@
 import io, { type Socket } from 'socket.io-client'
 import { LOGGER } from './logger-service'
+import api from '@renderer/utils/client'
+import { isMachineIDBanned } from '@renderer/utils'
+import useUserStore from '@renderer/stores/user-store'
 
-export const useSocket = (): Socket => {
-  const socket = io(import.meta.env.RENDERER_VITE_SOCKET_URL)
+export const useSocketService = (): {
+  connect: (uuid: string) => void
+} => {
+  let socket: Socket | null = null
+  const userStore = useUserStore()
 
-  socket.on('connect', async () => {
-    LOGGER.success('Connected to websocket.')
-  })
+  const refreshToken = async (): Promise<void> => {
+    const refreshToken = localStorage.getItem('refresh_token')
 
-  socket.on('error', (err) => {
-    LOGGER.err('Error with socket connection: ', err)
-  })
+    api
+      .post('/auth/refresh', { refreshToken })
+      .then(({ data }) => {
+        localStorage.setItem('token', data.access_token)
+        localStorage.setItem('refresh_token', data.refresh_token)
+      })
+      .catch((err) => {
+        LOGGER.with('Socket Service').log(err)
+      })
+  }
 
-  socket.on('disconnect', () => {
-    LOGGER.success('Disconected from websocket')
-  })
+  const connect = (uuid: string): void => {
+    socket = io(import.meta.env.RENDERER_VITE_SOCKET_URL, {
+      query: {
+        uuid
+      }
+    })
 
-  return socket
+    socket.on('connect', async () => {
+      LOGGER.with('Socket Service').success(`Connected to websocket with uuid: `, uuid)
+    })
+
+    socket.on('error', (err) => {
+      LOGGER.with('Socket Service').err('Error with socket connection: ', err)
+    })
+
+    socket.on('disconnect', () => {
+      LOGGER.with('Socket Service').success('Disconected from websocket')
+    })
+
+    socket.on('player:banned', async (data) => {
+      await isMachineIDBanned()
+      const isCurrentPlayerBanned =
+        userStore.user?.machineId === data.uuid || userStore.user?.uuid === data.uuid
+
+      if (isCurrentPlayerBanned) {
+        await refreshToken()
+        await userStore.updateProfile()
+        location.reload()
+      }
+    })
+
+    socket.on('player:unbanned', async (data) => {
+      await isMachineIDBanned()
+      const isCurrentPlayerUnbanned =
+        userStore.user?.machineId === data.uuid || userStore.user?.uuid === data.uuid
+
+      if (isCurrentPlayerUnbanned) {
+        await refreshToken()
+        await userStore.updateProfile()
+        location.reload()
+      }
+    })
+
+    socket.on('player:update-profile', async (data) => {
+      const isCurrentPlayer = userStore.user?.uuid === data.uuid
+
+      if (isCurrentPlayer) {
+        await refreshToken()
+        await userStore.updateProfile()
+        location.reload()
+      }
+    })
+  }
+
+  return {
+    connect
+  }
 }

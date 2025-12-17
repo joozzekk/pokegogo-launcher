@@ -4,6 +4,7 @@ import { useFTP, FTPFile } from '@renderer/services/ftp-service'
 import { format } from 'date-fns'
 import { computed, onMounted, ref } from 'vue'
 import { showProgressToast } from '@renderer/utils'
+import { LOGGER } from '@renderer/services/logger-service'
 
 const showSearchInput = ref<boolean>(false)
 const searchQuery = ref<string>('')
@@ -57,7 +58,7 @@ const toggleImportant = async (file: FTPFile): Promise<void> => {
     await getFolderContent()
     progress?.close('Pomyślnie zaktualizowano.', 'success')
   } catch (e) {
-    console.error(e)
+    LOGGER.with('FTP').err((e as Error).message)
     progress?.close('Błąd aktualizacji.', 'error')
   }
 }
