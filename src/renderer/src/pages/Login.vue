@@ -334,7 +334,7 @@ const removeSavedAccount = (user: Partial<IUser & { url: string }>): void => {
         >
           <button
             class="absolute top-2 right-2 hover:cursor-pointer"
-            @click="removeSavedAccount(savedAccount)"
+            @click.stop="removeSavedAccount(savedAccount)"
           >
             <i class="fa fa-trash" />
           </button>
