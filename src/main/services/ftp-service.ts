@@ -62,11 +62,12 @@ export const useFTPService = (): {
     const c = new Client()
 
     try {
+
       await c.connect({
-        host: '57.128.211.104',
+        host: import.meta.env.VITE_FTP_HOST,
         port: 22,
-        username: 'ftpclient',
-        password: 'PokeAdmin321b!#',
+        username: import.meta.env.VITE_FTP_USER,
+        password: import.meta.env.VITE_FTP_PASS,
         readyTimeout: 30000,
         keepaliveInterval: 2000,
         keepaliveCountMax: 5

@@ -7,19 +7,18 @@ import { createTray } from './services/tray-service'
 import { ensureDir } from './utils'
 import { useFTPService } from './services/ftp-service'
 import { join } from 'path'
-import discordRpc, { type RP } from 'discord-rich-presence' // <-- Import biblioteki
+import discordRpc, { type RP } from 'discord-rich-presence'
 import Logger from 'electron-log'
 
-// Twój Client ID
-const CLIENT_ID = '1429151369172090960'
+const CLIENT_ID = import.meta.env.VITE_DISCORD_CLIENT_ID
 let rpc: RP | null = null
 
 function initDiscord(): void {
   try {
     rpc = discordRpc(CLIENT_ID)
 
-    rpc.on('error', (err: any) => {
-      Logger.warn('Discord RPC napotkał błąd (może Discord jest wyłączony?):', err.message)
+    rpc.on('error', (err: string) => {
+      Logger.warn('Discord RPC napotkał błąd (może Discord jest wyłączony?):', err)
     })
 
     rpc.on('connected', () => {
