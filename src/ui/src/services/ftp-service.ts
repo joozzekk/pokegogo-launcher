@@ -2,6 +2,7 @@
 import { showProgressToast, showToast, traverseFileTree } from '@ui/utils'
 import { Ref, ref } from 'vue'
 import { LOGGER } from './logger-service'
+import { FTPChannel } from '@ui/types/ftp'
 
 interface FTPService {
   currentFileName: Ref<string>
@@ -59,7 +60,7 @@ export const useFTP = (
 
     try {
       // Backend zwraca teraz listę wzbogaconą o flagi i statusy zip
-      const res = await window.electron.ipcRenderer?.invoke('ftp:list-files', folderPath)
+      const res = await window.electron.ipcRenderer?.invoke(FTPChannel.LIST_FILES, folderPath)
 
       currentFolder.value = folderPath
       // Sortowanie: katalogi najpierw, potem pliki
@@ -85,7 +86,7 @@ export const useFTP = (
   const createFolder = async (newFolder: string): Promise<void> => {
     try {
       const res = await window.electron.ipcRenderer?.invoke(
-        'ftp:create-folder',
+        FTPChannel.CREATE_FOLDER,
         currentFolder.value,
         newFolder
       )
@@ -115,9 +116,9 @@ export const useFTP = (
 
     try {
       // Podpięcie listenera
-      window.electron.ipcRenderer?.on('ftp:zip-progress', progressHandler)
+      window.electron.ipcRenderer?.on(FTPChannel.ZIP_PROGRESS, progressHandler)
 
-      await window.electron.ipcRenderer?.invoke('ftp:zip-folder', fullPath)
+      await window.electron.ipcRenderer?.invoke(FTPChannel.ZIP_FOLDER, fullPath)
 
       // Sukces
       progress?.updateProgress(100, 100, 'Gotowe!')
@@ -149,13 +150,16 @@ export const useFTP = (
 
       progress?.updateProgress(0, resolvedFiles.length, 'Przesyłanie plików...')
 
-      window.electron.ipcRenderer?.on('ftp:upload-folder-progress', (_event, completed: number) => {
-        progress?.updateProgress(completed, resolvedFiles.length, 'Przesyłanie plików...')
-      })
+      window.electron.ipcRenderer?.on(
+        FTPChannel.UPLOAD_FOLDER_PROGRESS,
+        (_event, completed: number) => {
+          progress?.updateProgress(completed, resolvedFiles.length, 'Przesyłanie plików...')
+        }
+      )
 
       try {
         const res = await window.electron.ipcRenderer?.invoke(
-          'ftp:upload-folder',
+          FTPChannel.UPLOAD_FOLDER,
           currentFolder.value,
           resolvedFiles,
           0
@@ -209,7 +213,7 @@ export const useFTP = (
         const file = files[i]
         try {
           const res = await window.electron.ipcRenderer?.invoke(
-            'ftp:upload-file',
+            FTPChannel.UPLOAD_FILE,
             currentFolder.value,
             await file.arrayBuffer(),
             file.name
@@ -234,9 +238,8 @@ export const useFTP = (
   const removeFile = async (name: string): Promise<void> => {
     const progress = showProgressToast(`Usuwanie...`)
     try {
-      // Backend obsługuje usuwanie rekurencyjne i manifest
       const res = await window.electron.ipcRenderer?.invoke(
-        'ftp:remove-file',
+        FTPChannel.REMOVE_FILE,
         currentFolder.value,
         name
       )
@@ -255,7 +258,7 @@ export const useFTP = (
     currentFileName.value = name
     try {
       const res = await window.electron.ipcRenderer?.invoke(
-        'ftp:read-file',
+        FTPChannel.READ_FILE,
         currentFolder.value,
         name
       )
@@ -270,7 +273,7 @@ export const useFTP = (
     currentFileName.value = name
     try {
       const base64Content: string = await window.electron.ipcRenderer?.invoke(
-        'ftp:read-image',
+        FTPChannel.READ_IMAGE,
         currentFolder.value,
         name
       )
@@ -292,7 +295,7 @@ export const useFTP = (
       const progress = showProgressToast(`Zapisuję plik...`)
 
       const res = await window.electron.ipcRenderer?.invoke(
-        'ftp:upload-file',
+        FTPChannel.UPLOAD_FILE,
         currentFolder.value,
         fileBuffer,
         currentFileName.value
@@ -338,7 +341,7 @@ export const useFTP = (
           progress?.updateProgress(0, resolvedFiles.length, 'Przesyłanie plików...')
 
           window.electron.ipcRenderer?.on(
-            'ftp:upload-folder-progress',
+            FTPChannel.UPLOAD_FOLDER_PROGRESS,
             (_event, completed: number) => {
               progress?.updateProgress(completed, resolvedFiles.length, 'Przesyłanie plików...')
             }
@@ -346,7 +349,7 @@ export const useFTP = (
 
           try {
             const res = await window.electron.ipcRenderer?.invoke(
-              'ftp:upload-folder',
+              FTPChannel.UPLOAD_FOLDER,
               currentFolder.value,
               resolvedFiles,
               0
@@ -388,7 +391,7 @@ export const useFTP = (
         for (const file of files) {
           try {
             const res = await window.electron.ipcRenderer?.invoke(
-              'ftp:upload-file',
+              FTPChannel.UPLOAD_FILE,
               currentFolder.value,
               await file.arrayBuffer(),
               file.name

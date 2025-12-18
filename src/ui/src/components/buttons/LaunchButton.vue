@@ -18,7 +18,6 @@ const states = reactive({
   'minecraft-closed': 'Minecraft został zamknięty.'
 })
 
-const accountType = localStorage.getItem('LOGIN_TYPE')
 const userStore = useUserStore()
 
 const isBanned = computed(() => {
@@ -62,7 +61,7 @@ const handleLaunchGame = async (e: Event): Promise<void> => {
 
   let mcToken = localStorage.getItem('mcToken')
 
-  if (accountType === 'microsoft' && mcToken?.includes('exp')) {
+  if (userStore.user?.accountType === 'microsoft' && mcToken?.includes('exp')) {
     LOGGER.with('Launch State').log('Weryfikacja tokenu MC..')
     const exp = parseInt(JSON.parse(mcToken as string).exp)
     const now = new Date().getTime()
@@ -96,7 +95,7 @@ const handleLaunchGame = async (e: Event): Promise<void> => {
   }
 
   const res = await window.electron?.ipcRenderer?.invoke('launch:game', {
-    token: accountType === 'microsoft' ? mcToken : JSON.stringify(userStore.user),
+    token: userStore.user?.accountType === 'microsoft' ? mcToken : JSON.stringify(userStore.user),
     accessToken: localStorage.getItem('token'),
     javaVersion: '21',
     isDev: generalStore.settings.updateChannel === 'dev',
@@ -106,7 +105,7 @@ const handleLaunchGame = async (e: Event): Promise<void> => {
       displayMode: generalStore.settings.displayMode,
       gameMode: generalStore.settings.gameMode
     },
-    accountType
+    accountType: userStore.user?.accountType
   })
 
   if (res) {

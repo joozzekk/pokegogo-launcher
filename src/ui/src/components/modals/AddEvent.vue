@@ -7,6 +7,7 @@ import { helpers, required } from '@vuelidate/validators'
 import { parseISO } from 'date-fns'
 import DatePicker from 'primevue/datepicker'
 import { computed, reactive, ref } from 'vue'
+import { FTPChannel } from '@ui/types/ftp'
 
 const url = import.meta.env.RENDERER_VITE_API_URL
 const modalVisible = ref(false)
@@ -83,7 +84,7 @@ const addEvent = async (): Promise<void> => {
 
   if (preview.value)
     uploadResult = await window.electron.ipcRenderer?.invoke(
-      'ftp:upload-file',
+      FTPChannel.UPLOAD_FILE,
       'events',
       await photoFile.value.arrayBuffer(),
       photoFile.value.name
@@ -108,8 +109,8 @@ const editEvent = async (): Promise<void> => {
 
   let uploadResult = true
   if (preview.value)
-    await window.electron.ipcRenderer?.invoke(
-      'ftp:upload-file',
+    uploadResult = await window.electron.ipcRenderer?.invoke(
+      FTPChannel.UPLOAD_FILE,
       'events',
       await photoFile.value.arrayBuffer(),
       photoFile.value.name

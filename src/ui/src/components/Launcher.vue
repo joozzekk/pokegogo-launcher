@@ -14,7 +14,6 @@ import { initAnimations } from '@ui/assets/scripts/animations'
 
 const refreshInterval = ref<any>(null)
 const generalStore = useGeneralStore()
-const accountType = localStorage.getItem('LOGIN_TYPE')
 const userStore = useUserStore()
 const { connect } = useSocketService()
 
@@ -25,7 +24,7 @@ onMounted(async () => {
 
   initAnimations()
 
-  if (accountType === 'microsoft') {
+  if (userStore.user?.accountType === 'microsoft') {
     refreshInterval.value = setInterval(
       async () => {
         const res = await refreshMicrosoftToken(
@@ -47,7 +46,7 @@ onMounted(async () => {
 
   if (userStore.user) {
     await updateProfileData({
-      accountType: accountType ?? ''
+      accountType: userStore.user?.accountType ?? ''
     })
 
     await updateMachineData({

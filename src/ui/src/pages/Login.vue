@@ -12,21 +12,17 @@ import { useRouter } from 'vue-router'
 import { useVuelidate } from '@vuelidate/core'
 import { email, helpers, maxLength, minLength, required } from '@vuelidate/validators'
 import { Message } from 'primevue'
+import { AccountType, ActiveTab } from '@ui/types/app'
 
 const apiURL = import.meta.env.RENDERER_VITE_API_URL
 
 const userStore = useUserStore()
 const router = useRouter()
 
-enum ActiveTab {
-  LOGIN = 'login',
-  REGISTER = 'register'
-}
-
 const appState = reactive({
   loading: false,
   loadingMessage: '',
-  activeTab: ActiveTab.LOGIN as ActiveTab
+  activeTab: ActiveTab.LOGIN
 })
 
 const formState = reactive({
@@ -107,8 +103,10 @@ async function loadCustomOrFallbackHead(playerName: string): Promise<void> {
   }
 }
 
+const savedAccounts = computed(() => userStore.savedAccounts)
+
 watch(
-  userStore.savedAccounts,
+  () => userStore.savedAccounts,
   (newValue) => {
     newValue.forEach((user) => {
       loadCustomOrFallbackHead(user.nickname!)
@@ -125,14 +123,14 @@ const handleBackendLogin = async (): Promise<void> => {
   if (access_token && refresh_token) {
     localStorage.setItem('token', access_token)
     localStorage.setItem('refresh_token', refresh_token)
-    localStorage.setItem('LOGIN_TYPE', 'backend')
 
     const savedAccounts = JSON.parse(localStorage.getItem('savedAccounts') ?? '[]')
 
     if (
       !savedAccounts.find(
         (savedAccount: any) =>
-          savedAccount.nickname === formState.nick && savedAccount.accountType === 'backend'
+          savedAccount.nickname === formState.nick &&
+          savedAccount.accountType === AccountType.BACKEND
       )
     )
       localStorage.setItem(
@@ -142,7 +140,7 @@ const handleBackendLogin = async (): Promise<void> => {
           {
             nickname: formState.nick,
             password: formState.password,
-            accountType: 'backend'
+            accountType: AccountType.BACKEND
           }
         ])
       )
@@ -167,14 +165,14 @@ const handleRegister = async (): Promise<void> => {
     if (access_token && refresh_token) {
       localStorage.setItem('token', access_token)
       localStorage.setItem('refresh_token', refresh_token)
-      localStorage.setItem('LOGIN_TYPE', 'backend')
 
       const savedAccounts = JSON.parse(localStorage.getItem('savedAccounts') ?? '[]')
 
       if (
         !savedAccounts.find(
           (savedAccount: any) =>
-            savedAccount.nickname === formState.email && savedAccount.accountType === 'backend'
+            savedAccount.nickname === formState.email &&
+            savedAccount.accountType === AccountType.BACKEND
         )
       )
         localStorage.setItem(
@@ -184,7 +182,7 @@ const handleRegister = async (): Promise<void> => {
             {
               nickname: formState.nick,
               password: formState.password,
-              accountType: 'backend'
+              accountType: AccountType.BACKEND
             }
           ])
         )
@@ -246,7 +244,6 @@ const handleMicrosoftLogin = async (accountName?: string): Promise<void> => {
     localStorage.setItem('mcToken', mcToken)
     localStorage.setItem('token', access_token)
     localStorage.setItem('refresh_token', refresh_token)
-    localStorage.setItem('LOGIN_TYPE', 'microsoft')
 
     const savedAccounts = JSON.parse(localStorage.getItem('savedAccounts') ?? '[]')
 
@@ -292,7 +289,7 @@ const handleLogin = async (
         return
       }
 
-      if (savedAccount.accountType === 'backend') {
+      if (savedAccount.accountType === AccountType.BACKEND) {
         appState.loading = true
         appState.loadingMessage = `Logowanie do ${savedAccount.nickname}..`
         await handleBackendLogin()
@@ -365,7 +362,7 @@ const removeSavedAccount = (user: Partial<IUser & { url: string }>): void => {
 
         <div class="flex gap-2">
           <div
-            v-for="savedAccount in userStore.savedAccounts"
+            v-for="savedAccount in savedAccounts"
             :key="savedAccount.nickname"
             class="relative px-4 py-2 flex items-center flex-col gap-1 border border-[var(--primary)]/20 rounded-md backdrop-blur-2xl w-1/3 hover:bg-[var(--primary-shop)] hover:text-white hover:cursor-pointer"
             @click="handleLogin(savedAccount)"

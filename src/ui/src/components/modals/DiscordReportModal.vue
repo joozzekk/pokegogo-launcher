@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import useGeneralStore from '@ui/stores/general-store'
 import useUserStore from '@ui/stores/user-store'
+import { FTPChannel } from '@ui/types/ftp'
 import { showToast } from '@ui/utils'
 import { useVuelidate } from '@vuelidate/core'
 import { helpers, maxLength, minLength, required } from '@vuelidate/validators'
@@ -50,13 +51,13 @@ const handleSubmit = async (): Promise<void> => {
     return
   }
 
-  const logsFile = await window?.electron?.ipcRenderer?.invoke('ftp:get-logs')
+  const logsFile = await window?.electron?.ipcRenderer?.invoke(FTPChannel.GET_LOGS)
   const logsBlob = new Blob([logsFile], { type: 'text/plain' })
 
   let mcLogsFile, mcLogsBlob
 
   try {
-    mcLogsFile = await window?.electron?.ipcRenderer?.invoke('ftp:get-logs', 'minecraft')
+    mcLogsFile = await window?.electron?.ipcRenderer?.invoke(FTPChannel.GET_LOGS, 'minecraft')
     mcLogsBlob = new Blob([mcLogsFile], { type: 'text/plain' })
   } catch {
     /* ignore */

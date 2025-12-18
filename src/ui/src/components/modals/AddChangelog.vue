@@ -1,6 +1,7 @@
 <!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <script lang="ts" setup>
 import { createChangelog, updateChangelog } from '@ui/api/endpoints'
+import { FTPChannel } from '@ui/types/ftp'
 import { showToast } from '@ui/utils'
 import useVuelidate from '@vuelidate/core'
 import { helpers, required } from '@vuelidate/validators'
@@ -81,7 +82,7 @@ const addChangelog = async (): Promise<void> => {
 
   if (preview.value)
     uploadResult = await window.electron.ipcRenderer?.invoke(
-      'ftp:upload-file',
+      FTPChannel.UPLOAD_FILE,
       'changelog',
       await photoFile.value.arrayBuffer(),
       photoFile.value.name
@@ -106,8 +107,8 @@ const editChangelog = async (): Promise<void> => {
 
   let uploadResult = true
   if (preview.value)
-    await window.electron.ipcRenderer?.invoke(
-      'ftp:upload-file',
+    uploadResult = await window.electron.ipcRenderer?.invoke(
+      FTPChannel.UPLOAD_FILE,
       'changelog',
       await photoFile.value.arrayBuffer(),
       photoFile.value.name

@@ -1,6 +1,7 @@
 <!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <script lang="ts" setup>
 import { createItem, updateItem } from '@ui/api/endpoints'
+import { FTPChannel } from '@ui/types/ftp'
 import { showToast } from '@ui/utils'
 import useVuelidate from '@vuelidate/core'
 import { helpers, required } from '@vuelidate/validators'
@@ -161,7 +162,7 @@ const addItem = async (): Promise<void> => {
 
   if (preview.value)
     uploadResult = await window.electron.ipcRenderer?.invoke(
-      'ftp:upload-file',
+      FTPChannel.UPLOAD_FILE,
       'items',
       await photoFile.value.arrayBuffer(),
       photoFile.value.name
@@ -189,8 +190,8 @@ const editItem = async (): Promise<void> => {
 
   let uploadResult = true
   if (preview.value)
-    await window.electron.ipcRenderer?.invoke(
-      'ftp:upload-file',
+    uploadResult = await window.electron.ipcRenderer?.invoke(
+      FTPChannel.UPLOAD_FILE,
       'items',
       await photoFile.value.arrayBuffer(),
       photoFile.value.name

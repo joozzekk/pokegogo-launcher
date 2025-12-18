@@ -6,6 +6,7 @@ import VerifyFilesModal from '@ui/components/modals/VerifyFilesModal.vue'
 import SkinViewer from '@ui/components/SkinViewer.vue'
 import useGeneralStore from '@ui/stores/general-store'
 import useUserStore from '@ui/stores/user-store'
+import { AccountType } from '@ui/types/app'
 import { calculateValueFromPercentage, checkUpdate, MIN_RAM, showToast } from '@ui/utils'
 import useVuelidate from '@vuelidate/core'
 import { helpers, required, sameAs } from '@vuelidate/validators'
@@ -13,7 +14,6 @@ import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 
 const userStore = useUserStore()
 const generalStore = useGeneralStore()
-const accountType = localStorage.getItem('LOGIN_TYPE')
 
 const state = reactive({
   email: userStore.user?.email ?? '',
@@ -494,7 +494,7 @@ onUnmounted(() => {
             </button>
           </div>
 
-          <template v-if="accountType === 'backend'">
+          <template v-if="userStore.user?.accountType === AccountType.BACKEND">
             <label class="mt-[11px]">Zmiana hasła</label>
             <div class="form-group" :class="{ '!mb-5': v$.old.$error }">
               <div class="input-wrapper">

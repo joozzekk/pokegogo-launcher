@@ -3,12 +3,6 @@ import { themes } from '../theme/themes'
 import { watch } from 'vue'
 
 export function initAnimations(): void {
-  document.querySelectorAll<HTMLElement>('button, .nav-item, .news-item').forEach((element) => {
-    element.addEventListener('mouseenter', () => {
-      element.style.transition = 'all 0.3s ease'
-    })
-  })
-
   const observer = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
       if (entry.isIntersecting) {

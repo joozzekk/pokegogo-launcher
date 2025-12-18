@@ -10,7 +10,6 @@ const useUserStore = defineStore('user', () => {
   )
   const hwidBanned = ref<boolean>(false)
   const user = ref(null as IUser | null)
-  const accountType = localStorage.getItem('LOGIN_TYPE')
   const router = useRouter()
 
   const setUser = (newUser: IUser): void => {
@@ -28,7 +27,6 @@ const useUserStore = defineStore('user', () => {
 
   const logout = async (): Promise<void> => {
     resetUser()
-    localStorage.removeItem('LOGIN_TYPE')
     localStorage.removeItem('token')
     localStorage.removeItem('refresh_token')
     localStorage.removeItem('mcToken')
@@ -45,7 +43,6 @@ const useUserStore = defineStore('user', () => {
     user,
     hwidBanned,
     savedAccounts,
-    accountType,
     setUser,
     resetUser,
     logout,

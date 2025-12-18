@@ -5,6 +5,7 @@ import { format } from 'date-fns'
 import { computed, onMounted, ref } from 'vue'
 import { showProgressToast } from '@ui/utils'
 import { LOGGER } from '@ui/services/logger-service'
+import { FTPChannel } from '@ui/types/ftp'
 
 const showSearchInput = ref<boolean>(false)
 const searchQuery = ref<string>('')
@@ -33,7 +34,6 @@ const {
   loadingStatuses
 } = useFTP(inputFile, inputFolder)
 
-// Funkcja sprawdzająca czy element jest ważny na podstawie danych z API
 const fileIsImportant = (file: FTPFile): boolean => {
   return file.flag === 'important'
 }
@@ -41,15 +41,11 @@ const fileIsImportant = (file: FTPFile): boolean => {
 const toggleImportant = async (file: FTPFile): Promise<void> => {
   const newFlag = file.flag === 'important' ? 'ignore' : 'important'
 
-  // Używamy tego samego endpointu dla plików i folderów,
-  // backend ManifestManager poradzi sobie z kluczem ścieżki
   const progress = showProgressToast(`Aktualizuję status...`)
 
   try {
-    // Uwaga: 'ftp:set-hash-flag' w nowym backendzie obsługuje po prostu ścieżkę,
-    // niezależnie czy to plik czy folder (entry w jsonie)
     await window.electron.ipcRenderer?.invoke(
-      'ftp:set-hash-flag',
+      FTPChannel.SET_HASH_FLAG,
       currentFolder.value,
       file.name,
       newFlag

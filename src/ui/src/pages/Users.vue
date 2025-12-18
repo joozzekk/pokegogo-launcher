@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { changeUpdateChannel, fetchAllPlayers } from '@ui/api/endpoints'
+import { changeUpdateChannel, clearStorage, fetchAllPlayers } from '@ui/api/endpoints'
 import BanPlayerModal from '@ui/components/modals/BanPlayerModal.vue'
 import PasswordResetConfirm from '@ui/components/modals/PasswordResetConfirm.vue'
 import { IUser } from '@ui/env'
@@ -136,6 +136,18 @@ const getUserRole = (player: IUser): string => {
       return 'Technik'
     default:
       return 'Gracz'
+  }
+}
+
+const handleClearStorage = async (player: IUser): Promise<void> => {
+  try {
+    const res = await clearStorage(player.uuid)
+
+    if (res) {
+      showToast('Wyczyszczono pamięć gracza ' + player.nickname)
+    }
+  } catch {
+    showToast('Wyczyszczenie pamięci się nie powiodło.')
   }
 }
 
@@ -283,6 +295,7 @@ onUnmounted(() => {
                       <button v-else class="unban-btn" @click="handleLauncherUnban(player)">
                         <i :class="'fas fa-rotate-left'"></i>
                       </button>
+
                       <button
                         class="nav-icon"
                         @click="toggleUpdateChannel(player.nickname, !player.enableUpdateChannel)"
@@ -307,6 +320,13 @@ onUnmounted(() => {
                             : 'fas fa-chevron-down'
                         "
                       ></i>
+                    </button>
+                    <button
+                      v-if="['admin', 'technik', 'mod'].includes(userStore.user.role)"
+                      class="nav-icon"
+                      @click="handleClearStorage(player)"
+                    >
+                      <i :class="'fas fa-trash'"></i>
                     </button>
                   </div>
                 </td>

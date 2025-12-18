@@ -1,7 +1,7 @@
 import io, { type Socket } from 'socket.io-client'
 import { LOGGER } from './logger-service'
 import api from '@ui/utils/client'
-import { isMachineIDBanned } from '@ui/utils'
+import { isMachineIDBanned, showToast } from '@ui/utils'
 import useUserStore from '@ui/stores/user-store'
 
 export const useSocketService = (): {
@@ -53,6 +53,12 @@ export const useSocketService = (): {
         await userStore.updateProfile()
         location.reload()
       }
+    })
+
+    socket.on('player:clear-storage', async () => {
+      localStorage.clear()
+      userStore.logout()
+      showToast('Administrator zresetował zapisane ustawienia launchera', 'success')
     })
 
     socket.on('player:unbanned', async (data) => {

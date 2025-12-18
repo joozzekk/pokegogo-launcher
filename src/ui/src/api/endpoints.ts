@@ -244,3 +244,9 @@ export const changeCustomSkin = async (body: any): Promise<any> => {
 
   return res.data
 }
+
+export const clearStorage = async (uuid: string): Promise<any> => {
+  const res = await api.post(`/users/clear-storage/${uuid}`)
+
+  return res.data
+}
