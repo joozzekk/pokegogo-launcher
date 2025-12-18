@@ -5,7 +5,7 @@ import Background from '@renderer/components/Background.vue'
 import useUserStore from '@renderer/stores/user-store'
 import { computed, reactive, watch } from 'vue'
 import { IUser } from '@renderer/env'
-import { extractHead } from '@renderer/utils'
+import { extractHead, showToast } from '@renderer/utils'
 import { LOGGER } from '@renderer/services/logger-service'
 import { fetchLogin, fetchRegister, updateBackendUserFromMicrosoft } from '@renderer/api/endpoints'
 import { useRouter } from 'vue-router'
@@ -180,69 +180,78 @@ const handleRegister = async (): Promise<void> => {
 }
 
 const handleMicrosoftLogin = async (accountName?: string): Promise<void> => {
-  let loginData: { msToken: string; mcToken: string } | null = null
+  try {
+    let loginData: { msToken: string; mcToken: string } | null = null
 
-  if (accountName?.length) {
-    const storedMsToken = localStorage.getItem(`msToken:${accountName?.toLowerCase()}`)
+    if (accountName?.length) {
+      const storedMsToken = localStorage.getItem(`msToken:${accountName?.toLowerCase()}`)
 
-    if (storedMsToken) {
-      try {
-        LOGGER.log('Próba cichego logowania (Refresh Token)...')
-        loginData = await window.electron?.ipcRenderer?.invoke('auth:refresh-token', storedMsToken)
-      } catch {
-        LOGGER.err(
-          'Ciche logowanie nieudane, token mógł wygasnąć. Przełączanie na zwykłe logowanie.'
-        )
+      if (storedMsToken) {
+        try {
+          LOGGER.log('Próba cichego logowania (Refresh Token)...')
+          loginData = await window.electron?.ipcRenderer?.invoke(
+            'auth:refresh-token',
+            storedMsToken
+          )
+        } catch {
+          LOGGER.err(
+            'Ciche logowanie nieudane, token mógł wygasnąć. Przełączanie na zwykłe logowanie.'
+          )
+        }
       }
     }
-  }
 
-  if (!loginData) {
-    LOGGER.log('Otwieranie okna logowania Microsoft...')
-    loginData = await window.electron?.ipcRenderer?.invoke('auth:login')
-  }
+    if (!loginData) {
+      LOGGER.log('Otwieranie okna logowania Microsoft...')
+      loginData = await window.electron?.ipcRenderer?.invoke('auth:login')
+    }
 
-  if (!loginData) throw new Error('Błąd pobierania danych logowania')
+    if (!loginData) throw new Error('Błąd pobierania danych logowania')
 
-  const { msToken, mcToken } = loginData
-  const data = JSON.parse(mcToken)
-  const profile = data?.profile
+    const { msToken, mcToken } = loginData
+    const data = JSON.parse(mcToken)
+    const profile = data?.profile
 
-  const user = await updateBackendUserFromMicrosoft({
-    nickname: profile?.name,
-    mcid: profile?.id
-  })
+    const user = await updateBackendUserFromMicrosoft({
+      nickname: profile?.name,
+      mcid: profile?.id
+    })
 
-  const { access_token, refresh_token } = await fetchLogin(user.nickname, user.uuid, true)
+    const { access_token, refresh_token } = await fetchLogin(user.nickname, user.uuid, true)
 
-  localStorage.setItem(`msToken:${user.nickname?.toLowerCase()}`, msToken)
-  localStorage.setItem('mcToken', mcToken)
-  localStorage.setItem('token', access_token)
-  localStorage.setItem('refresh_token', refresh_token)
-  localStorage.setItem('LOGIN_TYPE', 'microsoft')
+    localStorage.setItem(`msToken:${user.nickname?.toLowerCase()}`, msToken)
+    localStorage.setItem('mcToken', mcToken)
+    localStorage.setItem('token', access_token)
+    localStorage.setItem('refresh_token', refresh_token)
+    localStorage.setItem('LOGIN_TYPE', 'microsoft')
 
-  const prevAccounts = JSON.parse(localStorage.getItem('prevAccounts') ?? '[]')
+    const prevAccounts = JSON.parse(localStorage.getItem('prevAccounts') ?? '[]')
 
-  if (
-    !prevAccounts.find(
-      (savedAccount: any) =>
-        savedAccount.nickname === user.nickname && savedAccount.accountType === 'microsoft'
+    if (
+      !prevAccounts.find(
+        (savedAccount: any) =>
+          savedAccount.nickname === user.nickname && savedAccount.accountType === 'microsoft'
+      )
     )
-  )
-    localStorage.setItem(
-      'prevAccounts',
-      JSON.stringify([
-        ...prevAccounts,
-        {
-          nickname: user.nickname,
-          accountType: 'microsoft'
-        }
-      ])
-    )
+      localStorage.setItem(
+        'prevAccounts',
+        JSON.stringify([
+          ...prevAccounts,
+          {
+            nickname: user.nickname,
+            accountType: 'microsoft'
+          }
+        ])
+      )
 
-  router.push({
-    path: '/app/home'
-  })
+    router.push({
+      path: '/app/home'
+    })
+  } catch {
+    showToast('Wystąpił błąd podczas logowania przez Microsoft.', 'error')
+    appState.loading = false
+    appState.loadingMessage = ''
+  }
 }
 
 const handleLogin = async (
@@ -261,7 +270,7 @@ const handleLogin = async (
       appState.loading = true
       appState.loadingMessage = 'Logowanie przez Microsoft...'
       await handleMicrosoftLogin(savedAccount.nickname)
-      return // WAŻNE: Kończymy funkcję tutaj!
+      return
     }
 
     // Obsługa Backend (zapisane konto)
@@ -269,14 +278,16 @@ const handleLogin = async (
       appState.loading = true
       appState.loadingMessage = `Logowanie do ${savedAccount.nickname}..`
       await handleBackendLogin()
-      return // WAŻNE: Kończymy funkcję tutaj!
+      return
     }
   }
 
-  // ---------------------------------------------------------
-  // SCENARIUSZ 2: LOGOWANIE RĘCZNE (Formularz)
-  // ---------------------------------------------------------
-  // Jeśli kod dotarł tutaj, to znaczy, że użytkownik wpisał dane ręcznie i kliknął przycisk.
+  if (savedAccount?.accountType === 'microsoft') {
+    appState.loading = true
+    appState.loadingMessage = 'Logowanie przez Microsoft...'
+    await handleMicrosoftLogin(savedAccount.nickname)
+    return
+  }
 
   // 1. Uruchamiamy walidację Vuelidate
   const isValid = await login$.value.$validate()

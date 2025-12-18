@@ -58,6 +58,8 @@ watch(searchQuery, () => {
     players = players.filter((p) => p.mcid && p.mcid.length > 0)
   } else if (query === 'nohwid') {
     players = players.filter((p) => !p.machineId)
+  } else if (query === 'online') {
+    players = players.filter((p) => p.isOnline)
   } else if (query.startsWith('role:')) {
     const roleName = query.split(':')[1]
     players = players.filter((p) => p.role?.toLowerCase() === roleName)
@@ -156,7 +158,7 @@ onUnmounted(() => {
         v-model="searchQuery"
         type="text"
         class="search-input !p-2 !py-1 !pl-8 !text-[0.8rem]"
-        placeholder="Wyszukaj gracza po nicku, UUID/MCID, Machine ID lub Mac adresie (lub słowach kluczowych: banned, premium, nohwi', role:(nazwa roli)..."
+        placeholder="Wyszukaj gracza po nicku, UUID/MCID, Machine ID lub Mac adresie lub słowach kluczowych: banned, premium, nohwid, online, role:rola..."
       />
     </div>
 
@@ -181,11 +183,7 @@ onUnmounted(() => {
         <table v-else class="logs-table select-none">
           <thead>
             <tr class="font-black text-[0.9rem]">
-              <th>
-                Gracz ({{ allPlayers.filter((player) => player.isOnline)?.length }}/{{
-                  allPlayers.length
-                }})
-              </th>
+              <th>Nick</th>
               <th>Rola</th>
               <th>Status</th>
               <th>UUID/MCID</th>
@@ -400,7 +398,9 @@ onUnmounted(() => {
         </button>
 
         <span class="pag-info">
-          Strona <strong>{{ currentPage }}</strong> z {{ totalPages }}
+          Strona <strong>{{ currentPage }}</strong> z {{ totalPages }} ({{
+            paginatedPlayers.length
+          }}/{{ filteredPlayers.length }})
         </span>
 
         <button :disabled="currentPage === totalPages" class="pag-btn" @click="currentPage++">
