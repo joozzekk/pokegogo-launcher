@@ -7,10 +7,12 @@ import { basename, dirname, join, posix } from 'path'
 import { createWriteStream } from 'fs'
 import archiver from 'archiver'
 
+type FTPFileFlag = 'important' | 'ignore'
+
 interface ManifestEntry {
   type: 'file' | 'dir'
   hash?: string
-  flag?: 'important' | 'ignore'
+  flag?: FTPFileFlag
   isZipped?: boolean
   zipHash?: string
   lastSynced?: number
@@ -62,7 +64,6 @@ export const useFTPService = (): {
     const c = new Client()
 
     try {
-
       await c.connect({
         host: import.meta.env.VITE_FTP_HOST,
         port: 22,
@@ -212,8 +213,8 @@ export const useFTPService = (): {
 
     function parseHashesContent(
       data: string
-    ): Record<string, { hash: string; flag?: 'important' | 'ignore' }> {
-      const map: Record<string, { hash: string; flag?: 'important' | 'ignore' }> = {}
+    ): Record<string, { hash: string; flag?: FTPFileFlag }> {
+      const map: Record<string, { hash: string; flag?: FTPFileFlag }> = {}
       data
         .split('\n')
         .map((l) => l.trim())
@@ -222,12 +223,12 @@ export const useFTPService = (): {
           const parts = line.split(' ')
           if (parts.length < 2) return
           const last = parts[parts.length - 1]
-          let flag: 'important' | 'ignore' | undefined
+          let flag: FTPFileFlag | undefined
           let hash = parts[parts.length - 1]
           let nameParts = parts.slice(0, parts.length - 1)
 
           if (last === 'important' || last === 'ignore') {
-            flag = last as 'important' | 'ignore'
+            flag = last as FTPFileFlag
             if (parts.length < 3) return
             hash = parts[parts.length - 2]
             nameParts = parts.slice(0, parts.length - 2)
@@ -240,9 +241,7 @@ export const useFTPService = (): {
       return map
     }
 
-    function serializeHashes(
-      map: Record<string, { hash: string; flag?: 'important' | 'ignore' }>
-    ): string {
+    function serializeHashes(map: Record<string, { hash: string; flag?: FTPFileFlag }>): string {
       return Object.entries(map)
         .map(([name, v]) => `${name} ${v.hash}${v.flag ? ' ' + v.flag : ''}`)
         .join('\n')
@@ -294,9 +293,9 @@ export const useFTPService = (): {
     async function loadRemoteHashes(
       remoteDir: string,
       localTempPath: string
-    ): Promise<Record<string, { hash: string; flag?: 'important' | 'ignore' }>> {
+    ): Promise<Record<string, { hash: string; flag?: FTPFileFlag }>> {
       const client = await connect()
-      const hashes: Record<string, { hash: string; flag?: 'important' | 'ignore' }> = {}
+      const hashes: Record<string, { hash: string; flag?: FTPFileFlag }> = {}
       const remoteHashesPath = remoteJoin(remoteDir, 'hashes.txt')
 
       try {
@@ -444,7 +443,7 @@ export const useFTPService = (): {
       const client = await connect()
       const tmpHashesPath = join(process.cwd(), 'tmp', 'hashes.txt')
       let remoteMissing = false
-      const map: Record<string, { hash: string; flag?: 'important' | 'ignore' }> = {}
+      const map: Record<string, { hash: string; flag?: FTPFileFlag }> = {}
       try {
         await client.get(remoteJoin(folder, 'hashes.txt'), tmpHashesPath)
         const data = await readFile(tmpHashesPath, 'utf-8')
@@ -463,7 +462,7 @@ export const useFTPService = (): {
 
     ipcMain.handle(
       'ftp:set-hash-flag',
-      async (_, folder: string, name: string, flag: 'important' | 'ignore' | null) => {
+      async (_, folder: string, name: string, flag: FTPFileFlag | null) => {
         const client = await connect()
         const rootPath = '.'
         const relativePath = normalizePath(remoteJoin(folder, name))
@@ -597,7 +596,7 @@ export const useFTPService = (): {
         _: any,
         folder: string,
         folderName: string,
-        flag?: 'important' | 'ignore' | null,
+        flag?: FTPFileFlag | null,
         operationId?: string
       ) => {
         const client = await connect()
@@ -636,7 +635,7 @@ export const useFTPService = (): {
         const traverseAndUpdate = async (ftpPath: string): Promise<void> => {
           try {
             const list = await client.list(ftpPath)
-            const hashes: Record<string, { hash: string; flag?: 'important' | 'ignore' }> = {}
+            const hashes: Record<string, { hash: string; flag?: FTPFileFlag }> = {}
 
             try {
               await client.get(remoteJoin(ftpPath, 'hashes.txt'), tmpHashesPath)
@@ -727,8 +726,7 @@ export const useFTPService = (): {
           await traverseAndUpdate(targetPath)
 
           try {
-            const parentHashesMap: Record<string, { hash: string; flag?: 'important' | 'ignore' }> =
-              {}
+            const parentHashesMap: Record<string, { hash: string; flag?: FTPFileFlag }> = {}
             try {
               await client.get(remoteJoin(folder, 'hashes.txt'), tmpHashesPath)
               const data = await readFile(tmpHashesPath, 'utf-8')

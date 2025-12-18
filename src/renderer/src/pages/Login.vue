@@ -12,6 +12,7 @@ import { useRouter } from 'vue-router'
 import { useVuelidate } from '@vuelidate/core'
 import { email, helpers, required } from '@vuelidate/validators'
 import { Message } from 'primevue'
+import { AxiosError } from 'axios'
 
 const apiURL = import.meta.env.RENDERER_VITE_API_URL
 
@@ -139,43 +140,51 @@ const handleBackendLogin = async (): Promise<void> => {
 }
 
 const handleRegister = async (): Promise<void> => {
-  const isValid = await login$.value.$validate()
-  if (!isValid) return
+  try {
+    const isValid = await login$.value.$validate()
+    if (!isValid) return
 
-  const { access_token, refresh_token } = await fetchRegister(
-    formState.nick,
-    formState.email,
-    formState.password
-  )
-
-  if (access_token && refresh_token) {
-    localStorage.setItem('token', access_token)
-    localStorage.setItem('refresh_token', refresh_token)
-    localStorage.setItem('LOGIN_TYPE', 'backend')
-
-    const prevAccounts = JSON.parse(localStorage.getItem('prevAccounts') ?? '[]')
-
-    if (
-      !prevAccounts.find(
-        (savedAccount: any) =>
-          savedAccount.nickname === formState.email && savedAccount.accountType === 'backend'
-      )
+    const { access_token, refresh_token } = await fetchRegister(
+      formState.nick,
+      formState.email,
+      formState.password
     )
-      localStorage.setItem(
-        'prevAccounts',
-        JSON.stringify([
-          ...prevAccounts,
-          {
-            nickname: formState.nick,
-            password: formState.password,
-            accountType: 'backend'
-          }
-        ])
-      )
 
-    router.push({
-      path: '/app/home'
-    })
+    if (access_token && refresh_token) {
+      localStorage.setItem('token', access_token)
+      localStorage.setItem('refresh_token', refresh_token)
+      localStorage.setItem('LOGIN_TYPE', 'backend')
+
+      const prevAccounts = JSON.parse(localStorage.getItem('prevAccounts') ?? '[]')
+
+      if (
+        !prevAccounts.find(
+          (savedAccount: any) =>
+            savedAccount.nickname === formState.email && savedAccount.accountType === 'backend'
+        )
+      )
+        localStorage.setItem(
+          'prevAccounts',
+          JSON.stringify([
+            ...prevAccounts,
+            {
+              nickname: formState.nick,
+              password: formState.password,
+              accountType: 'backend'
+            }
+          ])
+        )
+
+      router.push({
+        path: '/app/home'
+      })
+    }
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>
+
+    showToast(error.response?.data?.message ?? 'Wystąpił błąd podczas rejestracji.', 'error')
+    appState.loading = false
+    appState.loadingMessage = ''
   }
 }
 
@@ -247,8 +256,8 @@ const handleMicrosoftLogin = async (accountName?: string): Promise<void> => {
     router.push({
       path: '/app/home'
     })
-  } catch {
-    showToast('Wystąpił błąd podczas logowania przez Microsoft.', 'error')
+  } catch (error: any) {
+    showToast(error.message ?? 'Wystąpił błąd podczas logowania przez Microsoft.', 'error')
     appState.loading = false
     appState.loadingMessage = ''
   }
@@ -257,58 +266,49 @@ const handleMicrosoftLogin = async (accountName?: string): Promise<void> => {
 const handleLogin = async (
   savedAccount: Partial<IUser & { url: string; password: string }> | null = {} // Dajemy domyślną wartość
 ): Promise<void> => {
-  // ---------------------------------------------------------
-  // SCENARIUSZ 1: LOGOWANIE Z ZAPISANEGO KONTA (Szybka ścieżka)
-  // ---------------------------------------------------------
-  if (savedAccount?.nickname) {
-    // Nadpisujemy state, aby UI pokazywało kogo logujemy
-    formState.nick = savedAccount.nickname
-    if (savedAccount.password) formState.password = savedAccount.password
+  try {
+    if (savedAccount?.nickname) {
+      formState.nick = savedAccount.nickname
+      if (savedAccount.password) formState.password = savedAccount.password
 
-    // Obsługa Microsoft
-    if (savedAccount.accountType === 'microsoft') {
+      if (savedAccount.accountType === 'microsoft') {
+        appState.loading = true
+        appState.loadingMessage = 'Logowanie przez Microsoft...'
+        await handleMicrosoftLogin(savedAccount.nickname)
+        return
+      }
+
+      if (savedAccount.accountType === 'backend') {
+        appState.loading = true
+        appState.loadingMessage = `Logowanie do ${savedAccount.nickname}..`
+        await handleBackendLogin()
+        return
+      }
+    }
+
+    if (savedAccount?.accountType === 'microsoft') {
       appState.loading = true
       appState.loadingMessage = 'Logowanie przez Microsoft...'
       await handleMicrosoftLogin(savedAccount.nickname)
       return
     }
 
-    // Obsługa Backend (zapisane konto)
-    if (savedAccount.accountType === 'backend') {
-      appState.loading = true
-      appState.loadingMessage = `Logowanie do ${savedAccount.nickname}..`
-      await handleBackendLogin()
+    const isValid = await login$.value.$validate()
+
+    if (!isValid) {
+      console.warn('Walidacja nieudana. Błędy:', login$.value.$errors)
       return
     }
-  }
 
-  if (savedAccount?.accountType === 'microsoft') {
     appState.loading = true
-    appState.loadingMessage = 'Logowanie przez Microsoft...'
-    await handleMicrosoftLogin(savedAccount.nickname)
-    return
-  }
+    appState.loadingMessage = `Logowanie..`
 
-  // 1. Uruchamiamy walidację Vuelidate
-  const isValid = await login$.value.$validate()
-
-  if (!isValid) {
-    // DIAGNOSTYKA: Wypisz błędy w konsoli, żebyś widział co jest nie tak
-    console.warn('Walidacja nieudana. Błędy:', login$.value.$errors)
-    return
-  }
-
-  // 2. Jeśli walidacja OK, logujemy
-  appState.loading = true
-  appState.loadingMessage = `Logowanie..`
-
-  try {
     await handleBackendLogin()
   } catch (error: any) {
     LOGGER.err('Błąd podczas ręcznego logowania', error)
-  } finally {
+    showToast(error.response?.data?.message ?? 'Wystąpił błąd podczas logowania.', 'error')
     appState.loading = false
-    appState.activeTab = ActiveTab.LOGIN
+    appState.loadingMessage = ''
   }
 }
 
@@ -518,7 +518,7 @@ const removeSavedAccount = (user: Partial<IUser & { url: string }>): void => {
     </template>
   </div>
 
-  <div class="toast-container"></div>
+  <div id="toastContainer" class="toast-container"></div>
   <div v-if="appState.loading" class="loading-overlay">
     <div class="loading-content">
       <div class="loading-spinner">
