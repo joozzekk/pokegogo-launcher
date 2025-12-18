@@ -12,10 +12,16 @@ const progress = ref(0)
 
 const generalStore = useGeneralStore()
 
+enum APP_STATUSES {
+  CHECK_FOR_UPDATE = 'check-for-update',
+  UPDATING = 'updating',
+  STARTING = 'starting'
+}
+
 const statuses = {
-  'check-for-update': 'Sprawdzanie aktualizacji..',
-  updating: 'Aktualizowanie..',
-  starting: 'Witamy!'
+  [APP_STATUSES.CHECK_FOR_UPDATE]: 'Sprawdzanie aktualizacji..',
+  [APP_STATUSES.UPDATING]: 'Aktualizowanie..',
+  [APP_STATUSES.STARTING]: 'Witamy!'
 }
 
 const firstFloatingBlock = computed(() => {
@@ -37,11 +43,11 @@ onMounted(() => {
 
   const runLoadingFlow = async (): Promise<void> => {
     try {
-      status.value = statuses['check-for-update']
+      status.value = statuses[APP_STATUSES.CHECK_FOR_UPDATE]
       await checkUpdate()
       progress.value = 25
 
-      status.value = statuses['updating']
+      status.value = statuses[APP_STATUSES.UPDATING]
       if (generalStore.isUpdateAvailable && generalStore.settings.autoUpdate) {
         await window.electron?.ipcRenderer?.invoke('update:start')
       }
@@ -49,7 +55,7 @@ onMounted(() => {
 
       await window.electron?.ipcRenderer?.invoke('load:start-services')
 
-      status.value = statuses['starting']
+      status.value = statuses[APP_STATUSES.STARTING]
       progress.value = 100
 
       setTimeout(() => {

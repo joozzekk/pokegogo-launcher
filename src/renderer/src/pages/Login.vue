@@ -10,9 +10,8 @@ import { LOGGER } from '@renderer/services/logger-service'
 import { fetchLogin, fetchRegister, updateBackendUserFromMicrosoft } from '@renderer/api/endpoints'
 import { useRouter } from 'vue-router'
 import { useVuelidate } from '@vuelidate/core'
-import { email, helpers, required } from '@vuelidate/validators'
+import { alphaNum, email, helpers, maxLength, minLength, required } from '@vuelidate/validators'
 import { Message } from 'primevue'
-import { AxiosError } from 'axios'
 
 const apiURL = import.meta.env.RENDERER_VITE_API_URL
 
@@ -40,10 +39,18 @@ const formState = reactive({
 const loginRules = computed(() => {
   return {
     nick: {
-      required: helpers.withMessage('Pole jest wymagane', required)
+      required: helpers.withMessage('Pole jest wymagane', required),
+      minLength: helpers.withMessage('Pole musi zawierać co najmniej 6 znaków', minLength(6)),
+      maxLength: helpers.withMessage('Pole może zawierać maksymalnie 16 znaków', maxLength(16)),
+      alphaNum: helpers.withMessage(
+        'Pole może zawierać tylko litery i cyfry, oraz znaki podkreślenia',
+        (value) => /^[a-zA-Z0-9_]+$/.test(value)
+      )
     },
     password: {
       required: helpers.withMessage('Pole jest wymagane', required),
+      minLength: helpers.withMessage('Pole musi zawierać co najmniej 8 znaków', minLength(8)),
+      maxLength: helpers.withMessage('Pole może zawierać maksymalnie 32 znaki', maxLength(32)),
       ...(appState.activeTab === ActiveTab.REGISTER
         ? {
             sameAs: helpers.withMessage(
@@ -61,6 +68,11 @@ const loginRules = computed(() => {
           },
           repeatPassword: {
             required: helpers.withMessage('Pole jest wymagane', required),
+            minLength: helpers.withMessage('Pole musi zawierać co najmniej 8 znaków', minLength(8)),
+            maxLength: helpers.withMessage(
+              'Pole może zawierać maksymalnie 32 znaki',
+              maxLength(32)
+            ),
             sameAs: helpers.withMessage(
               'Pola nie są takie same.',
               (value) => value === formState.password
@@ -179,12 +191,12 @@ const handleRegister = async (): Promise<void> => {
         path: '/app/home'
       })
     }
-  } catch (err) {
-    const error = err as AxiosError<{ message: string }>
-
-    showToast(error.response?.data?.message ?? 'Wystąpił błąd podczas rejestracji.', 'error')
-    appState.loading = false
-    appState.loadingMessage = ''
+  } catch (error: any) {
+    LOGGER.err('Błąd podczas ręcznego logowania', error)
+    showToast(
+      error.response?.data?.message ?? error.message ?? 'Wystąpił błąd podczas logowania.',
+      'error'
+    )
   }
 }
 
@@ -306,7 +318,10 @@ const handleLogin = async (
     await handleBackendLogin()
   } catch (error: any) {
     LOGGER.err('Błąd podczas ręcznego logowania', error)
-    showToast(error.response?.data?.message ?? 'Wystąpił błąd podczas logowania.', 'error')
+    showToast(
+      error.response?.data?.message ?? error.message ?? 'Wystąpił błąd podczas logowania.',
+      'error'
+    )
     appState.loading = false
     appState.loadingMessage = ''
   }
