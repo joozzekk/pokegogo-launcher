@@ -76,7 +76,7 @@ const createMainWindow = (): BrowserWindow => {
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+    mainWindow.loadFile(join(__dirname, '../ui/index.html'))
   }
 
   return mainWindow
@@ -108,7 +108,7 @@ const createLoadingWindow = (): {
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     loadingWindow.loadURL(process.env['ELECTRON_RENDERER_URL'] + '/loading')
   } else {
-    loadingWindow.loadFile(join(__dirname, '../renderer/loading.html'))
+    loadingWindow.loadFile(join(__dirname, '../ui/loading.html'))
   }
 
   loadingWindow.on('ready-to-show', () => {

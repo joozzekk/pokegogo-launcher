@@ -11,16 +11,18 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin()]
   },
   renderer: {
+    root: resolve(__dirname, 'src/ui'),
     resolve: {
       alias: {
-        '@renderer': resolve('src/renderer/src')
+        '@ui': resolve('src/ui/src')
       }
     },
     build: {
+      outDir: resolve(__dirname, 'out/ui'),
       rollupOptions: {
         input: {
-          main: resolve(__dirname, 'src/renderer/index.html'),
-          loading: resolve(__dirname, 'src/renderer/loading.html')
+          main: resolve(__dirname, 'src/ui/index.html'),
+          loading: resolve(__dirname, 'src/ui/loading.html')
         }
       }
     },
