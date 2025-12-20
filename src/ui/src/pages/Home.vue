@@ -46,7 +46,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="w-full relative h-full">
+  <div class="w-full min-h-[calc(100vh-60px)] p-2">
     <div class="flex gap-2 w-full mb-2">
       <div
         class="backdrop-blur-xl bg-[var(--primary)]/2 border rounded-xl px-4 py-3 border-[var(--primary)]/10 w-full flex justify-between items-center"

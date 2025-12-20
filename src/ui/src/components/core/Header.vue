@@ -110,7 +110,7 @@ onUnmounted(() => {
         :class="{ active: $route.path === '/app/events' }"
         @click="handleChangeRoute('/app/events')"
       >
-        <i class="fa fa-calendar-week"></i>
+        <i class="fa fa-calendar-days"></i>
       </button>
       <button
         v-if="hasTech"
@@ -118,7 +118,7 @@ onUnmounted(() => {
         :class="{ active: $route.path === '/app/items' }"
         @click="handleChangeRoute('/app/items')"
       >
-        <i class="fa fa-list"></i>
+        <i class="fa fa-store"></i>
       </button>
       <button
         v-if="hasTech"
@@ -126,7 +126,7 @@ onUnmounted(() => {
         :class="{ active: $route.path === '/app/ftp' }"
         @click="handleChangeRoute('/app/ftp')"
       >
-        <i class="fa fa-folder"></i>
+        <i class="fa fa-folder-tree"></i>
       </button>
       <div>></div>
       <div class="active">

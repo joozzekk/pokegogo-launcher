@@ -21,23 +21,30 @@ onMounted(async () => {
 
 <template>
   <div class="shop-container">
-    <section class="shop-grid-wrap">
-      <div v-if="data.length" class="shop-grid" data-aos="zoom-in">
-        <ShopItem v-for="item in data" :key="item.uuid" :item="item" />
-      </div>
-    </section>
+    <div class="shop-grid-wrap">
+      <section class="shop-grid-wrap">
+        <div v-if="data.length" class="shop-grid" data-aos="zoom-in">
+          <ShopItem v-for="item in data" :key="item.uuid" :item="item" />
+        </div>
+      </section>
+    </div>
   </div>
 </template>
 
 <style>
 .shop-container {
-  max-height: 100%;
+  max-height: calc(100vh - 60px);
+  padding: 0.5rem;
+  overflow: hidden;
+}
+
+.shop-grid-wrap {
   overflow-y: auto;
+  max-height: calc(100vh - 60px);
 }
 
 .shop-grid {
   display: grid;
-  padding-top: 1rem;
   gap: 1rem;
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }

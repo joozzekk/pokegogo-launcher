@@ -25,10 +25,6 @@ const handleChangeRoute = (newRoute: string): void => {
   router.push(newRoute)
 }
 
-const handleSupDev = (): void => {
-  window.open('https://tipply.pl/@joozzekk', '_blank')
-}
-
 const fallbackHeadUrl = computed(() => `https://mineskin.eu/helm/${playerName.value}/100.png`)
 
 async function loadCustomOrFallbackHead(): Promise<void> {
@@ -116,7 +112,7 @@ watch(
         @click="handleChangeRoute('/app/changelog')"
       >
         <div class="nav-icon">
-          <i class="fa-solid fa-calendar-days"></i>
+          <i class="fa-solid fa-rectangle-list"></i>
         </div>
         <span>Changelog</span>
         <div class="nav-indicator"></div>
@@ -137,12 +133,6 @@ watch(
     </div>
 
     <div class="flex flex-col mx-2" :class="{ 'mx-4': !generalStore.settings.isSidebarCollapsed }">
-      <button id="support" class="nav-item hover:cursor-pointer select-none" @click="handleSupDev">
-        <i class="nav-icon fa fa-coffee" />
-        <label for="support" class="hover:cursor-pointer text-[0.5rem] mt-[0.3rem]"
-          >Kup kawusie 🥰</label
-        >
-      </button>
       <button id="logout" class="nav-item hover:cursor-pointer select-none" @click="handleLogout">
         <i class="nav-icon fa-solid fa-door-open"></i>
         <label for="logout" class="hover:cursor-pointer text-[0.5rem] mt-[0.3rem]"

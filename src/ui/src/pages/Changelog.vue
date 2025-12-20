@@ -20,7 +20,6 @@ const addChangelogModalRef = ref()
 
 async function fetchChangelog(): Promise<void> {
   isLoadingChangelog.value = true
-  if (!userStore.user) return
 
   const res = await getChangelog()
 
@@ -107,18 +106,16 @@ onMounted(async () => {
 
 <template>
   <div class="changelog-container">
-    <div v-if="hasMod" class="flex gap-2">
-      <div class="search-input-wrapper mb-2">
-        <i class="fas fa-search search-icon !text-[0.9rem] ml-3"></i>
-        <input
-          v-model="searchQuery"
-          type="text"
-          class="search-input !p-2 !py-1 !pl-8 !text-[0.8rem]"
-          placeholder="Wyszukaj changelog po słowach kluczowych.."
-        />
-      </div>
+    <div class="w-full mb-2 relative flex gap-2">
+      <i class="fas fa-search search-icon !text-[0.8rem] absolute ml-3"></i>
+      <input
+        v-model="searchQuery"
+        type="text"
+        class="search-input !p-2 !py-1 !pl-8 !text-[0.8rem]"
+        placeholder="Wyszukaj changelog po słowach kluczowych.."
+      />
 
-      <div class="flex gap-2 relative z-400">
+      <div class="flex gap-2 z-400">
         <button
           class="nav-icon"
           :class="{ active: selectedType === 'server' }"

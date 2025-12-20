@@ -7,7 +7,6 @@ import { showProgressToast } from '@ui/utils'
 import { LOGGER } from '@ui/services/logger-service'
 import { FTPChannel } from '@ui/types/ftp'
 
-const showSearchInput = ref<boolean>(false)
 const searchQuery = ref<string>('')
 const inputFile = ref<HTMLInputElement | null>(null)
 const inputFolder = ref<HTMLInputElement | null>(null)
@@ -99,11 +98,6 @@ const handleUploadFolder = (): void => {
   inputFolder.value?.click()
 }
 
-const handleShowSearch = (): void => {
-  showSearchInput.value = !showSearchInput.value
-  searchQuery.value = ''
-}
-
 const isTextFile = (name: string): boolean => {
   return /\.(txt|log|md|csv|json|xml|yml|yaml|conf|properties|js|ts|css|html|vue|hashes)$/i.test(
     name
@@ -122,8 +116,20 @@ onMounted(async () => {
 </script>
 
 <template>
+  <div class="bg-[var(--bg-card)] mb-2 text-lg flex items-center justify-between">
+    <div class="search-input-wrapper">
+      <i class="fas fa-search search-icon !text-[0.9rem] ml-3"></i>
+      <input
+        v-model="searchQuery"
+        type="text"
+        class="search-input !p-2 !py-1 !pl-8 !text-[0.8rem]"
+        placeholder="Szukaj..."
+      />
+    </div>
+  </div>
+
   <div
-    class="relative flex flex-col w-full text-[var(--text-secondary)] max-h-full rounded-xl border-dashed border-1 border-[var(--border)]"
+    class="relative flex flex-col w-full text-[var(--text-secondary)] h-[calc(100vh-7rem)] rounded-xl border-dashed border-1 border-[var(--border)]"
     :class="{
       'border bg-[var(--bg-light)]/30': dragActive,
       'overflow-y-hidden': loadingStatuses,
@@ -136,9 +142,10 @@ onMounted(async () => {
   >
     <div
       v-if="loadingStatuses"
-      class="absolute inset-0 z-50 flex items-center justify-center bg-black/40"
+      class="absolute inset-0 z-50 flex items-center justify-center bg-black/70"
     >
       <i class="fa fa-spinner fa-spin text-3xl text-white"></i>
+      <div class="text-white text-lg font-bold">Wczytywanie...</div>
     </div>
 
     <template v-if="dragActive">
@@ -200,17 +207,11 @@ onMounted(async () => {
       />
 
       <div
-        class="top-0 sticky bg-[var(--bg-light)] px-4 py-2 text-[0.9rem] flex items-center justify-between z-[10] border-dashed border-b border-[var(--border)]"
-        :class="{ 'mb-[44px]': showSearchInput }"
+        class="top-0 sticky bg-[var(--bg-body)] px-4 py-2 text-[0.9rem] flex items-center justify-between z-[10] border-dashed border-b border-[var(--border)]"
       >
         <div class="flex items-center">
-          <span class="nav-icon mr-1" @click="restoreFolder('')">
-            <i
-              class="fa fa-home"
-              :class="{
-                'hover:cursor-pointer hover:text-[var(--text-secondary)]': breadcrumbs.length > 0
-              }"
-            />
+          <span class="nav-icon" @click="restoreFolder('')">
+            <i class="fa fa-home" />
           </span>
           <span v-if="breadcrumbs.length > 0" class="mx-1">></span>
 
@@ -232,12 +233,6 @@ onMounted(async () => {
         <div class="flex gap-2 items-center justify-evenly">
           <button
             class="nav-icon hover:cursor-pointer hover:text-[var(--text-secondary)]"
-            @click="handleShowSearch"
-          >
-            <i class="fa fa-search" />
-          </button>
-          <button
-            class="nav-icon hover:cursor-pointer hover:text-[var(--text-secondary)]"
             @click="openCreateFolderModal"
           >
             <i class="fa fa-folder-plus" />
@@ -255,23 +250,6 @@ onMounted(async () => {
             <i class="fa fa-file-import" />
           </button>
         </div>
-
-        <transition name="slide-fade">
-          <div
-            v-if="showSearchInput"
-            class="absolute z-[8] left-0 transition-all duration-150 w-full h-full top-[100%] bg-[var(--bg-card)] px-4 py-2 text-lg flex items-center justify-between"
-          >
-            <div class="search-input-wrapper">
-              <i class="fas fa-search search-icon !text-[0.9rem] ml-3"></i>
-              <input
-                v-model="searchQuery"
-                type="text"
-                class="search-input !p-2 !py-1 !pl-8 !text-[0.8rem]"
-                placeholder="Szukaj..."
-              />
-            </div>
-          </div>
-        </transition>
       </div>
 
       <template v-if="!filteredFiles.length">
