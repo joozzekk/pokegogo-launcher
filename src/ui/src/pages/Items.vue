@@ -1,3 +1,4 @@
+<!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <script lang="ts" setup>
 import { getItems, removeItem } from '@ui/api/endpoints'
 import AddItem from '@ui/components/modals/AddItem.vue'
@@ -159,11 +160,8 @@ onMounted(async () => {
   height: 100%;
 }
 .users-container {
-  width: 100%;
-  height: calc(100vh - 125px);
-  backdrop-filter: blur(20px);
-  border-radius: var(--border-radius);
-  animation: fadeInUp 0.8s ease-out 0.2s both;
+  padding: 0.5rem;
+  height: calc(100vh - 54.5px);
 }
 .reverse {
   display: flex;
@@ -171,24 +169,22 @@ onMounted(async () => {
   gap: 0.5rem;
 }
 .logs-table-wrapper {
-  width: 100%;
-  height: 100%;
-  overflow-y: auto;
   background: var(--bg-card);
   backdrop-filter: blur(20px);
   border-radius: var(--border-radius);
   box-shadow: var(--shadow-card);
-  overflow: hidden;
   position: relative;
+  height: calc(100vh - 109px);
   overflow-y: auto;
   border: 1px dashed var(--border);
 }
 .logs-table {
   width: 100%;
+  height: calc(100vh - 157px);
   border-collapse: collapse;
 }
 .logs-table th {
-  background: var(--bg-light);
+  background: var(--bg-body);
   padding: 0.5rem 1rem;
   text-align: left;
   font-weight: 600;

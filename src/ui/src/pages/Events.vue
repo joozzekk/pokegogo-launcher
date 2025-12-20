@@ -1,3 +1,4 @@
+<!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <script lang="ts" setup>
 import { getEvents, removeEvent } from '@ui/api/endpoints'
 import AddEvent from '@ui/components/modals/AddEvent.vue'
@@ -161,11 +162,8 @@ onMounted(async () => {
   height: 100%;
 }
 .users-container {
-  width: 100%;
-  height: calc(100vh - 125px);
-  backdrop-filter: blur(20px);
-  border-radius: var(--border-radius);
-  animation: fadeInUp 0.8s ease-out 0.2s both;
+  padding: 0.5rem;
+  height: calc(100vh - 54.5px);
 }
 .reverse {
   display: flex;
@@ -174,7 +172,7 @@ onMounted(async () => {
 }
 .logs-table-wrapper {
   width: 100%;
-  height: 100%;
+  height: calc(100vh - 109px);
   overflow-y: auto;
   background: var(--bg-card);
   backdrop-filter: blur(20px);

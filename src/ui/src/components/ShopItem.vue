@@ -1,3 +1,23 @@
+<!-- eslint-disable @typescript-eslint/no-explicit-any -->
+
+<script setup lang="ts">
+const props = defineProps<{
+  item: any
+}>()
+
+const url = import.meta.env.RENDERER_VITE_API_URL
+
+const fmt = (n: number): string =>
+  `${new Intl.NumberFormat('pl-PL', { maximumFractionDigits: 0 }).format(n)} PLN`
+
+const handleClick = (e: MouseEvent): void => {
+  if (props.item.uuid) {
+    e.preventDefault()
+    window.open(`${import.meta.env.RENDERER_VITE_WEBPAGE}/item?uuid=` + props.item.uuid)
+  }
+}
+</script>
+
 <template>
   <div class="shopitem" @click="handleClick">
     <img
@@ -17,21 +37,3 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-const props = defineProps<{
-  item: any
-}>()
-
-const url = import.meta.env.RENDERER_VITE_API_URL
-
-const fmt = (n: number): string =>
-  `${new Intl.NumberFormat('pl-PL', { maximumFractionDigits: 0 }).format(n)} PLN`
-
-const handleClick = (e: MouseEvent): void => {
-  if (props.item.uuid) {
-    e.preventDefault()
-    window.open(`${import.meta.env.RENDERER_VITE_WEBPAGE}/item?uuid=` + props.item.uuid)
-  }
-}
-</script>

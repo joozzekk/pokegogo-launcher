@@ -33,14 +33,15 @@ onMounted(async () => {
 
 <style>
 .shop-container {
-  max-height: calc(100vh - 60px);
-  padding: 0.5rem;
+  height: calc(100vh - 54.5px);
   overflow: hidden;
 }
 
 .shop-grid-wrap {
   overflow-y: auto;
-  max-height: calc(100vh - 60px);
+  padding: 0.25rem;
+  padding-bottom: 0.5rem;
+  height: calc(100vh - 54.5px);
 }
 
 .shop-grid {

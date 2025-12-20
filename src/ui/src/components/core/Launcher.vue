@@ -19,7 +19,16 @@ const { startMicrosoftTokenRefreshInterval } = useMethods()
 const { fetchUpdateData, fetchEvents } = useFetches()
 const { refreshInterval, events } = useVariables()
 
-const routeOrder = ['/app/home', '/app/shop', '/app/changelog', '/app/settings']
+const routeOrder = [
+  '/app/users',
+  '/app/events',
+  '/app/items',
+  '/app/ftp',
+  '/app/home',
+  '/app/shop',
+  '/app/changelog',
+  '/app/settings'
+]
 
 watch(
   () => route.path,

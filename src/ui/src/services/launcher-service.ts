@@ -5,6 +5,7 @@ import useUserStore from '@ui/stores/user-store'
 import { isMachineIDBanned, refreshMicrosoftToken } from '@ui/utils'
 import { ref, type Ref } from 'vue'
 import { useSocketService } from './socket-service'
+import { AccountType } from '@ui/types/app'
 
 export const useLauncherService = (): {
   useVariables: () => {
@@ -60,7 +61,11 @@ export const useLauncherService = (): {
 
     if (userStore.user) {
       await updateProfileData({
-        accountType: userStore.user?.accountType ?? ''
+        accountType: userStore.user?.accountType
+          ? userStore.user?.mcid
+            ? AccountType.MICROSOFT
+            : AccountType.BACKEND
+          : AccountType.BACKEND
       })
 
       await updateMachineData({

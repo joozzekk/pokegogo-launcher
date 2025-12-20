@@ -766,7 +766,7 @@ body {
 
 /* -------------------------------------- Strona z ustawieniami---------------------------- */
 .settings-container {
-  max-height: calc(100vh - 60px);
+  height: calc(100vh - 54.5px);
   padding: 0.5rem;
 }
 

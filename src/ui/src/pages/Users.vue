@@ -299,7 +299,7 @@ onUnmounted(() => {
                 <td colspan="5" style="padding: 0">
                   <div class="player-details">
                     <div class="player-details-grid">
-                      <div class="detail-item">
+                      <div v-if="expandedPlayer?.isBanned" class="detail-item">
                         <div class="detail-label">Powód blokady</div>
                         <div class="detail-value">
                           {{ expandedPlayer.banReason }}
@@ -411,11 +411,8 @@ onUnmounted(() => {
   height: 100%;
 }
 .users-container {
-  width: 100%;
-  height: calc(100vh - 115px);
-  backdrop-filter: blur(20px);
-  border-radius: var(--border-radius);
-  animation: fadeInUp 0.8s ease-out 0.2s both;
+  padding: 0.5rem;
+  height: calc(100vh - 54.5px);
 }
 .reverse {
   display: flex;
@@ -423,15 +420,12 @@ onUnmounted(() => {
   gap: 0.5rem;
 }
 .logs-table-wrapper {
-  width: 100%;
-  height: 100%;
-  overflow-y: auto;
   background: var(--bg-card);
   backdrop-filter: blur(20px);
   border-radius: var(--border-radius);
   box-shadow: var(--shadow-card);
-  overflow: hidden;
   position: relative;
+  height: calc(100vh - 117.5px);
   overflow-y: auto;
   border: 1px dashed var(--border);
 }
@@ -584,12 +578,13 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  position: absolute;
+  bottom: 0;
   gap: 1.5rem;
   padding: 0.5rem 1rem;
   background: var(--bg-body);
   border-top: 1px solid var(--border);
-  position: sticky;
-  bottom: 0;
+  width: 100%;
 }
 
 .pag-btn {
