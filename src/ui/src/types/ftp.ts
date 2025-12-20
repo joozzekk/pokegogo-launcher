@@ -12,5 +12,9 @@ export enum FTPChannel {
   READ_FILE = 'ftp:read-file',
   READ_IMAGE = 'ftp:read-image',
   UPLOAD_FOLDER_PROGRESS = 'ftp:upload-folder-progress',
-  ZIP_PROGRESS = 'ftp:zip-progress'
+  ZIP_PROGRESS = 'ftp:zip-progress',
+  DOWNLOAD_FILE = 'ftp:download-file',
+  DOWNLOAD_FOLDER = 'ftp:download-folder',
+  SELECT_DIRECTORY = 'ftp:select-directory',
+  DOWNLOAD_FOLDER_PROGRESS = 'ftp:download-folder-progress'
 }

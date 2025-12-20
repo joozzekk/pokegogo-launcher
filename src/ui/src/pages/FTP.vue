@@ -28,10 +28,12 @@ const {
   openTextFile,
   openImageFile,
   saveFile,
-  zipFolder, // Nowa funkcja
+  zipFolder,
   dragActive,
   handleDrop,
-  loadingStatuses
+  loadingStatuses,
+  downloadFile,
+  downloadFolder
 } = useFTP(inputFile, inputFolder)
 
 const fileIsImportant = (file: FTPFile): boolean => {
@@ -51,7 +53,7 @@ const toggleImportant = async (file: FTPFile): Promise<void> => {
       newFlag
     )
 
-    await getFolderContent()
+    await getFolderContent(currentFolder.value)
     progress?.close('Pomyślnie zaktualizowano.', 'success')
   } catch (e) {
     LOGGER.with('FTP').err((e as Error).message)
@@ -61,7 +63,6 @@ const toggleImportant = async (file: FTPFile): Promise<void> => {
 
 const handleZipFolder = async (file: FTPFile): Promise<void> => {
   if (!file.isDirectory) return
-  // Dodajemy confirmation lub od razu akcja
   await zipFolder(file.name)
 }
 
@@ -73,17 +74,17 @@ const openCreateFolderModal = (): void => {
   createFolderModal.value?.openModal()
 }
 
-// Filtrowanie (currentFolderFiles jest już posortowane w service)
 const filteredFiles = computed(() => {
-  const files = currentFolderFiles.value ?? []
+  const files = currentFolderFiles.value
+    ? [...currentFolderFiles.value]
+        .sort((a: FTPFile) => (a.name?.endsWith('.zip') ? 1 : -1))
+        .sort((a: FTPFile) => (a.isDirectory ? -1 : 1))
+    : []
 
-  // Odsiewamy plik manifestu, żeby go nie pokazywać userowi
-  const cleanList = files.filter((f) => f.name !== '.meta.json')
-
-  if (!searchQuery.value) return cleanList
+  if (!searchQuery.value) return files
 
   const query = searchQuery.value.toLowerCase()
-  return cleanList.filter((file) => file.name.toLowerCase().includes(query))
+  return files.filter((file) => file.name.toLowerCase().includes(query))
 })
 
 const breadcrumbs = computed(() => {
@@ -308,13 +309,15 @@ onMounted(async () => {
             ></i>
             <i
               v-else-if="file.status === 'zipped'"
-              class="fa fa-file-zipper text-[var(--primary)]"
+              class="fa fa-box text-green-400"
               title="Folder spakowany"
             ></i>
             <i v-else class="fa fa-folder text-[var(--primary)]"></i>
           </template>
           <template v-else>
-            <i v-if="file.name.endsWith('.zip')" class="fa fa-file-zipper"></i>
+            <i v-if="file.name.endsWith('.zip')" class="fa fa-archive text-blue-400"></i>
+            <i v-else-if="isTextFile(file.name)" class="fa fa-file-text text-orange-400"></i>
+            <i v-else-if="isImageFile(file.name)" class="fa fa-file-image text-orange-400"></i>
             <i v-else class="fa fa-file"></i>
           </template>
         </div>
@@ -353,10 +356,11 @@ onMounted(async () => {
                 title="Spakuj folder (utwórz .zip)"
                 @click.stop="handleZipFolder(file)"
               >
-                <i class="fa fa-file-zipper"></i>
+                <i class="fa fa-box-open"></i>
               </button>
 
               <button
+                v-if="!file.name.endsWith('.zip')"
                 class="nav-icon hover:text-yellow-400"
                 :disabled="loadingStatuses"
                 :class="{ 'opacity-50': loadingStatuses, 'text-yellow-400': fileIsImportant(file) }"
@@ -364,6 +368,24 @@ onMounted(async () => {
                 @click.stop="toggleImportant(file)"
               >
                 <i :class="fileIsImportant(file) ? 'fa fa-star' : 'fa-regular fa-star'" />
+              </button>
+
+              <button
+                v-if="file.isDirectory"
+                class="nav-icon hover:text-[var(--primary)]"
+                title="Pobierz folder"
+                @click.stop="downloadFolder(file.name)"
+              >
+                <i class="fa fa-download"></i>
+              </button>
+
+              <button
+                v-else
+                class="nav-icon hover:text-[var(--primary)]"
+                title="Pobierz plik"
+                @click.stop="downloadFile(file.name)"
+              >
+                <i class="fa fa-download"></i>
               </button>
 
               <button class="ban-btn hover:text-red-500" @click.stop="removeFile(file.name)">

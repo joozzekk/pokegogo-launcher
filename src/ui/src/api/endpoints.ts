@@ -60,10 +60,8 @@ export const changeEmail = async (nickname: string, newEmail: string): Promise<a
   return res.data
 }
 
-export const fetchAllPlayers = async (nickname: string): Promise<any> => {
-  const res = await api.post('/users/all', {
-    nickname
-  })
+export const fetchAllPlayers = async (): Promise<any> => {
+  const res = await api.post('/users/all')
 
   return res.data
 }
@@ -245,8 +243,8 @@ export const changeCustomSkin = async (body: any): Promise<any> => {
   return res.data
 }
 
-export const clearStorage = async (uuid: string): Promise<any> => {
-  const res = await api.post(`/users/clear-storage/${uuid}`)
+export const removeUser = async (uuid: string): Promise<any> => {
+  const res = await api.delete(`/users/${uuid}`)
 
   return res.data
 }

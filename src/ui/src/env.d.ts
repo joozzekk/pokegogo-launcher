@@ -1,5 +1,7 @@
 /// <reference types="vite/client" />
 
+import { UserRole } from './types/app'
+
 interface ImportMetaEnv {
   readonly RENDERER_VITE_API_URL: string
   readonly RENDERER_VITE_SERVER_IP: string
@@ -30,6 +32,6 @@ export interface IUser {
   accountType: string
   macAddress: string
   ipAddress: string
-  role: string
+  role: UserRole
   enableUpdateChannel: boolean
 }

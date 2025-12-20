@@ -23,6 +23,8 @@ interface FTPService {
   handleDrop: (ev: DragEvent) => Promise<void>
   loadingStatuses: Ref<boolean>
   dragActive: Ref<boolean>
+  downloadFile: (name: string) => Promise<void>
+  downloadFolder: (name: string) => Promise<void>
 }
 
 export interface FTPFile {
@@ -48,7 +50,6 @@ export const useFTP = (
   const currentFileContent = ref<string>('')
   const currentFolder = ref<string>('')
   const currentFolderFiles = ref<FTPFile[]>([])
-  // currentHashes zostało usunięte, bo dane są teraz w currentFolderFiles
   const loadingStatuses = ref<boolean>(false)
 
   const getFolderContent = async (folder: string = ''): Promise<void> => {
@@ -59,11 +60,9 @@ export const useFTP = (
         : folder
 
     try {
-      // Backend zwraca teraz listę wzbogaconą o flagi i statusy zip
       const res = await window.electron.ipcRenderer?.invoke(FTPChannel.LIST_FILES, folderPath)
 
       currentFolder.value = folderPath
-      // Sortowanie: katalogi najpierw, potem pliki
       currentFolderFiles.value = res.sort((a: FTPFile, b: FTPFile) => {
         if (a.isDirectory === b.isDirectory) {
           return a.name.localeCompare(b.name)
@@ -104,23 +103,18 @@ export const useFTP = (
   const zipFolder = async (folderName: string): Promise<void> => {
     const fullPath = currentFolder.value ? `${currentFolder.value}/${folderName}` : folderName
 
-    // Inicjalizacja toasta z wartością 0/100
     const progress = showProgressToast(`Rozpoczynam pakowanie ${folderName}...`)
     progress?.updateProgress(0, 100, 'Inicjalizacja...')
 
-    // Listener postępu
     const progressHandler = (_event: any, data: { percent: number; message: string }): void => {
-      // updateProgress oczekuje (current, total, text)
       progress?.updateProgress(data.percent, 100, data.message)
     }
 
     try {
-      // Podpięcie listenera
       window.electron.ipcRenderer?.on(FTPChannel.ZIP_PROGRESS, progressHandler)
 
       await window.electron.ipcRenderer?.invoke(FTPChannel.ZIP_FOLDER, fullPath)
 
-      // Sukces
       progress?.updateProgress(100, 100, 'Gotowe!')
       progress?.close('Folder został spakowany pomyślnie.', 'success')
 
@@ -129,8 +123,6 @@ export const useFTP = (
       LOGGER.err(err as string)
       progress?.close('Błąd podczas pakowania folderu.', 'error')
     } finally {
-      // Bardzo ważne: odpięcie listenera po zakończeniu (sukces lub błąd)
-      // aby nie dublować eventów przy kolejnym kliknięciu
       window.electron.ipcRenderer?.removeAllListeners('ftp:zip-progress')
     }
   }
@@ -186,7 +178,6 @@ export const useFTP = (
   }
 
   const restoreFolder = async (name: string): Promise<void> => {
-    // Jeśli name jest pusty, idziemy do roota
     if (!name) {
       currentFolder.value = ''
       await getFolderContent('')
@@ -232,6 +223,60 @@ export const useFTP = (
       progress?.close('Błąd przesyłania.', 'error')
     } finally {
       if (inputFile.value) inputFile.value.value = ''
+    }
+  }
+
+  const downloadFile = async (name: string): Promise<void> => {
+    const localPath = await window.electron.ipcRenderer?.invoke(FTPChannel.SELECT_DIRECTORY)
+    if (!localPath) return
+
+    const progress = showProgressToast(`Pobieranie pliku...`)
+    try {
+      const res = await window.electron.ipcRenderer?.invoke(
+        FTPChannel.DOWNLOAD_FILE,
+        localPath,
+        currentFolder.value,
+        name
+      )
+
+      if (res) {
+        progress?.close(`Pomyślnie pobrano ${name}`, 'success')
+        await getFolderContent(currentFolder.value)
+      }
+    } catch (err) {
+      LOGGER.err(err as string)
+      progress?.close('Wystąpił błąd podczas pobierania pliku.', 'error')
+    }
+  }
+
+  const downloadFolder = async (name: string): Promise<void> => {
+    const localPath = await window.electron.ipcRenderer?.invoke(FTPChannel.SELECT_DIRECTORY)
+    if (!localPath) return
+
+    const progress = showProgressToast(`Pobieranie folderu ${name}...`)
+
+    window.electron.ipcRenderer?.on(
+      FTPChannel.DOWNLOAD_FOLDER_PROGRESS,
+      (_event, { completed, total }: { completed: number; total: number }) => {
+        progress?.updateProgress(completed, total, `Pobieranie folderu ${name}...`)
+      }
+    )
+
+    try {
+      const res = await window.electron.ipcRenderer?.invoke(
+        FTPChannel.DOWNLOAD_FOLDER,
+        localPath,
+        currentFolder.value,
+        name
+      )
+
+      if (res) {
+        progress?.close(`Pomyślnie pobrano folder ${name}`, 'success')
+        await getFolderContent(currentFolder.value)
+      }
+    } catch (err) {
+      LOGGER.err(err as string)
+      progress?.close('Wystąpił błąd podczas pobierania folderu.', 'error')
     }
   }
 
@@ -436,6 +481,8 @@ export const useFTP = (
     dragActive,
     handleDrop,
     zipFolder,
-    loadingStatuses
+    loadingStatuses,
+    downloadFile,
+    downloadFolder
   }
 }

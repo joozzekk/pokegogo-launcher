@@ -3,9 +3,10 @@ import { type IUser } from '@ui/env'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { type SavedAccount } from '@ui/types/app'
 
 const useUserStore = defineStore('user', () => {
-  const savedAccounts = ref<Partial<IUser & { password: string; url?: string }>[]>(
+  const savedAccounts = ref<SavedAccount[]>(
     JSON.parse(localStorage.getItem('savedAccounts') ?? '[]')
   )
   const hwidBanned = ref<boolean>(false)
@@ -20,8 +21,10 @@ const useUserStore = defineStore('user', () => {
     user.value = null
   }
 
-  const removeSavedAccount = (nickname: string): void => {
-    savedAccounts.value = savedAccounts.value.filter((account) => account.nickname !== nickname)
+  const removeSavedAccount = (savedAccount: SavedAccount): void => {
+    savedAccounts.value = savedAccounts.value.filter(
+      (account) => account.nickname !== savedAccount.nickname
+    )
     localStorage.setItem('savedAccounts', JSON.stringify(savedAccounts.value))
   }
 

@@ -1,6 +1,6 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 
-import Launcher from '@ui/components/Launcher.vue'
+import Launcher from '@ui/components/core/Launcher.vue'
 import HomePage from '@ui/pages/Home.vue'
 import LoginPage from '@ui/pages/Login.vue'
 import ChangelogPage from '@ui/pages/Changelog.vue'

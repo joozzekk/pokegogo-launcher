@@ -1,3 +1,5 @@
+import { IUser } from '@ui/env'
+
 export enum AccountType {
   BACKEND = 'backend',
   MICROSOFT = 'microsoft'
@@ -7,3 +9,25 @@ export enum ActiveTab {
   LOGIN = 'login',
   REGISTER = 'register'
 }
+
+export enum SearchKeyWord {
+  BANNED = 'banned',
+  PREMIUM = 'premium',
+  NOHWID = 'nohwid',
+  ONLINE = 'online',
+  ROLE = 'role'
+}
+
+export enum UserRole {
+  ADMIN = 'admin',
+  MODERATOR = 'moderator',
+  DEV = 'technik'
+}
+
+export type SavedAccount = Partial<
+  IUser & {
+    password: string
+    accountType: AccountType
+    url: string
+  }
+>

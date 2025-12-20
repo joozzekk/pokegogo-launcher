@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import Client from 'ssh2-sftp-client'
 import { createHash } from 'crypto'
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain } from 'electron'
 import { mkdir, readdir, readFile, rm, unlink, writeFile } from 'fs/promises'
 import { basename, dirname, join, posix } from 'path'
 import { createWriteStream } from 'fs'
 import archiver from 'archiver'
+import { ensureDir } from '../utils'
 
 type FTPFileFlag = 'important' | 'ignore'
 
@@ -810,6 +811,99 @@ export const useFTPService = (): {
 
       return fileContent
     })
+
+    ipcMain.handle('ftp:select-directory', async () => {
+      const result = await dialog.showOpenDialog({
+        properties: ['openDirectory']
+      })
+
+      return result.filePaths[0]
+    })
+
+    ipcMain.handle(
+      'ftp:download-file',
+      async (_, localDir: string, folder: string, name: string) => {
+        const tempFilePath = join(localDir, name)
+
+        // eslint-disable-next-line no-useless-catch
+        try {
+          const client = await connect()
+          await client.get(remoteJoin(folder, name), tempFilePath)
+
+          return true
+        } catch (error) {
+          throw error
+        }
+      }
+    )
+
+    interface DownloadTask {
+      remote: string
+      local: string
+    }
+
+    const buildDownloadQueue = async (
+      client: any,
+      remotePath: string,
+      localBaseDir: string,
+      queue: DownloadTask[] = []
+    ): Promise<DownloadTask[]> => {
+      const files = await client.list(remotePath)
+
+      for (const file of files) {
+        const remoteFullPath = `${remotePath}/${file.name}`
+        const localFullPath = join(localBaseDir, file.name)
+
+        if (file.type === '-') {
+          queue.push({ remote: remoteFullPath, local: localFullPath })
+        } else if (file.type === 'd') {
+          ensureDir(localFullPath)
+          await buildDownloadQueue(client, remoteFullPath, localFullPath, queue)
+        }
+      }
+      return queue
+    }
+
+    ipcMain.handle(
+      'ftp:download-folder',
+      async (_, localDir: string, remoteFolder: string, folder: string) => {
+        let client: Client | null = null
+        try {
+          client = await connect()
+
+          const startingRemotePath = `${remoteFolder}/${folder}`.replace(/\\/g, '/')
+          const startingLocalPath = join(localDir, folder)
+
+          ensureDir(startingLocalPath)
+
+          const downloadQueue = await buildDownloadQueue(
+            client,
+            startingRemotePath,
+            startingLocalPath
+          )
+          const totalFiles = downloadQueue.length
+
+          for (let i = 0; i < totalFiles; i++) {
+            const task = downloadQueue[i]
+
+            mainWindow.webContents.send('ftp:download-folder-progress', {
+              total: totalFiles,
+              completed: i + 1,
+              current: basename(task.remote)
+            })
+
+            await client.get(task.remote, task.local)
+          }
+
+          return true
+        } catch (error) {
+          console.error('SFTP Error:', error)
+          throw error
+        } finally {
+          if (client) await client.end()
+        }
+      }
+    )
   }
 
   return {

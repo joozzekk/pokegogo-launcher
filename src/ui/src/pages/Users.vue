@@ -1,9 +1,10 @@
 <script lang="ts" setup>
-import { changeUpdateChannel, clearStorage, fetchAllPlayers } from '@ui/api/endpoints'
+import { fetchAllPlayers, removeUser } from '@ui/api/endpoints'
 import BanPlayerModal from '@ui/components/modals/BanPlayerModal.vue'
 import PasswordResetConfirm from '@ui/components/modals/PasswordResetConfirm.vue'
 import { IUser } from '@ui/env'
 import useUserStore from '@ui/stores/user-store'
+import { AccountType, SearchKeyWord, UserRole } from '@ui/types/app'
 import { showToast } from '@ui/utils'
 import { format } from 'date-fns'
 import { ref, onMounted, watch, onUnmounted, computed } from 'vue'
@@ -21,9 +22,8 @@ const passwordResetModalRef = ref()
 
 async function loadPlayerData(): Promise<void> {
   isLoadingPlayers.value = true
-  if (!userStore.user) return
 
-  const res = await fetchAllPlayers(userStore.user.nickname)
+  const res = await fetchAllPlayers()
 
   if (res) {
     allPlayers.value = res
@@ -34,12 +34,10 @@ async function loadPlayerData(): Promise<void> {
 }
 
 const currentPage = ref(1)
-const itemsPerPage = ref(11) // Liczba graczy na stronę
+const itemsPerPage = ref(11)
 
-// Obliczamy całkowitą liczbę stron
 const totalPages = computed(() => Math.ceil(filteredPlayers.value.length / itemsPerPage.value))
 
-// Wycinamy fragment listy dla aktualnej strony
 const paginatedPlayers = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage.value
   const end = start + itemsPerPage.value
@@ -52,15 +50,15 @@ watch(searchQuery, () => {
 
   let players = [...allPlayers.value]
 
-  if (query === 'banned') {
+  if (query === SearchKeyWord.BANNED) {
     players = players.filter((p) => p.isBanned)
-  } else if (query === 'premium') {
+  } else if (query === SearchKeyWord.PREMIUM) {
     players = players.filter((p) => p.mcid && p.mcid.length > 0)
-  } else if (query === 'nohwid') {
+  } else if (query === SearchKeyWord.NOHWID) {
     players = players.filter((p) => !p.machineId)
-  } else if (query === 'online') {
+  } else if (query === SearchKeyWord.ONLINE) {
     players = players.filter((p) => p.isOnline)
-  } else if (query.startsWith('role:')) {
+  } else if (query.startsWith(SearchKeyWord.ROLE)) {
     const roleName = query.split(':')[1]
     players = players.filter((p) => p.role?.toLowerCase() === roleName)
   } else {
@@ -73,7 +71,6 @@ watch(searchQuery, () => {
     )
   }
 
-  // 4. Przypisanie wyników i obsługa komunikatu o braku danych
   filteredPlayers.value = players
   noResultsVisible.value = players.length === 0
 })
@@ -102,24 +99,6 @@ const handleResetPassword = async (player: IUser): Promise<void> => {
   passwordResetModalRef.value?.openModal(player)
 }
 
-const toggleUpdateChannel = async (
-  nickname: string,
-  enableUpdateChannel: boolean
-): Promise<void> => {
-  try {
-    const res = await changeUpdateChannel(nickname, enableUpdateChannel)
-
-    if (res) {
-      await loadPlayerData()
-      showToast(
-        `${enableUpdateChannel ? 'Włączono' : 'Wyłączono'} kanał aktualizacji dla gracza ${nickname}.`
-      )
-    }
-  } catch {
-    showToast('Włączenie kanału aktualizacji się nie powiodło.')
-  }
-}
-
 const getPlayerID = (player: IUser): string => {
   if (player?.mcid) return player.mcid
   if (player?.uuid) return player.uuid
@@ -128,26 +107,28 @@ const getPlayerID = (player: IUser): string => {
 
 const getUserRole = (player: IUser): string => {
   switch (player?.role) {
-    case 'admin':
+    case UserRole.ADMIN:
       return 'Admin'
-    case 'mod':
+    case UserRole.MODERATOR:
       return 'Mod'
-    case 'technik':
+    case UserRole.DEV:
       return 'Technik'
     default:
       return 'Gracz'
   }
 }
 
-const handleClearStorage = async (player: IUser): Promise<void> => {
+const handleDeletePlayer = async (player: IUser): Promise<void> => {
   try {
-    const res = await clearStorage(player.uuid)
+    const res = await removeUser(player?.mcid?.length ? player.mcid : player.uuid!)
 
     if (res) {
-      showToast('Wyczyszczono pamięć gracza ' + player.nickname)
+      await loadPlayerData()
+
+      showToast(`Gracz ${player.nickname} został usunięty`, 'success')
     }
   } catch {
-    showToast('Wyczyszczenie pamięci się nie powiodło.')
+    showToast(`Nie udało się usunąć gracza ${player.nickname}`, 'error')
   }
 }
 
@@ -178,9 +159,6 @@ onUnmounted(() => {
       <div v-if="isLoadingPlayers" class="loading-users">
         <i :class="'fas fa-spinner fa-spin'"></i>
         Ładowanie użytkowników..
-        <button class="btn-primary" style="max-width: 300px" @click="loadPlayerData">
-          Odśwież
-        </button>
       </div>
       <template v-else>
         <div
@@ -199,18 +177,12 @@ onUnmounted(() => {
               <th>Rola</th>
               <th>Status</th>
               <th>UUID/MCID</th>
-              <th>
-                <div style="position: relative; display: flex; flex-direction: row-reverse">
-                  <button class="info-btn" @click="loadPlayerData">
-                    <i :class="'fas fa-refresh'"></i>
-                  </button>
-                </div>
-              </th>
+              <th></th>
             </tr>
           </thead>
           <tbody id="logsTableBody">
             <template v-for="player in paginatedPlayers" :key="getPlayerID(player)">
-              <tr>
+              <tr :class="{ '!bg-red-500/10 hover:!bg-red-500/20': player.isBanned }">
                 <td>
                   <div class="flex items-center gap-2">
                     <div
@@ -280,10 +252,16 @@ onUnmounted(() => {
                   <div v-if="userStore.user" class="reverse">
                     <template
                       v-if="
-                        ['admin', 'technik', 'mod'].includes(userStore.user.role) &&
-                        !['admin', 'technik', 'mod'].includes(player.role)
+                        [UserRole.ADMIN, UserRole.DEV, UserRole.MODERATOR].includes(
+                          userStore.user.role
+                        ) &&
+                        ![UserRole.ADMIN, UserRole.DEV, UserRole.MODERATOR].includes(player.role)
                       "
                     >
+                      <button class="nav-icon" @click="handleDeletePlayer(player)">
+                        <i class="fa fa-trash" />
+                      </button>
+
                       <button
                         v-if="!player?.isBanned"
                         class="ban-btn"
@@ -295,17 +273,10 @@ onUnmounted(() => {
                       <button v-else class="unban-btn" @click="handleLauncherUnban(player)">
                         <i :class="'fas fa-rotate-left'"></i>
                       </button>
-
-                      <button
-                        class="nav-icon"
-                        @click="toggleUpdateChannel(player.nickname, !player.enableUpdateChannel)"
-                      >
-                        <i v-if="player?.enableUpdateChannel" :class="'fas fa-user-check'"></i>
-                        <i v-else :class="'fas fa-user-xmark'"></i>
-                      </button>
                     </template>
+
                     <button
-                      v-if="player?.accountType !== 'microsoft'"
+                      v-if="player?.accountType !== AccountType.MICROSOFT"
                       class="nav-icon"
                       @click="handleResetPassword(player)"
                     >
@@ -321,21 +292,19 @@ onUnmounted(() => {
                         "
                       ></i>
                     </button>
-                    <button
-                      v-if="['admin', 'technik', 'mod'].includes(userStore.user.role)"
-                      class="nav-icon"
-                      @click="handleClearStorage(player)"
-                    >
-                      <i :class="'fas fa-trash'"></i>
-                    </button>
                   </div>
                 </td>
               </tr>
-              <!-- Expanded details row right after player row -->
               <tr v-if="!!expandedPlayer && getPlayerID(expandedPlayer) === getPlayerID(player)">
                 <td colspan="5" style="padding: 0">
                   <div class="player-details">
                     <div class="player-details-grid">
+                      <div class="detail-item">
+                        <div class="detail-label">Powód blokady</div>
+                        <div class="detail-value">
+                          {{ expandedPlayer.banReason }}
+                        </div>
+                      </div>
                       <div class="detail-item">
                         <div class="detail-label">Ostatnie logowanie</div>
                         <div class="detail-value">
@@ -418,9 +387,7 @@ onUnmounted(() => {
         </button>
 
         <span class="pag-info">
-          Strona <strong>{{ currentPage }}</strong> z {{ totalPages }} ({{
-            paginatedPlayers.length
-          }}/{{ filteredPlayers.length }})
+          Strona <strong>{{ currentPage }}/{{ totalPages }}</strong>
         </span>
 
         <button :disabled="currentPage === totalPages" class="pag-btn" @click="currentPage++">
@@ -445,7 +412,7 @@ onUnmounted(() => {
 }
 .users-container {
   width: 100%;
-  height: calc(100vh - 112.5px);
+  height: calc(100vh - 115px);
   backdrop-filter: blur(20px);
   border-radius: var(--border-radius);
   animation: fadeInUp 0.8s ease-out 0.2s both;
