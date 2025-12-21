@@ -2,6 +2,7 @@
 import { banPlayer, unbanPlayer } from '@ui/api/endpoints'
 import { IUser } from '@ui/env'
 import useUserStore from '@ui/stores/user-store'
+import { UserRole } from '@ui/types/app'
 import { defaultDatePickerTime, showToast } from '@ui/utils'
 import DatePicker from 'primevue/datepicker'
 import { ref } from 'vue'
@@ -95,7 +96,11 @@ defineExpose({
           <template v-if="actionType === 'ban'">
             <div v-if="userStore.user" class="flex gap-2">
               <button
-                v-if="['admin', 'technik'].includes(userStore.user.role) && !!playerData?.machineId"
+                v-if="
+                  [UserRole.ADMIN, UserRole.DEV, UserRole.MODERATOR].includes(
+                    userStore.user.role
+                  ) && !!playerData?.machineId
+                "
                 class="toggle-option !py-[0.25rem]"
                 :class="{ active: banType === 'hwid' }"
                 @click="banType = 'hwid'"
