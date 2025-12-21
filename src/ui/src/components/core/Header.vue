@@ -8,6 +8,7 @@ import DiscordReportModal from '@ui/components/modals/DiscordReportModal.vue'
 import { useRouter } from 'vue-router'
 import useUserStore from '@ui/stores/user-store'
 import logo from '@ui/assets/logo.png'
+import { UserRole } from '@ui/types/app'
 
 const userStore = useUserStore()
 const generalStore = useGeneralStore()
@@ -26,10 +27,10 @@ const openDiscord = (): void => {
 }
 
 const hasMod = computed(() =>
-  ['admin', 'technik', 'mod'].includes(userStore.user?.role || 'default')
+  [UserRole.ADMIN, UserRole.MODERATOR, UserRole.DEV].includes(userStore.user!.role)
 )
-const hasTech = computed(() => ['technik'].includes(userStore.user?.role || 'default'))
-const hasAdmin = computed(() => ['admin', 'technik'].includes(userStore.user?.role || 'default'))
+const hasTech = computed(() => [UserRole.DEV].includes(userStore.user!.role))
+const hasAdmin = computed(() => [UserRole.ADMIN, UserRole.DEV].includes(userStore.user!.role))
 
 const handleChangeRoute = (newRoute: string): void => {
   router.push(newRoute)
