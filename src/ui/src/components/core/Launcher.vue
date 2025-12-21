@@ -25,6 +25,7 @@ const routeOrder = [
   '/app/items',
   '/app/ftp',
   '/app/home',
+  '/app/news',
   '/app/shop',
   '/app/changelog',
   '/app/settings'
@@ -67,7 +68,7 @@ onUnmounted(() => {
   <div class="container">
     <Sidebar />
 
-    <main class="main-content !relative overflow-hidden !w-[calc(100vw-7rem)]">
+    <main class="main-content !relative overflow-hidden !w-[calc(100vw-6.5rem)]">
       <RouterView v-slot="{ Component }">
         <Transition :name="transitionName">
           <component :is="Component" :events="events" />
@@ -86,7 +87,7 @@ onUnmounted(() => {
 .view-prev-enter-active,
 .view-prev-leave-active {
   position: absolute;
-  width: calc(100vw - 7rem);
+  width: calc(100vw - 6.5rem);
   transition: all 0.5s cubic-bezier(0.55, 0, 0.1, 1);
 }
 

@@ -267,13 +267,22 @@ onUnmounted(() => {
         <div
           class="title"
           :class="{
-            'margin-title': generalStore.isOpeningGame
+            'margin-title':
+              generalStore.isOpeningGame &&
+              currentState !== 'java-install' &&
+              currentState !== 'files-verify'
           }"
         >
           <i v-if="generalStore.isOpeningGame" class="fas fa-spinner fa-spin"></i>
           <span>{{ state }}</span>
         </div>
-        <span v-if="generalStore.isOpeningGame && currentState !== 'java-install'" class="info"
+        <span
+          v-if="
+            generalStore.isOpeningGame &&
+            currentState !== 'java-install' &&
+            currentState !== 'files-verify'
+          "
+          class="info"
           >Kliknij, aby przerwać</span
         >
       </div>

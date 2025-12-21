@@ -134,7 +134,9 @@ onMounted(async () => {
               {{ event?.endDate ? format(event.endDate, 'dd MMMM yyyy') : '' }}
             </span>
             <h4>{{ event.name }}</h4>
-            <p class="text-[var(--text-secondary)]!">{{ event.desc }}</p>
+            <p class="text-[var(--text-secondary)]!">
+              {{ event.desc?.length > 120 ? event.desc.substring(0, 120) + '...' : event.desc }}
+            </p>
           </div>
         </article>
       </div>

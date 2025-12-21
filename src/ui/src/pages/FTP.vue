@@ -387,7 +387,7 @@ onMounted(async () => {
 
 <style scoped>
 .ftp-container {
-  width: calc(100vw - 7rem);
+  width: calc(100vw - 6.5rem);
   height: calc(100vh - 54.5px);
   padding: 0.5rem;
 }

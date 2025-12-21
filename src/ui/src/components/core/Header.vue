@@ -27,10 +27,12 @@ const openDiscord = (): void => {
 }
 
 const hasMod = computed(() =>
-  [UserRole.ADMIN, UserRole.MODERATOR, UserRole.DEV].includes(userStore.user!.role)
+  [UserRole.ADMIN, UserRole.MODERATOR, UserRole.DEV].includes(userStore.user?.role ?? UserRole.USER)
 )
-const hasTech = computed(() => [UserRole.DEV].includes(userStore.user!.role))
-const hasAdmin = computed(() => [UserRole.ADMIN, UserRole.DEV].includes(userStore.user!.role))
+const hasTech = computed(() => [UserRole.DEV].includes(userStore.user?.role ?? UserRole.USER))
+const hasAdmin = computed(() =>
+  [UserRole.ADMIN, UserRole.DEV].includes(userStore.user?.role ?? UserRole.USER)
+)
 
 const handleChangeRoute = (newRoute: string): void => {
   router.push(newRoute)
@@ -95,7 +97,7 @@ onUnmounted(() => {
     </div>
     <div v-if="$route.path.includes('/app')" class="breadcrumbs flex items-center gap-2">
       <button class="nav-icon" @click="$router.push('/app/home')">
-        <i class="fa fa-home" />
+        <i class="fa fa-play" />
       </button>
       <button
         v-if="hasMod"

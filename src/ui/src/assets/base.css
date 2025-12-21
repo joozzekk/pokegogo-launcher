@@ -290,7 +290,7 @@ body {
 
 /* -------------------------------------- Pasek boczny ---------------------------- */
 .sidebar {
-  width: 7rem;
+  width: 6.5rem;
   background: var(--bg-card);
   backdrop-filter: blur(20px);
   display: flex;

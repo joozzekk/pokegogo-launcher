@@ -5,6 +5,7 @@ import HomePage from '@ui/pages/Home.vue'
 import LoginPage from '@ui/pages/Login.vue'
 import ChangelogPage from '@ui/pages/Changelog.vue'
 import SettingsPage from '@ui/pages/Settings.vue'
+import NewsPage from '@ui/pages/News.vue'
 import ShopPage from '@ui/pages/Shop.vue'
 import LoadingPage from '@ui/pages/Loading.vue'
 import UsersPage from '@ui/pages/Users.vue'
@@ -25,7 +26,15 @@ const routes = [
         name: 'home',
         component: HomePage,
         meta: {
-          displayName: 'Home'
+          displayName: 'Graj'
+        }
+      },
+      {
+        path: 'news',
+        name: 'news',
+        component: NewsPage,
+        meta: {
+          displayName: 'Aktualności'
         }
       },
       {

@@ -21,7 +21,8 @@ export enum SearchKeyWord {
 export enum UserRole {
   ADMIN = 'admin',
   MODERATOR = 'moderator',
-  DEV = 'technik'
+  DEV = 'technik',
+  USER = 'gracz'
 }
 
 export type SavedAccount = Partial<

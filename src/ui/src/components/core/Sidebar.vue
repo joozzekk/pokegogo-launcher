@@ -86,11 +86,24 @@ watch(
         @click="handleChangeRoute('/app/home')"
       >
         <div class="nav-icon">
-          <i class="fas fa-home"></i>
+          <i class="fas fa-play"></i>
         </div>
-        <span>Home</span>
+        <span>Graj</span>
         <div class="nav-indicator"></div>
       </button>
+      <!-- <button
+        class="nav-item"
+        :class="{
+          active: $route.path === '/app/news'
+        }"
+        @click="handleChangeRoute('/app/news')"
+      >
+        <div class="nav-icon">
+          <i class="fas fa-bell"></i>
+        </div>
+        <span>Aktualności</span>
+        <div class="nav-indicator"></div>
+      </button> -->
       <button
         class="nav-item"
         :class="{
