@@ -48,10 +48,11 @@ export const useSocketService = (): {
       const isCurrentPlayerBanned =
         userStore.user?.machineId === data.uuid || userStore.user?.uuid === data.uuid
 
+      userStore.user!.banReason = data.reason
+
       if (isCurrentPlayerBanned) {
         await refreshToken()
         await userStore.updateProfile()
-        location.reload()
       }
     })
 
@@ -69,7 +70,8 @@ export const useSocketService = (): {
       if (isCurrentPlayerUnbanned) {
         await refreshToken()
         await userStore.updateProfile()
-        location.reload()
+
+        showToast('Zostałeś odbanowany', 'success')
       }
     })
 

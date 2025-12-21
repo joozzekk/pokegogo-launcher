@@ -37,11 +37,9 @@ watch(
     const fromIndex = routeOrder.indexOf(from)
 
     if (toIndex !== -1 && fromIndex !== -1) {
-      // Jeśli idziemy "w dół" listy (np. z 0 na 1), widok ma jechać do góry (wjeżdżać z dołu)
-      // Jeśli idziemy "w górę" listy (np. z 2 na 0), widok ma jechać w dół (wjeżdżać z góry)
       transitionName.value = toIndex > fromIndex ? 'view-next' : 'view-prev'
     } else {
-      transitionName.value = 'view' // fallback
+      transitionName.value = 'view'
     }
   }
 )

@@ -56,7 +56,7 @@ const unbanUser = async (): Promise<void> => {
 
   if (res) {
     await emits('refreshData')
-    showToast('Pomyślnie odbanowano użytkownika ')
+    showToast('Pomyślnie odbanowano użytkownika')
     handleCancel()
   }
 }
@@ -110,7 +110,7 @@ defineExpose({
                 Nick
               </button>
             </div>
-            <div v-if="banType === 'nickname'" class="flex gap-2 flex-col">
+            <div class="flex gap-2 flex-col">
               <label for="banReason" class="input-label">Czas zakończenia bana</label>
               <DatePicker
                 v-model="banTime"
