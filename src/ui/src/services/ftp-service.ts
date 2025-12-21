@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { showProgressToast, showToast, traverseFileTree } from '@ui/utils'
-import { Ref, ref } from 'vue'
+import { computed, ComputedRef, Ref, ref } from 'vue'
 import { LOGGER } from './logger-service'
 import { FTPChannel } from '@ui/types/ftp'
+import CreateFolderModal from '@ui/components/modals/CreateFolderModal.vue'
 
 interface FTPService {
   currentFileName: Ref<string>
@@ -25,6 +26,22 @@ interface FTPService {
   dragActive: Ref<boolean>
   downloadFile: (name: string) => Promise<void>
   downloadFolder: (name: string) => Promise<void>
+  searchQuery: Ref<string>
+  fileIsImportant: (file: FTPFile) => boolean
+  toggleImportant: (file: FTPFile) => Promise<void>
+  handleZipFolder: (file: FTPFile) => Promise<void>
+  mapPathToBreadCrumbs: (path: string) => string[]
+  openCreateFolderModal: () => void
+  filteredFiles: ComputedRef<FTPFile[]>
+  breadcrumbs: ComputedRef<string[]>
+  handleUploadFile: () => void
+  handleUploadFolder: () => void
+  isTextFile: (name: string) => boolean
+  isImageFile: (name: string) => boolean
+  isKnownFile: (name: string) => boolean
+  inputFile: Ref<HTMLInputElement | null>
+  inputFolder: Ref<HTMLInputElement | null>
+  createFolderModal: Ref<InstanceType<typeof CreateFolderModal> | null>
 }
 
 export interface FTPFile {
@@ -41,16 +58,18 @@ export interface FTPFile {
   hash?: string
 }
 
-export const useFTP = (
-  inputFile?: Ref<HTMLInputElement | null>,
-  inputFolder?: Ref<HTMLInputElement | null>
-): FTPService => {
+export const useFTP = (): FTPService => {
+  const searchQuery = ref<string>('')
   const dragActive = ref<boolean>(false)
   const currentFileName = ref<string>('')
   const currentFileContent = ref<string>('')
   const currentFolder = ref<string>('')
   const currentFolderFiles = ref<FTPFile[]>([])
   const loadingStatuses = ref<boolean>(false)
+  const createFolderModal = ref<InstanceType<typeof CreateFolderModal> | null>(null)
+
+  const inputFile = ref<HTMLInputElement | null>(null)
+  const inputFolder = ref<HTMLInputElement | null>(null)
 
   const getFolderContent = async (folder: string = ''): Promise<void> => {
     loadingStatuses.value = true
@@ -300,6 +319,8 @@ export const useFTP = (
   }
 
   const openTextFile = async (name: string): Promise<void> => {
+    searchQuery.value = ''
+
     currentFileName.value = name
     try {
       const res = await window.electron.ipcRenderer?.invoke(
@@ -315,6 +336,8 @@ export const useFTP = (
   }
 
   const openImageFile = async (name: string): Promise<void> => {
+    searchQuery.value = ''
+
     currentFileName.value = name
     try {
       const base64Content: string = await window.electron.ipcRenderer?.invoke(
@@ -463,7 +486,84 @@ export const useFTP = (
     }
   }
 
+  const fileIsImportant = (file: FTPFile): boolean => {
+    return file.flag === 'important'
+  }
+
+  const toggleImportant = async (file: FTPFile): Promise<void> => {
+    const newFlag = file.flag === 'important' ? 'ignore' : 'important'
+
+    const progress = showProgressToast(`Aktualizuję status...`)
+
+    try {
+      await window.electron.ipcRenderer?.invoke(
+        FTPChannel.SET_HASH_FLAG,
+        currentFolder.value,
+        file.name,
+        newFlag
+      )
+
+      await getFolderContent(currentFolder.value)
+      progress?.close('Pomyślnie zaktualizowano.', 'success')
+    } catch (e) {
+      LOGGER.with('FTP').err((e as Error).message)
+      progress?.close('Błąd aktualizacji.', 'error')
+    }
+  }
+
+  const handleZipFolder = async (file: FTPFile): Promise<void> => {
+    if (!file.isDirectory) return
+    await zipFolder(file.name)
+  }
+
+  const mapPathToBreadCrumbs = (path: string): string[] => {
+    return path.split('/').filter(Boolean)
+  }
+
+  const openCreateFolderModal = (): void => {
+    createFolderModal.value?.openModal()
+  }
+
+  const filteredFiles = computed(() => {
+    const files = currentFolderFiles.value
+      ? [...currentFolderFiles.value]
+          .sort((a: FTPFile) => (a.name?.endsWith('.zip') ? 1 : -1))
+          .sort((a: FTPFile) => (a.isDirectory ? -1 : 1))
+          .sort((a: FTPFile) => (a.isZipped ? -1 : 1))
+      : []
+
+    if (!searchQuery.value) return files
+
+    const query = searchQuery.value.toLowerCase()
+    return files.filter((file) => file.name.toLowerCase().includes(query))
+  })
+
+  const breadcrumbs = computed(() => {
+    return mapPathToBreadCrumbs(currentFolder.value)
+  })
+
+  const handleUploadFile = (): void => {
+    inputFile.value?.click()
+  }
+
+  const handleUploadFolder = (): void => {
+    inputFolder.value?.click()
+  }
+
+  const isTextFile = (name: string): boolean => {
+    return /\.(txt|log|md|csv|json|xml|yml|yaml|conf|properties|js|ts|css|html|vue|hashes)$/i.test(
+      name
+    )
+  }
+
+  const isImageFile = (name: string): boolean => {
+    return /\.(png|jpg|jpeg|gif|bmp|svg|webp)$/i.test(name)
+  }
+
+  const isKnownFile = (name: string): boolean => isTextFile(name) || isImageFile(name)
+
   return {
+    searchQuery,
     currentFileName,
     currentFileContent,
     currentFolderFiles,
@@ -483,6 +583,21 @@ export const useFTP = (
     zipFolder,
     loadingStatuses,
     downloadFile,
-    downloadFolder
+    downloadFolder,
+    fileIsImportant,
+    toggleImportant,
+    handleZipFolder,
+    mapPathToBreadCrumbs,
+    openCreateFolderModal,
+    filteredFiles,
+    breadcrumbs,
+    handleUploadFile,
+    handleUploadFolder,
+    isTextFile,
+    isImageFile,
+    isKnownFile,
+    inputFile,
+    inputFolder,
+    createFolderModal
   }
 }

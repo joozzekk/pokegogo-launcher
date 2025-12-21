@@ -6,7 +6,7 @@ import VerifyFilesModal from '@ui/components/modals/VerifyFilesModal.vue'
 import SkinViewer from '@ui/components/SkinViewer.vue'
 import useGeneralStore from '@ui/stores/general-store'
 import useUserStore from '@ui/stores/user-store'
-import { AccountType } from '@ui/types/app'
+import { AccountType, UserRole } from '@ui/types/app'
 import { calculateValueFromPercentage, checkUpdate, MIN_RAM, showToast } from '@ui/utils'
 import useVuelidate from '@vuelidate/core'
 import { helpers, required, sameAs } from '@vuelidate/validators'
@@ -312,7 +312,11 @@ onUnmounted(() => {
         </div>
 
         <div
-          v-if="['admin', 'technik', 'mod', 'helper'].includes(userStore.user?.role ?? 'default')"
+          v-if="
+            [UserRole.ADMIN, UserRole.DEV, UserRole.MODERATOR, 'helper'].includes(
+              userStore.user?.role ?? 'default'
+            )
+          "
           class="my-0 flex flex-row items-center justify-between"
         >
           <div class="text-[var(--text-secondary)]">Motyw</div>
@@ -332,7 +336,7 @@ onUnmounted(() => {
         <div
           class="my-0 flex flex-row items-center justify-between"
           :class="{
-            'mt-4': !['admin', 'technik', 'mod', 'helper'].includes(
+            'mt-4': ![UserRole.ADMIN, UserRole.DEV, UserRole.MODERATOR, 'helper'].includes(
               userStore.user?.role ?? 'default'
             )
           }"

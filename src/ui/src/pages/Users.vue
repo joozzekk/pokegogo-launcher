@@ -61,6 +61,35 @@ watch(searchQuery, () => {
   } else if (query.startsWith(SearchKeyWord.ROLE)) {
     const roleName = query.split(':')[1]
     players = players.filter((p) => p.role?.toLowerCase() === roleName)
+  } else if (query.startsWith(SearchKeyWord.HWID)) {
+    const hwidCounts = new Map()
+    allPlayers.value.forEach((p) => {
+      if (p.machineId) {
+        hwidCounts.set(p.machineId, (hwidCounts.get(p.machineId) || 0) + 1)
+      }
+    })
+
+    const match = query.match(/([><=]{1,2})(\d+)/)
+
+    if (match) {
+      const [, operator, valueStr] = match
+      const threshold = parseInt(valueStr)
+
+      players = players.filter((p) => {
+        if (!p.machineId) return false
+        const count = hwidCounts.get(p.machineId) || 0
+        if (operator === '>') return count > threshold
+        if (operator === '<') return count < threshold
+        return count === threshold
+      })
+
+      players.sort((a: IUser, b: IUser) => {
+        if (a.machineId! < b.machineId!) return -1
+        if (a.machineId! > b.machineId!) return 1
+
+        return a.nickname.localeCompare(b.nickname)
+      })
+    }
   } else {
     players = players.filter(
       (p) =>
@@ -381,19 +410,19 @@ onUnmounted(() => {
           </tbody>
         </table>
       </template>
-      <div v-if="totalPages > 1" class="pagination-controls">
-        <button :disabled="currentPage === 1" class="pag-btn" @click="currentPage--">
-          <i class="fas fa-chevron-left"></i>
-        </button>
+    </div>
+    <div v-if="totalPages > 1" class="pagination-controls">
+      <button :disabled="currentPage === 1" class="pag-btn" @click="currentPage--">
+        <i class="fas fa-chevron-left"></i>
+      </button>
 
-        <span class="pag-info">
-          Strona <strong>{{ currentPage }}/{{ totalPages }}</strong>
-        </span>
+      <span class="pag-info">
+        Strona <strong>{{ currentPage }}/{{ totalPages }}</strong>
+      </span>
 
-        <button :disabled="currentPage === totalPages" class="pag-btn" @click="currentPage++">
-          <i class="fas fa-chevron-right"></i>
-        </button>
-      </div>
+      <button :disabled="currentPage === totalPages" class="pag-btn" @click="currentPage++">
+        <i class="fas fa-chevron-right"></i>
+      </button>
     </div>
 
     <BanPlayerModal ref="banPlayerModalRef" @refresh-data="loadPlayerData" />
@@ -413,6 +442,7 @@ onUnmounted(() => {
 .users-container {
   padding: 0.5rem;
   height: calc(100vh - 54.5px);
+  overflow: hidden;
 }
 .reverse {
   display: flex;
@@ -425,7 +455,7 @@ onUnmounted(() => {
   border-radius: var(--border-radius);
   box-shadow: var(--shadow-card);
   position: relative;
-  height: calc(100vh - 117.5px);
+  height: calc(100vh - 150px);
   overflow-y: auto;
   border: 1px dashed var(--border);
 }
@@ -578,13 +608,14 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  position: absolute;
-  bottom: 0;
   gap: 1.5rem;
+  position: absolute;
+  bottom: 0.55rem;
   padding: 0.5rem 1rem;
   background: var(--bg-body);
   border-top: 1px solid var(--border);
-  width: 100%;
+  width: calc(100vw - 7.5rem);
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
 }
 
 .pag-btn {

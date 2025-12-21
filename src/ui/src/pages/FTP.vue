@@ -1,24 +1,22 @@
 <script lang="ts" setup>
 import CreateFolderModal from '@ui/components/modals/CreateFolderModal.vue'
-import { useFTP, FTPFile } from '@ui/services/ftp-service'
+import { useFTP } from '@ui/services/ftp-service'
 import { format } from 'date-fns'
-import { computed, onMounted, ref } from 'vue'
-import { showProgressToast } from '@ui/utils'
-import { LOGGER } from '@ui/services/logger-service'
-import { FTPChannel } from '@ui/types/ftp'
-
-const searchQuery = ref<string>('')
-const inputFile = ref<HTMLInputElement | null>(null)
-const inputFolder = ref<HTMLInputElement | null>(null)
-const createFolderModal = ref<InstanceType<typeof CreateFolderModal> | null>(null)
+import { onMounted } from 'vue'
 
 const {
+  searchQuery,
   currentFileName,
   currentFileContent,
-  currentFolderFiles,
+  dragActive,
+  loadingStatuses,
+  createFolderModal,
+  inputFile,
+  inputFolder,
+  filteredFiles,
+  breadcrumbs,
   getFolderContent,
   changeFolder,
-  currentFolder,
   restoreFolder,
   uploadFile,
   uploadFolder,
@@ -27,89 +25,19 @@ const {
   openTextFile,
   openImageFile,
   saveFile,
-  zipFolder,
-  dragActive,
-  handleDrop,
-  loadingStatuses,
   downloadFile,
-  downloadFolder
-} = useFTP(inputFile, inputFolder)
-
-const fileIsImportant = (file: FTPFile): boolean => {
-  return file.flag === 'important'
-}
-
-const toggleImportant = async (file: FTPFile): Promise<void> => {
-  const newFlag = file.flag === 'important' ? 'ignore' : 'important'
-
-  const progress = showProgressToast(`Aktualizuję status...`)
-
-  try {
-    await window.electron.ipcRenderer?.invoke(
-      FTPChannel.SET_HASH_FLAG,
-      currentFolder.value,
-      file.name,
-      newFlag
-    )
-
-    await getFolderContent(currentFolder.value)
-    progress?.close('Pomyślnie zaktualizowano.', 'success')
-  } catch (e) {
-    LOGGER.with('FTP').err((e as Error).message)
-    progress?.close('Błąd aktualizacji.', 'error')
-  }
-}
-
-const handleZipFolder = async (file: FTPFile): Promise<void> => {
-  if (!file.isDirectory) return
-  await zipFolder(file.name)
-}
-
-const mapPathToBreadCrumbs = (path: string): string[] => {
-  return path.split('/').filter(Boolean)
-}
-
-const openCreateFolderModal = (): void => {
-  createFolderModal.value?.openModal()
-}
-
-const filteredFiles = computed(() => {
-  const files = currentFolderFiles.value
-    ? [...currentFolderFiles.value]
-        .sort((a: FTPFile) => (a.name?.endsWith('.zip') ? 1 : -1))
-        .sort((a: FTPFile) => (a.isDirectory ? -1 : 1))
-        .sort((a: FTPFile) => (a.isZipped ? -1 : 1))
-    : []
-
-  if (!searchQuery.value) return files
-
-  const query = searchQuery.value.toLowerCase()
-  return files.filter((file) => file.name.toLowerCase().includes(query))
-})
-
-const breadcrumbs = computed(() => {
-  return mapPathToBreadCrumbs(currentFolder.value)
-})
-
-const handleUploadFile = (): void => {
-  inputFile.value?.click()
-}
-
-const handleUploadFolder = (): void => {
-  inputFolder.value?.click()
-}
-
-const isTextFile = (name: string): boolean => {
-  return /\.(txt|log|md|csv|json|xml|yml|yaml|conf|properties|js|ts|css|html|vue|hashes)$/i.test(
-    name
-  )
-}
-
-const isImageFile = (name: string): boolean => {
-  return /\.(png|jpg|jpeg|gif|bmp|svg|webp)$/i.test(name)
-}
-
-const isKnownFile = (name: string): boolean => isTextFile(name) || isImageFile(name)
+  downloadFolder,
+  handleDrop,
+  openCreateFolderModal,
+  handleUploadFile,
+  handleUploadFolder,
+  isTextFile,
+  isImageFile,
+  isKnownFile,
+  fileIsImportant,
+  toggleImportant,
+  handleZipFolder
+} = useFTP()
 
 onMounted(async () => {
   await getFolderContent()

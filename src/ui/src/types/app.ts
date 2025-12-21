@@ -15,7 +15,8 @@ export enum SearchKeyWord {
   PREMIUM = 'premium',
   NOHWID = 'nohwid',
   ONLINE = 'online',
-  ROLE = 'role'
+  ROLE = 'role',
+  HWID = 'hwid'
 }
 
 export enum UserRole {
