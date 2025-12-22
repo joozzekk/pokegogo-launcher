@@ -313,8 +313,8 @@ onUnmounted(() => {
 
         <div
           v-if="
-            [UserRole.ADMIN, UserRole.DEV, UserRole.MODERATOR, 'helper'].includes(
-              userStore.user?.role ?? 'default'
+            [UserRole.ADMIN, UserRole.DEV, UserRole.MODERATOR, UserRole.HELPER].includes(
+              userStore.user?.role ?? UserRole.USER
             )
           "
           class="my-0 flex flex-row items-center justify-between"
@@ -336,8 +336,8 @@ onUnmounted(() => {
         <div
           class="my-0 flex flex-row items-center justify-between"
           :class="{
-            'mt-4': ![UserRole.ADMIN, UserRole.DEV, UserRole.MODERATOR, 'helper'].includes(
-              userStore.user?.role ?? 'default'
+            'mt-4': ![UserRole.ADMIN, UserRole.DEV, UserRole.MODERATOR, UserRole.HELPER].includes(
+              userStore.user?.role ?? UserRole.USER
             )
           }"
         >
@@ -383,7 +383,11 @@ onUnmounted(() => {
         </div>
 
         <div
-          v-if="['technik', 'admin', 'mod'].includes(userStore.user?.role ?? 'default')"
+          v-if="
+            [UserRole.DEV, UserRole.ADMIN, UserRole.MODERATOR].includes(
+              userStore.user?.role ?? UserRole.USER
+            )
+          "
           class="my-0 mt-4 flex flex-row items-center justify-between"
         >
           <div class="text-[var(--text-secondary)] w-full">Automatyczne aktualizacje</div>
@@ -409,8 +413,8 @@ onUnmounted(() => {
         <div
           v-if="
             userStore.user?.enableUpdateChannel ||
-            ['technik', 'admin', 'mod', 'headadmin', 'helper'].includes(
-              userStore.user?.role ?? 'default'
+            [UserRole.DEV, UserRole.ADMIN, UserRole.MODERATOR, UserRole.HELPER].includes(
+              userStore.user?.role ?? UserRole.USER
             )
           "
           class="my-0 mt-4 flex flex-row items-center justify-between"
