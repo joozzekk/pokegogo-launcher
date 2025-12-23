@@ -53,6 +53,8 @@ const createMainWindow = (): BrowserWindow => {
       messageNotify.on('click', () => {
         mainWindow.show()
       })
+
+      messageNotify.show()
     }
   )
 

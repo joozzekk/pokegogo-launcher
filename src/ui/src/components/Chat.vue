@@ -3,40 +3,49 @@ import { getFriend, getMessages, readMessages, sendMessage } from '@ui/api/endpo
 import { IUser } from '@ui/env'
 import { LOGGER } from '@ui/services/logger-service'
 import useUserStore from '@ui/stores/user-store'
-import { IMessage } from '@ui/types/app'
 import { extractHead } from '@ui/utils'
 import { computed, nextTick, ref, watch } from 'vue'
+import { useChatsStore } from '@ui/stores/chats-store'
+import { storeToRefs } from 'pinia'
+
+const chatsStore = useChatsStore()
+const { messages } = storeToRefs(chatsStore)
 
 const apiURL = import.meta.env.RENDERER_VITE_API_URL
 
 const chatToggled = ref<boolean>(false)
 const userStore = useUserStore()
 const friend = ref<IUser | null>(null)
-const messages = ref<IMessage[]>([])
 const message = ref<string>('')
 const messagesContainer = ref<HTMLDivElement | null>(null)
 
-const handleSendMessage = async (): Promise<void> => {
-  if (!message.value) return
-
-  await sendMessage(friend.value!.uuid, message.value)
-
-  messages.value.push({
-    sender: userStore.user!.uuid,
-    receiver: friend.value!.uuid,
-    content: message.value
-  })
-
-  await nextTick()
-
+const scrollToBottom = (): void => {
   if (messagesContainer.value) {
     messagesContainer.value.scrollTo({
       top: messagesContainer.value.scrollHeight,
       behavior: 'smooth'
     })
   }
+}
 
-  message.value = ''
+const handleSendMessage = async (): Promise<void> => {
+  if (!message.value || !friend.value) return
+
+  const content = message.value
+  message.value = '' // Czyścimy input od razu dla lepszego UX
+
+  await sendMessage(friend.value.uuid, content)
+
+  // Dodajemy własną wiadomość do store, aby wyświetliła się natychmiast
+  chatsStore.addMessage({
+    sender: userStore.user!.uuid,
+    receiver: friend.value.uuid,
+    content: content,
+    read: true
+  })
+
+  await nextTick()
+  scrollToBottom()
 }
 
 const fallbackHeadUrl = (playerName: string): string =>
@@ -102,10 +111,19 @@ watch(
   async () => {
     if (friend.value) {
       await loadCustomOrFallbackHead(friend.value.nickname)
-      messages.value = await getMessages(friend.value.uuid)
+      const data = await getMessages(friend.value.uuid)
+      chatsStore.setMessages(data)
     }
   },
   { immediate: true }
+)
+
+watch(
+  () => messages.value.length,
+  async () => {
+    await nextTick()
+    scrollToBottom()
+  }
 )
 
 const friendHeadUrl = computed(() => {
@@ -117,7 +135,8 @@ const friendHeadUrl = computed(() => {
 const handleReadMessages = async (): Promise<void> => {
   await readMessages(friend.value!.uuid)
 
-  messages.value = await getMessages(friend.value!.uuid)
+  const data = await getMessages(friend.value!.uuid)
+  chatsStore.setMessages(data)
 }
 
 watch(chatToggled, async (newValue) => {

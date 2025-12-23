@@ -4,6 +4,8 @@ import api from '@ui/utils/client'
 import { isMachineIDBanned, showToast } from '@ui/utils'
 import useUserStore from '@ui/stores/user-store'
 import { useRouter } from 'vue-router'
+import { useChatsStore } from '@ui/stores/chats-store'
+import { getMessages } from '@ui/api/endpoints'
 
 export const useSocketService = (): {
   connect: (uuid: string) => void
@@ -85,6 +87,15 @@ export const useSocketService = (): {
         await userStore.updateProfile()
         router.go(0)
       }
+    })
+
+    socket.on('player:receive-message', async (data: { senderUUID: string; message: string }) => {
+      LOGGER.with('Socket Service').log('Player received message: ', data.message)
+
+      const chatsStore = useChatsStore()
+      const messages = await getMessages(data.senderUUID)
+
+      chatsStore.setMessages(messages)
     })
   }
 
