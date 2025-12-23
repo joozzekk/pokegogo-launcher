@@ -1,5 +1,5 @@
 import { is } from '@electron-toolkit/utils'
-import { app, BrowserWindow, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, Notification, shell } from 'electron'
 import { join } from 'path'
 import icon from '../../../resources/icon.png?asset'
 import { useLoginService } from './login-service'
@@ -38,6 +38,23 @@ const createMainWindow = (): BrowserWindow => {
     mainWindow.webContents.send('change:max-ram', Math.floor(getMaxRAMInGB() * 0.95))
     mainWindow.webContents.send('change:version', app.getVersion())
   })
+
+  ipcMain.handle(
+    'notification:show',
+    async (_, data: { title: string; body: string; icon: string }): Promise<void> => {
+      Logger.log('Notification showed: ', data)
+
+      const messageNotify = new Notification({
+        icon: data.icon,
+        title: data.title,
+        body: data.body
+      })
+
+      messageNotify.on('click', () => {
+        mainWindow.show()
+      })
+    }
+  )
 
   ipcMain.handle('data:machine', async () => {
     const hwid = await machineId()

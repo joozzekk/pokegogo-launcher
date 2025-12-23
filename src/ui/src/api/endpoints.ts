@@ -248,3 +248,29 @@ export const removeUser = async (uuid: string): Promise<any> => {
 
   return res.data
 }
+
+export const getFriend = async (uuid: string): Promise<any> => {
+  const res = await api.get(`/users/friend/${uuid}`)
+
+  return res.data
+}
+
+export const getMessages = async (uuid: string): Promise<any> => {
+  const res = await api.get(`/messages/${uuid}`)
+
+  return res.data
+}
+
+export const sendMessage = async (uuid: string, content: string): Promise<any> => {
+  const res = await api.post(`/messages/${uuid}`, {
+    content
+  })
+
+  return res.data
+}
+
+export const readMessages = async (uuid: string): Promise<any> => {
+  const res = await api.post(`/messages/read/${uuid}`)
+
+  return res.data
+}

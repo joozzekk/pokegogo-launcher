@@ -3,12 +3,14 @@ import { LOGGER } from './logger-service'
 import api from '@ui/utils/client'
 import { isMachineIDBanned, showToast } from '@ui/utils'
 import useUserStore from '@ui/stores/user-store'
+import { useRouter } from 'vue-router'
 
 export const useSocketService = (): {
   connect: (uuid: string) => void
 } => {
   let socket: Socket | null = null
   const userStore = useUserStore()
+  const router = useRouter()
 
   const refreshToken = async (): Promise<void> => {
     const refreshToken = localStorage.getItem('refresh_token')
@@ -81,7 +83,7 @@ export const useSocketService = (): {
       if (isCurrentPlayer) {
         await refreshToken()
         await userStore.updateProfile()
-        location.reload()
+        router.go(0)
       }
     })
   }

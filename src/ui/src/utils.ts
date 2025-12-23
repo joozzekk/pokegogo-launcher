@@ -5,7 +5,7 @@ import { DatePickerPassThroughOptions } from 'primevue'
 import useUserStore from './stores/user-store'
 import { checkMachineID } from './api/endpoints'
 
-const TOAST_DURATION = 5000
+const TOAST_DURATION = 3000
 
 export const checkUpdate = async (): Promise<void> => {
   const generalStore = useGeneralStore()

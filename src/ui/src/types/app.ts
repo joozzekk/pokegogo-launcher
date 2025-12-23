@@ -34,3 +34,11 @@ export type SavedAccount = Partial<
     url: string
   }
 >
+
+export type IMessage = Partial<{
+  sender: string
+  receiver: string
+  content: string
+  createdAt: Date | string
+  read: boolean
+}>

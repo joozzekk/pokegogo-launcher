@@ -34,4 +34,6 @@ export interface IUser {
   ipAddress: string
   role: UserRole
   enableUpdateChannel: boolean
+  friends: string[]
+  headUrl?: string
 }

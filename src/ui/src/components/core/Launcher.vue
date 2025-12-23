@@ -8,6 +8,7 @@ import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useLauncherService } from '@ui/services/launcher-service'
 import { initAnimations } from '@ui/assets/scripts/animations'
 import { useRoute } from 'vue-router'
+import Chat from '../Chat.vue'
 
 const route = useRoute()
 
@@ -79,6 +80,7 @@ onUnmounted(() => {
 
   <div id="toastContainer" class="toast-container"></div>
   <BannedModal />
+  <Chat />
 </template>
 
 <style>

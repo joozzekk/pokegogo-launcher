@@ -109,7 +109,7 @@ onMounted(async () => {
       </p>
     </div>
 
-    <div class="absolute w-full bottom-0">
+    <div class="absolute bottom-0 w-[calc(100%-1rem)]">
       <LaunchButton class="w-4/10 mx-auto" />
       <div class="w-full flex gap-2 mt-4">
         <article

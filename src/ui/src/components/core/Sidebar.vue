@@ -34,11 +34,18 @@ async function loadCustomOrFallbackHead(): Promise<void> {
   try {
     const base64Head = await extractHead(customSkinSource, 100)
     skinHeadUrl.value = base64Head
+
+    if (userStore.user) {
+      userStore.user.headUrl = base64Head
+    }
     LOGGER.with('SkinAPI').success(`Custom skin is loaded for ${currentName}.`)
   } catch (error) {
     LOGGER.with('SkinAPI').err('Error during skin load.', (error as Error)?.message)
 
     skinHeadUrl.value = fallbackHeadUrl.value
+    if (userStore.user) {
+      userStore.user.headUrl = fallbackHeadUrl.value
+    }
   }
 }
 
@@ -63,12 +70,21 @@ watch(
       <div class="player-fullinfo">
         <div class="player-avatar">
           <img
+            v-if="skinHeadUrl"
             id="playerSkin"
             :src="skinHeadUrl"
             class="player-skin"
             alt="Player Skin"
             @dragstart.prevent="null"
           />
+          <div
+            v-else
+            id="playerSkin"
+            class="player-skin flex items-center justify-center"
+            alt="Player Skin"
+          >
+            <i class="fas fa-user"></i>
+          </div>
           <div class="status-dot"></div>
         </div>
       </div>
