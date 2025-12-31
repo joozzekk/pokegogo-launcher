@@ -58,7 +58,15 @@ export async function launchMinecraft(
   const minecraftDir = path.join(baseDir, 'instances', settings.gameMode.toLowerCase())
   const client = new Client()
 
-  const javaPath = join(baseDir, 'java/jdk-21.0.8/bin/', plt === 'win32' ? 'java.exe' : 'java')
+  const javaPath = join(
+    baseDir,
+    'java',
+    plt === 'win32'
+      ? 'jdk-21.0.8/bin/java.exe'
+      : plt === 'darwin'
+        ? 'jdk-21.0.8.jdk/Contents/Home/bin/java'
+        : 'jdk-21.0.8/bin/java'
+  )
 
   const isFullScreen = settings.displayMode === 'Pełny ekran' ? true : false
   const { width: fullWidth, height: fullHeight } = screen.getPrimaryDisplay().bounds
