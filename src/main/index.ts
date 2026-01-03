@@ -1,5 +1,5 @@
 import { installExtension, VUEJS_DEVTOOLS } from 'electron-devtools-installer'
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain, Menu, Notification } from 'electron'
 import { electronApp } from '@electron-toolkit/utils'
 import useWindowService from './services/window-service'
 import { useAppUpdater } from './services/app-updater'
@@ -9,6 +9,9 @@ import { useFTPService } from './services/ftp-service'
 import { join } from 'path'
 import discordRpc, { type RP } from 'discord-rich-presence'
 import Logger from 'electron-log'
+import { machineId } from 'node-machine-id'
+import { address } from 'address/promises'
+import { platform } from 'os'
 
 const CLIENT_ID = import.meta.env.VITE_DISCORD_CLIENT_ID
 let rpc: RP | null = null
@@ -56,6 +59,59 @@ if (!gotTheLock) {
 
     initDiscord()
 
+    if (!ipcMain.listenerCount('notification:show'))
+      ipcMain.handle(
+        'notification:show',
+        async (_, data: { title: string; body: string; icon: string }): Promise<void> => {
+          Logger.log('Notification showed: ', data)
+
+          const messageNotify = new Notification({
+            icon: data.icon,
+            title: data.title,
+            body: data.body
+          })
+
+          messageNotify.on('click', () => {
+            mainWindow?.show()
+          })
+
+          messageNotify.show()
+        }
+      )
+
+    if (!ipcMain.listenerCount('data:machine'))
+      ipcMain.handle('data:machine', async () => {
+        const hwid = await machineId()
+        const addr = await address()
+        return {
+          machineId: hwid,
+          macAddress: addr?.mac,
+          ipAddress: addr?.ip
+        }
+      })
+
+    if (!ipcMain.listenerCount('window:minimize'))
+      ipcMain.on('window:minimize', () => {
+        const win = BrowserWindow.getFocusedWindow()
+        if (win) win.minimize()
+      })
+
+    if (!ipcMain.listenerCount('window:close'))
+      ipcMain.on('window:close', (_, isHideToTray: boolean = true) => {
+        const win = BrowserWindow.getFocusedWindow()
+        if (win) {
+          if (isHideToTray && platform() !== 'darwin') {
+            Logger.log('PokeGoGo Launcher > Hidden in tray')
+            win.hide()
+            return
+          }
+
+          win.close()
+          mainWindow = null
+          if (ipcMain.listenerCount('launch:exit')) ipcMain.emit('launch:exit')
+        }
+      })
+
     ipcMain.on('discord:update-activity', (_, activity) => {
       if (rpc) {
         rpc.updatePresence({
@@ -67,12 +123,50 @@ if (!gotTheLock) {
         })
       }
     })
-  })
 
-  app.on('activate', async () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      if (mainWindow) mainWindow.show()
-    }
+    app.on('activate', () => {
+      if (mainWindow) return
+      mainWindow = createMainWindow()
+      mainWindow.show()
+    })
+
+    const template: Electron.MenuItemConstructorOptions[] = [
+      {
+        label: 'File',
+        submenu: [
+          {
+            label: 'New Window',
+            accelerator: 'CmdOrCtrl+N',
+            click: () => {
+              try {
+                if (mainWindow) return
+                mainWindow = createMainWindow()
+                mainWindow.show()
+              } catch (err) {
+                console.error('[Menu] Failed to open new window:', err)
+              }
+            }
+          },
+          {
+            label: 'Close window',
+            accelerator: 'CmdOrCtrl+W',
+            click: () => {
+              try {
+                if (mainWindow) {
+                  mainWindow.close()
+                  mainWindow = null
+                }
+              } catch (err) {
+                console.error('[Menu] Failed to open new window:', err)
+              }
+            }
+          }
+        ]
+      }
+    ]
+
+    const menu = Menu.buildFromTemplate(template)
+    Menu.setApplicationMenu(menu)
   })
 
   app.on('second-instance', () => {

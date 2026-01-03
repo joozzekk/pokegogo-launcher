@@ -126,7 +126,7 @@ export async function launchMinecraft(
     if (data.includes('Initializing Client')) {
       win.webContents.send('launch:change-state', JSON.stringify('minecraft-started'))
       mcOpened = true
-      win.hide()
+      if (plt !== 'darwin') win.hide()
     }
   })
   client.on('progress', (data) => {

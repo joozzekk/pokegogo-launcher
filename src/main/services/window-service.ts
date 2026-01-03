@@ -1,12 +1,10 @@
 import { is } from '@electron-toolkit/utils'
-import { app, BrowserWindow, ipcMain, Notification, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import { join } from 'path'
 import icon from '../../../resources/icon.png?asset'
 import { useLoginService } from './login-service'
 import { useLaunchService } from './launch-service'
 import { getMaxRAMInGB } from '../utils'
-import { machineId } from 'node-machine-id'
-import { address } from 'address/promises'
 import Logger from 'electron-log'
 
 const createMainWindow = (): BrowserWindow => {
@@ -37,54 +35,6 @@ const createMainWindow = (): BrowserWindow => {
   mainWindow.on('ready-to-show', () => {
     mainWindow.webContents.send('change:max-ram', Math.floor(getMaxRAMInGB() * 0.95))
     mainWindow.webContents.send('change:version', app.getVersion())
-  })
-
-  ipcMain.handle(
-    'notification:show',
-    async (_, data: { title: string; body: string; icon: string }): Promise<void> => {
-      Logger.log('Notification showed: ', data)
-
-      const messageNotify = new Notification({
-        icon: data.icon,
-        title: data.title,
-        body: data.body
-      })
-
-      messageNotify.on('click', () => {
-        mainWindow.show()
-      })
-
-      messageNotify.show()
-    }
-  )
-
-  ipcMain.handle('data:machine', async () => {
-    const hwid = await machineId()
-    const addr = await address()
-    return {
-      machineId: hwid,
-      macAddress: addr?.mac,
-      ipAddress: addr?.ip
-    }
-  })
-
-  ipcMain.on('window:minimize', () => {
-    const win = BrowserWindow.getFocusedWindow()
-    if (win) win.minimize()
-  })
-
-  ipcMain.on('window:close', (_, isHideToTray: boolean = true) => {
-    const win = BrowserWindow.getFocusedWindow()
-    if (win) {
-      if (isHideToTray) {
-        Logger.log('PokeGoGo Launcher > Hidden in tray')
-        win.hide()
-        return
-      }
-
-      win.close()
-      if (ipcMain.listenerCount('launch:exit')) ipcMain.emit('launch:exit')
-    }
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
