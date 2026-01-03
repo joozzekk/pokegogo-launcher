@@ -60,8 +60,12 @@ export const changeEmail = async (nickname: string, newEmail: string): Promise<a
   return res.data
 }
 
-export const fetchAllPlayers = async (): Promise<any> => {
-  const res = await api.post('/users/all')
+export const getPlayers = async (
+  page: number = 1,
+  limit: number = 10,
+  query?: string
+): Promise<any> => {
+  const res = await api.post(`/users/all?page=${page}&limit=${limit}&query=${query}`)
 
   return res.data
 }
@@ -249,8 +253,8 @@ export const removeUser = async (uuid: string): Promise<any> => {
   return res.data
 }
 
-export const getFriend = async (uuid: string): Promise<any> => {
-  const res = await api.get(`/users/friend/${uuid}`)
+export const getFriends = async (): Promise<any> => {
+  const res = await api.get(`/users/friends`)
 
   return res.data
 }
@@ -271,6 +275,38 @@ export const sendMessage = async (uuid: string, content: string): Promise<any> =
 
 export const readMessages = async (uuid: string): Promise<any> => {
   const res = await api.post(`/messages/read/${uuid}`)
+
+  return res.data
+}
+
+export const requestFriend = async (uuid: string): Promise<any> => {
+  const res = await api.post(`/users/friends/request`, {
+    friendUuid: uuid
+  })
+
+  return res.data
+}
+
+export const acceptFriendRequest = async (uuid: string): Promise<any> => {
+  const res = await api.post(`/users/friends/accept`, {
+    friendUuid: uuid
+  })
+
+  return res.data
+}
+
+export const rejectFriendRequest = async (uuid: string): Promise<any> => {
+  const res = await api.post(`/users/friends/decline`, {
+    friendUuid: uuid
+  })
+
+  return res.data
+}
+
+export const removeFriend = async (uuid: string): Promise<any> => {
+  const res = await api.post(`/users/friends/remove`, {
+    friendUuid: uuid
+  })
 
   return res.data
 }

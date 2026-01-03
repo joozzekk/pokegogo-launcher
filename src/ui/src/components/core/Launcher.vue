@@ -17,16 +17,15 @@ const transitionName = ref('slide-up')
 const { useMethods, useFetches, useVariables } = useLauncherService()
 
 const { startMicrosoftTokenRefreshInterval } = useMethods()
-const { fetchUpdateData, fetchEvents } = useFetches()
+const { fetchUpdateData, fetchEvents, fetchFriends } = useFetches()
 const { refreshInterval, events } = useVariables()
 
 const routeOrder = [
-  '/app/users',
   '/app/events',
   '/app/items',
   '/app/ftp',
   '/app/home',
-  '/app/news',
+  '/app/users',
   '/app/shop',
   '/app/changelog',
   '/app/settings'
@@ -51,6 +50,7 @@ onMounted(async () => {
   startMicrosoftTokenRefreshInterval()
 
   await fetchUpdateData()
+  await fetchFriends()
   await fetchEvents()
 
   window.discord.setActivity(`W PokeGoGo Launcher`, 'Przeglądam..')
@@ -66,10 +66,10 @@ onUnmounted(() => {
 
   <Header />
 
-  <div class="container">
+  <div class="launcher-container">
     <Sidebar />
 
-    <main class="main-content !relative overflow-hidden !w-[calc(100vw-6.5rem)]">
+    <main class="main-content !relative overflow-hidden !w-full">
       <RouterView v-slot="{ Component }">
         <Transition :name="transitionName">
           <component :is="Component" :events="events" />

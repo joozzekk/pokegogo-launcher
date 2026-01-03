@@ -26,9 +26,6 @@ const openDiscord = (): void => {
   window.open('discord://-/invite/pokemongogo', '_blank')
 }
 
-const hasMod = computed(() =>
-  [UserRole.ADMIN, UserRole.MODERATOR, UserRole.DEV].includes(userStore.user?.role ?? UserRole.USER)
-)
 const hasTech = computed(() => [UserRole.DEV].includes(userStore.user?.role ?? UserRole.USER))
 const hasAdmin = computed(() =>
   [UserRole.ADMIN, UserRole.DEV].includes(userStore.user?.role ?? UserRole.USER)
@@ -98,14 +95,6 @@ onUnmounted(() => {
     <div v-if="$route.path.includes('/app')" class="breadcrumbs flex items-center gap-2">
       <button class="nav-icon" @click="$router.push('/app/home')">
         <i class="fa fa-play" />
-      </button>
-      <button
-        v-if="hasMod"
-        class="nav-icon"
-        :class="{ active: $route.path === '/app/users' }"
-        @click="handleChangeRoute('/app/users')"
-      >
-        <i class="fa fa-users"></i>
       </button>
       <button
         v-if="hasAdmin"

@@ -35,5 +35,6 @@ export interface IUser {
   role: UserRole
   enableUpdateChannel: boolean
   friends: string[]
+  friendRequests: string[]
   headUrl?: string
 }

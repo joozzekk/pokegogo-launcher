@@ -4,6 +4,9 @@ import useGeneralStore from './stores/general-store'
 import { DatePickerPassThroughOptions } from 'primevue'
 import useUserStore from './stores/user-store'
 import { checkMachineID } from './api/endpoints'
+import { IUser } from './env'
+
+const apiURL = import.meta.env.RENDERER_VITE_API_URL
 
 const TOAST_DURATION = 3000
 
@@ -261,4 +264,18 @@ export const isMachineIDBanned = async (): Promise<void> => {
   LOGGER.log(res ? 'Machine ID is banned.' : 'Machine ID is not banned.')
 
   userStore.hwidBanned = res
+}
+
+export const fallbackHeadUrl = (playerName: string): string =>
+  `https://mineskin.eu/helm/${playerName}/100.png`
+
+export const loadCustomOrFallbackHead = async (player: IUser): Promise<string> => {
+  const customSkinSource = `${apiURL}/skins/image/${player.nickname}`
+
+  try {
+    const base64Head = await extractHead(customSkinSource, 100)
+    return base64Head
+  } catch {
+    return fallbackHeadUrl(player.nickname)
+  }
 }

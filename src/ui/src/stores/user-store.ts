@@ -4,8 +4,11 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { type SavedAccount } from '@ui/types/app'
+import { useChatsStore } from '@ui/stores/chats-store'
 
 const useUserStore = defineStore('user', () => {
+  const chatsStore = useChatsStore()
+
   const savedAccounts = ref<SavedAccount[]>(
     JSON.parse(localStorage.getItem('savedAccounts') ?? '[]')
   )
@@ -30,6 +33,7 @@ const useUserStore = defineStore('user', () => {
 
   const logout = async (): Promise<void> => {
     resetUser()
+    chatsStore.resetChats()
     localStorage.removeItem('token')
     localStorage.removeItem('refresh_token')
     localStorage.removeItem('mcToken')

@@ -23,7 +23,7 @@ select:hover {
 body {
   font-family: 'Poppins', sans-serif;
   color: var(--text-primary);
-  width: 100%;
+  width: 100vw;
   height: 100vh;
   overflow: hidden;
   position: relative;
@@ -282,9 +282,9 @@ body {
   color: var(--primary);
 }
 
-.container {
+.launcher-container {
   display: flex;
-  width: 100%;
+  width: calc(100vw);
   height: calc(100vh - 54.5px);
 }
 
@@ -402,7 +402,6 @@ body {
 }
 
 .main-content {
-  width: 100%;
   height: calc(100vh - 60px);
   overflow: hidden;
 }

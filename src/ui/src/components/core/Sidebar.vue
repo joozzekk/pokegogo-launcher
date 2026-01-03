@@ -104,22 +104,20 @@ watch(
         <div class="nav-icon">
           <i class="fas fa-play"></i>
         </div>
-        <span>Graj</span>
+        <span>Play</span>
         <div class="nav-indicator"></div>
       </button>
-      <!-- <button
+      <button
         class="nav-item"
-        :class="{
-          active: $route.path === '/app/news'
-        }"
-        @click="handleChangeRoute('/app/news')"
+        :class="{ active: $route.path === '/app/users' }"
+        @click="handleChangeRoute('/app/users')"
       >
         <div class="nav-icon">
-          <i class="fas fa-bell"></i>
+          <i class="fas fa-users"></i>
         </div>
-        <span>Aktualności</span>
+        <span>Players</span>
         <div class="nav-indicator"></div>
-      </button> -->
+      </button>
       <button
         class="nav-item"
         :class="{
@@ -130,7 +128,7 @@ watch(
         <div class="nav-icon">
           <i class="fas fa-shopping-cart"></i>
         </div>
-        <span>Sklep</span>
+        <span>Shop</span>
         <div class="nav-indicator"></div>
       </button>
       <button
@@ -156,7 +154,7 @@ watch(
         <div class="nav-icon">
           <i class="fas fa-cog"></i>
         </div>
-        <span>Ustawienia</span>
+        <span>Settings</span>
         <div class="nav-indicator"></div>
       </button>
     </div>
@@ -164,9 +162,7 @@ watch(
     <div class="flex flex-col mx-2" :class="{ 'mx-4': !generalStore.settings.isSidebarCollapsed }">
       <button id="logout" class="nav-item hover:cursor-pointer select-none" @click="handleLogout">
         <i class="nav-icon fa-solid fa-door-open"></i>
-        <label for="logout" class="hover:cursor-pointer text-[0.5rem] mt-[0.3rem]"
-          >Wyloguj się</label
-        >
+        <label for="logout" class="hover:cursor-pointer text-[0.5rem] mt-[0.3rem]">Logout</label>
       </button>
     </div>
   </aside>

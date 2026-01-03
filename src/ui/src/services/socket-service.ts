@@ -4,8 +4,6 @@ import api from '@ui/utils/client'
 import { isMachineIDBanned, showToast } from '@ui/utils'
 import useUserStore from '@ui/stores/user-store'
 import { useRouter } from 'vue-router'
-import { useChatsStore } from '@ui/stores/chats-store'
-import { getMessages } from '@ui/api/endpoints'
 
 export const useSocketService = (): {
   connect: (uuid: string) => void
@@ -91,11 +89,14 @@ export const useSocketService = (): {
 
     socket.on('player:receive-message', async (data: { senderUUID: string; message: string }) => {
       LOGGER.with('Socket Service').log('Player received message: ', data.message)
+    })
 
-      const chatsStore = useChatsStore()
-      const messages = await getMessages(data.senderUUID)
+    socket.on('friends:request', async (uuid: string) => {
+      const isForCurrentUser = userStore.user?.uuid === uuid || userStore.user?.mcid === uuid
 
-      chatsStore.setMessages(messages)
+      if (isForCurrentUser) {
+        showToast('Otrzymałeś nowe zaproszenie do znajomych', 'info')
+      }
     })
   }
 

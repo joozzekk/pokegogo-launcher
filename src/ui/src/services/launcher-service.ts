@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { getEvents, updateMachineData, updateProfileData } from '@ui/api/endpoints'
+import { getEvents, getFriends, updateMachineData, updateProfileData } from '@ui/api/endpoints'
 import useGeneralStore from '@ui/stores/general-store'
 import useUserStore from '@ui/stores/user-store'
 import { isMachineIDBanned, refreshMicrosoftToken } from '@ui/utils'
 import { ref, type Ref } from 'vue'
 import { useSocketService } from './socket-service'
 import { AccountType } from '@ui/types/app'
+import { useChatsStore } from '@ui/stores/chats-store'
 
 export const useLauncherService = (): {
   useVariables: () => {
@@ -15,6 +16,7 @@ export const useLauncherService = (): {
   useFetches: () => {
     fetchUpdateData: () => Promise<void>
     fetchEvents: () => Promise<void>
+    fetchFriends: () => Promise<void>
   }
   useMethods: () => {
     startMicrosoftTokenRefreshInterval: () => void
@@ -24,6 +26,7 @@ export const useLauncherService = (): {
   const refreshInterval = ref<any>(null)
   const generalStore = useGeneralStore()
   const userStore = useUserStore()
+  const chatsStore = useChatsStore()
   const { connect } = useSocketService()
 
   const events = ref<any[]>([])
@@ -84,6 +87,10 @@ export const useLauncherService = (): {
     events.value = await getEvents()
   }
 
+  const fetchFriends = async (): Promise<void> => {
+    chatsStore.setFriends(await getFriends())
+  }
+
   return {
     useVariables: () => ({
       refreshInterval,
@@ -91,7 +98,8 @@ export const useLauncherService = (): {
     }),
     useFetches: () => ({
       fetchUpdateData,
-      fetchEvents
+      fetchEvents,
+      fetchFriends
     }),
     useMethods: () => ({
       startMicrosoftTokenRefreshInterval,
