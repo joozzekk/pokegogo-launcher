@@ -2,15 +2,18 @@
 import { app, type BrowserWindow, ipcMain } from 'electron'
 import { installJava } from './installers/java-installer'
 import { copyMCFiles } from './installers/mc-installer'
-import { launchMinecraft } from './mc-launcher'
+import { createMinecraftInstance, MinecraftInstance } from './mc-launcher'
 import Logger from 'electron-log'
 import { join } from 'path'
 import { rm, unlink } from 'fs/promises'
 
 export const useLaunchService = (win: BrowserWindow): void => {
+  const minecraftInstances: MinecraftInstance[] = []
   let currentAbortController: AbortController | null = null
 
   ipcMain.handle('launch:game', async (_, data) => {
+    let currentInstance: MinecraftInstance | null = null
+
     if (currentAbortController) {
       currentAbortController.abort()
     }
@@ -27,8 +30,25 @@ export const useLaunchService = (win: BrowserWindow): void => {
     currentAbortController = null
 
     if (res !== 'stop') {
-      await launchMinecraft(win, data.token, data.accessToken, data.settings, data.accountType)
+      currentInstance = createMinecraftInstance({
+        accessToken: data.accessToken,
+        accountType: data.accountType,
+        window: win,
+        settings: data.settings,
+        token: data.token
+      })
+
+      minecraftInstances.push(currentInstance)
+
+      await currentInstance.start()
     }
+
+    ipcMain.handle('launch:exit', async (_, pid: string) => {
+      await minecraftInstances.find((instance) => instance.process === parseInt(pid))?.stop()
+      ipcMain.removeHandler('launch:exit')
+    })
+
+    return currentInstance?.process
   })
 
   ipcMain.handle('launch:check-files', async (_, data): Promise<any> => {
