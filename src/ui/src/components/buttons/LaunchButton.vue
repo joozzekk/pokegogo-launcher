@@ -39,6 +39,7 @@ const handleToggleGame = async (e: Event): Promise<void> => {
         await handleKillGame()
         break
       case 'minecraft-closed':
+        generalStore.mcInstance = null
         generalStore.setIsOpeningGame(false)
         generalStore.setCurrentState('start')
         break
@@ -108,9 +109,7 @@ const handleLaunchGame = async (e: Event): Promise<void> => {
     accountType: userStore.user?.accountType
   })
 
-  if (res) {
-    showToast(`${res}`)
-  }
+  if (res) generalStore.mcInstance = parseInt(res)
 }
 
 const state = computed(() => {
@@ -118,7 +117,8 @@ const state = computed(() => {
 })
 
 const handleKillGame = async (): Promise<void> => {
-  await window.electron?.ipcRenderer?.invoke('launch:exit')
+  await window.electron?.ipcRenderer?.invoke('launch:exit', generalStore.mcInstance)
+  generalStore.mcInstance = null
   generalStore.setCurrentState('start')
   generalStore.setIsOpeningGame(false)
   setTimeout(() => {
@@ -212,7 +212,7 @@ onMounted(async () => {
   }, 1000)
 
   try {
-    const isRunning = await window.electron?.ipcRenderer?.invoke('launch:check-state')
+    const isRunning = generalStore.mcInstance
 
     if (isRunning) {
       generalStore.setIsOpeningGame(true)
@@ -289,7 +289,11 @@ onUnmounted(() => {
     </button>
     <Transition name="slide-down">
       <div v-if="generalStore.currentLog.length" class="launch-button-info">
-        {{ generalStore.currentLog }}
+        {{
+          generalStore.currentLog.length > 80
+            ? generalStore.currentLog.slice(0, 80) + '..'
+            : generalStore.currentLog
+        }}
       </div>
     </Transition>
   </div>

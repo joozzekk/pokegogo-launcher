@@ -6,6 +6,7 @@ import { reactive, ref } from 'vue'
 const useGeneralStore = defineStore('general', () => {
   const appVersion = ref<string>('dev')
   const isUpdateAvailable = ref<boolean>(false)
+  const mcInstance = ref<number | null>(null)
 
   const initialSettings = {
     showNotifications: true,
@@ -124,6 +125,7 @@ const useGeneralStore = defineStore('general', () => {
   }
 
   return {
+    mcInstance,
     settings,
     appVersion,
     changeVersion,

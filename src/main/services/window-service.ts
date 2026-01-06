@@ -9,7 +9,9 @@ import Logger from 'electron-log'
 
 const createMainWindow = (): BrowserWindow => {
   const mainWindow = new BrowserWindow({
+    minWidth: 1280,
     width: 1280,
+    minHeight: 720,
     height: 720,
     show: false,
     autoHideMenuBar: true,
@@ -17,7 +19,6 @@ const createMainWindow = (): BrowserWindow => {
     darkTheme: true,
     accentColor: 'black',
     frame: false,
-    resizable: false,
     webPreferences: {
       nodeIntegration: false,
       preload: join(__dirname, '../preload/index.js'),

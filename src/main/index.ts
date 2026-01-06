@@ -152,10 +152,10 @@ if (!gotTheLock) {
             accelerator: 'CmdOrCtrl+W',
             click: () => {
               try {
-                if (mainWindow) {
-                  mainWindow.close()
-                  mainWindow = null
-                }
+                if (!mainWindow) return
+
+                mainWindow.close()
+                mainWindow = null
               } catch (err) {
                 console.error('[Menu] Failed to open new window:', err)
               }

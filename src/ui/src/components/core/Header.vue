@@ -74,8 +74,6 @@ const openConfirmModal = (): void => {
 }
 
 onMounted(async () => {
-  await checkUpdate()
-
   updateInterval.value = setInterval(checkUpdate, 1000 * 60)
 })
 
