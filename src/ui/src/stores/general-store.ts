@@ -4,6 +4,7 @@ import { defineStore } from 'pinia'
 import { reactive, ref } from 'vue'
 
 const useGeneralStore = defineStore('general', () => {
+  const searchQuery = ref<string>('')
   const appVersion = ref<string>('dev')
   const isUpdateAvailable = ref<boolean>(false)
   const mcInstance = ref<number | null>(null)
@@ -125,6 +126,7 @@ const useGeneralStore = defineStore('general', () => {
   }
 
   return {
+    searchQuery,
     mcInstance,
     settings,
     appVersion,

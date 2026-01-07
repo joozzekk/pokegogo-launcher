@@ -18,6 +18,8 @@ const createMainWindow = (): BrowserWindow => {
     ...(process.platform === 'linux' ? { icon } : {}),
     darkTheme: true,
     accentColor: 'black',
+    backgroundColor: 'black',
+    backgroundMaterial: 'acrylic',
     frame: false,
     webPreferences: {
       nodeIntegration: false,
@@ -28,14 +30,14 @@ const createMainWindow = (): BrowserWindow => {
   })
 
   if (process.platform !== 'darwin') {
-    // Opcjonalny warunek, by uniknąć problemów na macOS
-    // Włączenie software WebGL
     app.commandLine.appendSwitch('enable-unsafe-swiftshader')
   }
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.webContents.send('change:max-ram', Math.floor(getMaxRAMInGB() * 0.95))
     mainWindow.webContents.send('change:version', app.getVersion())
+
+    if (is.dev) mainWindow.webContents.openDevTools({ mode: 'detach' })
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
@@ -64,6 +66,8 @@ const createLoadingWindow = (): {
     ...(process.platform === 'linux' ? { icon } : {}),
     darkTheme: true,
     accentColor: 'black',
+    backgroundColor: 'black',
+    backgroundMaterial: 'acrylic',
     alwaysOnTop: true,
     frame: false,
     resizable: false,

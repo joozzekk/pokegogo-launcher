@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { IUser } from '@ui/env'
 import { LOGGER } from '@ui/services/logger-service'
 import useGeneralStore from '@ui/stores/general-store'
 import useUserStore from '@ui/stores/user-store'
@@ -68,7 +69,12 @@ watch(
   <aside class="sidebar" :class="{ collapsed: generalStore.settings.isSidebarCollapsed }">
     <div class="player-profile mx-3 my-3">
       <div class="player-fullinfo">
-        <div class="player-avatar">
+        <div
+          class="player-avatar cursor-pointer"
+          @click="
+            userStore.updateSelectedProfile({ ...userStore.user, headUrl: skinHeadUrl } as IUser)
+          "
+        >
           <img
             v-if="skinHeadUrl"
             id="playerSkin"

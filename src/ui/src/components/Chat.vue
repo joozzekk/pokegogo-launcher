@@ -1,24 +1,32 @@
+// ChatWindow.vue
+
 <script lang="ts" setup>
 import { readMessages, sendMessage } from '@ui/api/endpoints'
 import useUserStore from '@ui/stores/user-store'
-import { nextTick, ref, useTemplateRef } from 'vue'
+import { nextTick, ref, watch } from 'vue'
 import { useChatsStore } from '@ui/stores/chats-store'
-import { IMessage } from '@ui/types/app'
+import type { IMessage } from '@ui/types/app'
 
 const userStore = useUserStore()
 const chatsStore = useChatsStore()
 const message = ref<string>('')
 
-const chatContainers = useTemplateRef<HTMLDivElement[]>('chats')
+const chatRefs = ref<Record<string, HTMLDivElement | null>>({})
+
+const setChatRef = (uuid: string, el: HTMLDivElement | null): void => {
+  chatRefs.value[uuid] = el
+}
 
 const scrollToBottom = (uuid: string): void => {
-  const index = chatsStore.activeChats.findIndex((chat) => chat.uuid === uuid)
+  const container = chatRefs.value[uuid]
+  if (!container) return
 
-  if (chatContainers.value) {
-    chatContainers.value[index].scrollTo({
-      top: chatContainers.value[index].scrollHeight
+  requestAnimationFrame(() => {
+    container.scrollTo({
+      top: container.scrollHeight,
+      behavior: 'smooth'
     })
-  }
+  })
 }
 
 const handleSendMessage = async (uuid: string): Promise<void> => {
@@ -29,14 +37,13 @@ const handleSendMessage = async (uuid: string): Promise<void> => {
 
   await sendMessage(uuid, content)
 
-  chatsStore.activeChats
-    .find((chat) => chat.uuid === uuid)
-    ?.messages.push({
-      sender: userStore.user!.uuid,
-      receiver: uuid,
-      content: content,
-      read: true
-    })
+  const chat = chatsStore.activeChats.find((c) => c.uuid === uuid)
+  chat?.messages.push({
+    sender: userStore.user!.uuid,
+    receiver: uuid,
+    content,
+    read: true
+  })
 
   await nextTick()
   scrollToBottom(uuid)
@@ -44,17 +51,15 @@ const handleSendMessage = async (uuid: string): Promise<void> => {
 
 const unreadMessages = (uuid: string): IMessage[] => {
   const activeChat = chatsStore.activeChats.find((chat) => chat.uuid === uuid)
-
   return activeChat?.messages.filter((msg) => !msg.read) ?? []
 }
 
-const isLastInSequence = (uuid: string): boolean => {
+const isLastInSequence = (uuid: string, index: number): boolean => {
   const activeChat = chatsStore.activeChats.find((chat) => chat.uuid === uuid)
-
   if (!activeChat) return true
 
-  const currentMsg = activeChat.messages[activeChat.messages.length - 1]
-  const nextMsg = activeChat.messages[activeChat.messages.length]
+  const currentMsg = activeChat.messages[index]
+  const nextMsg = activeChat.messages[index + 1]
 
   if (!nextMsg) return true
   return currentMsg.sender !== nextMsg.sender
@@ -62,7 +67,6 @@ const isLastInSequence = (uuid: string): boolean => {
 
 const handleChatToggle = async (uuid: string): Promise<void> => {
   const activeChat = chatsStore.activeChats.find((chat) => chat.uuid === uuid)
-
   if (!activeChat) return
 
   activeChat.chatToggled = !activeChat.chatToggled
@@ -72,13 +76,24 @@ const handleChatToggle = async (uuid: string): Promise<void> => {
     scrollToBottom(uuid)
     readMessages(uuid)
 
-    chatsStore.activeChats
-      .find((chat) => chat.uuid === uuid)
-      ?.messages.forEach((msg) => {
-        msg.read = true
-      })
+    activeChat.messages.forEach((msg) => {
+      msg.read = true
+    })
   }
 }
+
+watch(
+  () => chatsStore.activeChats.map((c) => ({ uuid: c.uuid, toggled: c.chatToggled })),
+  async (states) => {
+    const opened = states.find((s) => s.toggled)
+    if (opened) {
+      await nextTick()
+      scrollToBottom(opened.uuid)
+      readMessages(opened.uuid)
+    }
+  },
+  { deep: true }
+)
 </script>
 
 <template>
@@ -88,12 +103,9 @@ const handleChatToggle = async (uuid: string): Promise<void> => {
         <div
           v-if="!chat.chatToggled"
           class="absolute z-50 bottom-2 right-0 w-12 h-12 rounded-full"
-          :style="{
-            right: chat.chatToggled ? '0' : `${i * 3.5}rem`
-          }"
+          :style="{ right: chat.chatToggled ? '0' : `${i * 3.5}rem` }"
         >
           <div
-            v-if="chat"
             class="relative hover:opacity-80 cursor-pointer"
             @click="handleChatToggle(chat.uuid)"
           >
@@ -106,6 +118,7 @@ const handleChatToggle = async (uuid: string): Promise<void> => {
             </div>
           </div>
         </div>
+
         <template v-else>
           <div class="chat-container z-54">
             <div class="flex items-center gap-2 px-4 py-3 bg-[var(--bg-dark)]">
@@ -124,7 +137,10 @@ const handleChatToggle = async (uuid: string): Promise<void> => {
               </button>
             </div>
 
-            <div ref="chats" class="flex flex-col gap-[0.25rem] p-2 overflow-y-auto h-[16rem]">
+            <div
+              :ref="(el) => setChatRef(chat.uuid, el as HTMLDivElement | null)"
+              class="flex flex-col gap-[0.25rem] p-2 overflow-y-auto h-[16rem]"
+            >
               <div v-if="!chat.messages?.length">
                 <div class="text-center text-xs text-[var(--text-secondary)] my-2 mt-auto">
                   Rozmowa rozpoczęta
@@ -142,19 +158,14 @@ const handleChatToggle = async (uuid: string): Promise<void> => {
                 }"
               >
                 <div class="w-6 h-6 shrink-0 my-auto flex items-center justify-center">
-                  <template v-if="isLastInSequence(chat.uuid)">
+                  <template v-if="isLastInSequence(chat.uuid, index)">
                     <img
                       v-if="msg.sender === userStore.user?.uuid"
                       :src="userStore.user?.headUrl"
                       class="w-6 h-6 rounded-full"
                       alt="Avatar"
                     />
-                    <img
-                      v-else-if="chat"
-                      :src="chat.headUrl"
-                      class="w-6 h-6 rounded-full"
-                      alt="Avatar"
-                    />
+                    <img v-else :src="chat.headUrl" class="w-6 h-6 rounded-full" alt="Avatar" />
                   </template>
                 </div>
 
@@ -164,8 +175,8 @@ const handleChatToggle = async (uuid: string): Promise<void> => {
                     'rounded-bl-lg': msg.sender === chat.uuid,
                     'rounded-br-lg': msg.sender === userStore.user?.uuid,
                     'bg-[var(--primary)]/15': msg.sender === userStore.user?.uuid,
-                    'rounded-t-lg': isLastInSequence(chat.uuid),
-                    'rounded-b-lg': !isLastInSequence(chat.uuid)
+                    'rounded-t-lg': isLastInSequence(chat.uuid, index),
+                    'rounded-b-lg': !isLastInSequence(chat.uuid, index)
                   }"
                 >
                   {{ msg.content }}

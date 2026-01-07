@@ -7,6 +7,7 @@ import { type SavedAccount } from '@ui/types/app'
 import { useChatsStore } from '@ui/stores/chats-store'
 
 const useUserStore = defineStore('user', () => {
+  const selectedProfile = ref<IUser | null>(null)
   const chatsStore = useChatsStore()
 
   const savedAccounts = ref<SavedAccount[]>(
@@ -46,10 +47,21 @@ const useUserStore = defineStore('user', () => {
     setUser(profile)
   }
 
+  const updateSelectedProfile = (player: IUser): void => {
+    selectedProfile.value = player
+  }
+
+  const resetSelectedProfile = (): void => {
+    selectedProfile.value = null
+  }
+
   return {
     user,
     hwidBanned,
     savedAccounts,
+    selectedProfile,
+    updateSelectedProfile,
+    resetSelectedProfile,
     setUser,
     resetUser,
     logout,

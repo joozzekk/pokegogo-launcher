@@ -21,14 +21,14 @@ function initDiscord(): void {
     rpc = discordRpc(CLIENT_ID)
 
     rpc.on('error', (err: string) => {
-      Logger.warn('Discord RPC napotkał błąd (może Discord jest wyłączony?):', err)
+      Logger.warn('Discord RPC Error (Discord is running?):', err)
     })
 
     rpc.on('connected', () => {
-      Logger.log('Połączono z Discordem!')
+      Logger.log('Connected to Discord')
     })
   } catch (err) {
-    Logger.warn('Inicjalizacja Discord RPC nieudana:', err)
+    Logger.warn('Discord IPC not connected: ', err)
   }
 }
 

@@ -4,7 +4,7 @@ import useUserStore from '@ui/stores/user-store'
 import { FTPChannel } from '@ui/types/ftp'
 import { showToast } from '@ui/utils'
 import { useVuelidate } from '@vuelidate/core'
-import { helpers, maxLength, minLength, required } from '@vuelidate/validators'
+import { helpers, minLength, required } from '@vuelidate/validators'
 import { computed, reactive, ref } from 'vue'
 
 const userStore = useUserStore()
@@ -25,9 +25,8 @@ const rules = computed(() => {
   return modalVisible.value
     ? {
         description: {
-          required: helpers.withMessage('Nazwa jest wymagana', required),
-          minLength: helpers.withMessage('Nazwa musi mieć co najmniej 2 znaki', minLength(2)),
-          maxLength: helpers.withMessage('Nazwa może mieć maksymalnie 50 znaków', maxLength(50))
+          required: helpers.withMessage('Treść jest wymagana', required),
+          minLength: helpers.withMessage('Treść musi mieć co najmniej 2 znaki', minLength(2))
         }
       }
     : {}
@@ -54,36 +53,24 @@ const handleSubmit = async (): Promise<void> => {
   const logsFile = await window?.electron?.ipcRenderer?.invoke(FTPChannel.GET_LOGS)
   const logsBlob = new Blob([logsFile], { type: 'text/plain' })
 
-  let mcLogsFile, mcLogsBlob
-
-  try {
-    mcLogsFile = await window?.electron?.ipcRenderer?.invoke(FTPChannel.GET_LOGS, 'minecraft')
-    mcLogsBlob = new Blob([mcLogsFile], { type: 'text/plain' })
-  } catch {
-    /* ignore */
-  } finally {
-    const formData = new FormData()
-    formData.append('files[0]', logsBlob, 'main.log')
-    if (mcLogsFile) {
-      formData.append('files[1]', mcLogsBlob, 'minecraft.log')
-    }
-    formData.append(
-      'payload_json',
-      JSON.stringify({
-        content: `**Nickname**: ${userStore.user?.nickname ?? 'Brak Nicku'}\n**Wersja**: ${
-          generalStore.appVersion
-        }\n**Treść zgłoszenia**:\n${state.description}`
-      })
-    )
-
-    const result = await fetch(webhookURL, {
-      method: 'POST',
-      body: formData
+  const formData = new FormData()
+  formData.append('files[0]', logsBlob, 'main.log')
+  formData.append(
+    'payload_json',
+    JSON.stringify({
+      content: `**Nickname**: ${userStore.user?.nickname ?? 'Brak Nicku'}\n**Wersja**: ${
+        generalStore.appVersion
+      }\n**Treść zgłoszenia**:\n${state.description}`
     })
+  )
 
-    if (result.ok) {
-      showToast('Zgłoszenie zostało wysłane', 'success')
-    }
+  const result = await fetch(webhookURL, {
+    method: 'POST',
+    body: formData
+  })
+
+  if (result.ok) {
+    showToast('Zgłoszenie zostało wysłane', 'success')
   }
 
   handleExit()

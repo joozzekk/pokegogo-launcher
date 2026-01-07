@@ -59,22 +59,21 @@ export const useLoginService = (): {
   const loginRules = computed(() => {
     return {
       nick: {
-        required: helpers.withMessage('Pole jest wymagane', required),
-        minLength: helpers.withMessage('Pole musi zawierać co najmniej 6 znaków', minLength(6)),
-        maxLength: helpers.withMessage('Pole może zawierać maksymalnie 16 znaków', maxLength(16)),
+        required: helpers.withMessage('Nick jest wymagany', required),
+        maxLength: helpers.withMessage('Nick może zawierać maksymalnie 16 znaków', maxLength(16)),
         alphaNum: helpers.withMessage(
           'Pole może zawierać tylko litery i cyfry, oraz znaki podkreślenia',
           (value: string) => /^[a-zA-Z0-9_]+$/.test(value)
         )
       },
       password: {
-        required: helpers.withMessage('Pole jest wymagane', required),
-        minLength: helpers.withMessage('Pole musi zawierać co najmniej 4 znaki', minLength(4)),
-        maxLength: helpers.withMessage('Pole może zawierać maksymalnie 32 znaki', maxLength(32)),
+        required: helpers.withMessage('Hasło jest wymagane', required),
+        minLength: helpers.withMessage('Hasło musi zawierać co najmniej 4 znaki', minLength(4)),
+        maxLength: helpers.withMessage('Hasło może zawierać maksymalnie 32 znaki', maxLength(32)),
         ...(appState.activeTab === ActiveTab.REGISTER
           ? {
               sameAs: helpers.withMessage(
-                'Pola nie są takie same.',
+                'Hasła nie są takie same.',
                 (value) => value === formState.repeatPassword
               )
             }
@@ -83,21 +82,21 @@ export const useLoginService = (): {
       ...(appState.activeTab === ActiveTab.REGISTER
         ? {
             email: {
-              required: helpers.withMessage('Pole jest wymagane', required),
-              email: helpers.withMessage('Pole nie jest prawidłowym emailem.', email)
+              required: helpers.withMessage('Email jest wymagany', required),
+              email: helpers.withMessage('Pole nie jest zawiera prawidłowego adresu email.', email)
             },
             repeatPassword: {
-              required: helpers.withMessage('Pole jest wymagane', required),
+              required: helpers.withMessage('Hasło jest wymagane', required),
               minLength: helpers.withMessage(
-                'Pole musi zawierać co najmniej 4 znaki',
+                'Hasło musi zawierać co najmniej 4 znaki',
                 minLength(4)
               ),
               maxLength: helpers.withMessage(
-                'Pole może zawierać maksymalnie 32 znaki',
+                'Hasło może zawierać maksymalnie 32 znaki',
                 maxLength(32)
               ),
               sameAs: helpers.withMessage(
-                'Pola nie są takie same.',
+                'Hasła nie są takie same.',
                 (value) => value === formState.password
               )
             }

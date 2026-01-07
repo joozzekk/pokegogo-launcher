@@ -1,9 +1,7 @@
 <script lang="ts" setup>
 import { changeEmail, changePassword } from '@ui/api/endpoints'
 import { applyTheme, themes } from '@ui/assets/theme/themes'
-import ChangeSkinModal from '@ui/components/modals/ChangeSkinModal.vue'
 import VerifyFilesModal from '@ui/components/modals/VerifyFilesModal.vue'
-import SkinViewer from '@ui/components/SkinViewer.vue'
 import useGeneralStore from '@ui/stores/general-store'
 import useUserStore from '@ui/stores/user-store'
 import { AccountType, UserRole } from '@ui/types/app'
@@ -125,11 +123,6 @@ const handleChangePassword = async (): Promise<void> => {
   }
 }
 
-const apiURL = import.meta.env.RENDERER_VITE_API_URL
-const skinUrl = computed(() => {
-  return `${apiURL}/skins/image/${userStore.user?.nickname}`
-})
-
 watch(
   () => userStore.user,
   (newUser) => {
@@ -166,11 +159,6 @@ const handleChangeUpdateChannel = async (channel: string): Promise<void> => {
 const verifyFilesModalRef = ref()
 const openVerifyFilesModal = (): void => {
   verifyFilesModalRef.value?.openModal()
-}
-
-const changeSkinModalRef = ref()
-const openChangeSkinModal = (): void => {
-  changeSkinModalRef.value?.openModal()
 }
 
 const setNewTheme = (newTheme: string): void => {
@@ -462,19 +450,6 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div v-if="userStore.user" class="setting-group mb-2!">
-          <label>Customowy skin</label>
-          <p class="text-[var(--text-secondary)] mb-2 text-[0.7rem]">
-            Zmiana skina jest możliwa tylko dla użytkwników non-premium!
-          </p>
-          <div
-            class="flex w-[100px] h-[100px] player-profile rounded-2xl! hover:bg-[var(--bg-light)]/40! hover:cursor-pointer"
-            @click="openChangeSkinModal()"
-          >
-            <SkinViewer :skin="skinUrl" />
-          </div>
-        </div>
-
         <div class="setting-group !w-full">
           <label>Zmiana emaila</label>
           <div class="flex gap-2 !w-full items-center">
@@ -598,6 +573,5 @@ onUnmounted(() => {
       </div>
     </div>
     <VerifyFilesModal ref="verifyFilesModalRef" />
-    <ChangeSkinModal ref="changeSkinModalRef" />
   </div>
 </template>

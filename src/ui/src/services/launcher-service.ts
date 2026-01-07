@@ -1,28 +1,53 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { getEvents, getFriends, updateMachineData, updateProfileData } from '@ui/api/endpoints'
+import {
+  getEvents,
+  getFriends,
+  getPlayers,
+  updateMachineData,
+  updateProfileData
+} from '@ui/api/endpoints'
 import useGeneralStore from '@ui/stores/general-store'
 import useUserStore from '@ui/stores/user-store'
-import { isMachineIDBanned, refreshMicrosoftToken } from '@ui/utils'
+import {
+  isMachineIDBanned,
+  loadCustomOrFallbackHead,
+  refreshMicrosoftToken,
+  showToast
+} from '@ui/utils'
 import { ref, type Ref } from 'vue'
 import { useSocketService } from './socket-service'
 import { AccountType } from '@ui/types/app'
 import { useChatsStore } from '@ui/stores/chats-store'
+import { IUser } from '@ui/env'
 
 export const useLauncherService = (): {
   useVariables: () => {
     refreshInterval: Ref<any>
     events: Ref<any[]>
+    allPlayers: Ref<IUser[]>
+    filteredPlayers: Ref<IUser[]>
+    isLoadingPlayers: Ref<boolean>
+    hasMorePlayers: Ref<boolean>
   }
   useFetches: () => {
     fetchUpdateData: () => Promise<void>
     fetchEvents: () => Promise<void>
     fetchFriends: () => Promise<void>
+    fetchPlayers: (query?: string, reset?: boolean) => Promise<void>
   }
   useMethods: () => {
     startMicrosoftTokenRefreshInterval: () => void
     setMachineData: () => Promise<void>
+    handleRefreshDataAndProfile: () => Promise<void>
   }
 } => {
+  const currentPage = ref(1)
+  const itemsPerPage = ref(24)
+  const allPlayers = ref<IUser[]>([])
+  const filteredPlayers = ref<IUser[]>([])
+  const isLoadingPlayers = ref<boolean>(false)
+  const hasMorePlayers = ref<boolean>(true)
+
   const refreshInterval = ref<any>(null)
   const generalStore = useGeneralStore()
   const userStore = useUserStore()
@@ -88,22 +113,94 @@ export const useLauncherService = (): {
   }
 
   const fetchFriends = async (): Promise<void> => {
-    chatsStore.setFriends(await getFriends())
+    chatsStore.setFriends(await getFriends(userStore.user!.uuid))
+  }
+
+  async function fetchPlayers(query?: string, reset: boolean = false): Promise<void> {
+    if (isLoadingPlayers.value || (!hasMorePlayers.value && !reset)) return
+
+    isLoadingPlayers.value = true
+
+    if (reset) {
+      currentPage.value = 1
+      hasMorePlayers.value = true
+    }
+
+    try {
+      const res = await getPlayers(
+        currentPage.value,
+        itemsPerPage.value,
+        query ?? generalStore.searchQuery
+      )
+
+      if (res) {
+        if (res.length < itemsPerPage.value) {
+          hasMorePlayers.value = false
+        }
+
+        const mappedPlayers = await Promise.all(
+          res.map(async (player) => {
+            const headUrl = await loadCustomOrFallbackHead(player)
+            return {
+              ...player,
+              headUrl
+            }
+          })
+        )
+
+        if (reset) {
+          allPlayers.value = mappedPlayers
+          filteredPlayers.value = mappedPlayers
+        } else {
+          allPlayers.value = [...allPlayers.value, ...mappedPlayers]
+          filteredPlayers.value = [...filteredPlayers.value, ...mappedPlayers]
+        }
+
+        if (res.length > 0) {
+          currentPage.value++
+        }
+      } else {
+        hasMorePlayers.value = false
+      }
+    } catch (error) {
+      console.error('Błąd pobierania graczy:', error)
+      showToast('Błąd pobierania listy graczy', 'error')
+    } finally {
+      isLoadingPlayers.value = false
+    }
+  }
+
+  const handleRefreshDataAndProfile = async (): Promise<void> => {
+    await fetchPlayers(generalStore.searchQuery, true)
+
+    if (userStore.selectedProfile) {
+      const newProfile = allPlayers.value.find(
+        (player) => player.uuid === userStore.selectedProfile?.uuid
+      )
+
+      if (newProfile) userStore.updateSelectedProfile(newProfile)
+    }
   }
 
   return {
     useVariables: () => ({
       refreshInterval,
-      events
+      events,
+      allPlayers,
+      filteredPlayers,
+      isLoadingPlayers,
+      hasMorePlayers
     }),
     useFetches: () => ({
       fetchUpdateData,
       fetchEvents,
-      fetchFriends
+      fetchFriends,
+      fetchPlayers
     }),
     useMethods: () => ({
       startMicrosoftTokenRefreshInterval,
-      setMachineData
+      setMachineData,
+      handleRefreshDataAndProfile
     })
   }
 }

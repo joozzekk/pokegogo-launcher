@@ -1,0 +1,567 @@
+<script lang="ts" setup>
+import { IUser } from '@ui/env'
+import useUserStore from '@ui/stores/user-store'
+import { AccountType, UserRole } from '@ui/types/app'
+import { differenceInMilliseconds, intervalToDuration, parseISO } from 'date-fns'
+import { computed, ref, watch } from 'vue'
+import SkinViewer from '@ui/components/SkinViewer.vue'
+import ChangeSkinModal from '@ui/components/modals/ChangeSkinModal.vue'
+import { useChatsStore } from '@ui/stores/chats-store'
+import {
+  acceptFriendRequest,
+  getFriends,
+  rejectFriendRequest,
+  removeFriend
+} from '@ui/api/endpoints'
+import { loadCustomOrFallbackHead, showToast } from '@ui/utils'
+
+const emit = defineEmits<{
+  (e: 'refresh-data', query?: string, reset?: boolean): Promise<void>
+  (e: 'ban-player', player: IUser): Promise<void>
+  (e: 'unban-player', player: IUser): Promise<void>
+  (e: 'reset-password', player: IUser): Promise<void>
+}>()
+
+const apiURL = import.meta.env.RENDERER_VITE_API_URL
+const skinUrl = computed(() => {
+  return `${apiURL}/skins/image/${player.value?.nickname}`
+})
+
+const chatsStore = useChatsStore()
+const userStore = useUserStore()
+const player = computed(() => userStore.selectedProfile)
+const friends = ref<IUser[]>([])
+
+watch(player, async () => {
+  if (player.value) {
+    timerInterval.value = window.setInterval(() => {
+      now.value = new Date()
+    }, 1000)
+    await fetchPlayerFriends()
+  }
+})
+
+const closeModal = (): void => {
+  userStore.resetSelectedProfile()
+  if (timerInterval.value) {
+    clearInterval(timerInterval.value)
+  }
+}
+
+const changeSkinModalRef = ref()
+const openChangeSkinModal = (): void => {
+  if (userStore?.user && player.value && userStore.user.uuid === player.value.uuid)
+    changeSkinModalRef.value?.openModal()
+}
+
+const getPlayerID = (player: IUser): string => {
+  if (player?.mcid) return player.mcid
+  if (player?.uuid) return player.uuid
+  return '(Brak)'
+}
+
+const fetchPlayerFriends = async (): Promise<void> => {
+  if (!player.value) return
+
+  const result = await getFriends(player.value.uuid)
+
+  if (result) {
+    for (const friend of result) {
+      const headUrl = await loadCustomOrFallbackHead(friend)
+      friend.headUrl = headUrl
+    }
+
+    friends.value = result
+  }
+}
+
+const isFriend = (player: IUser): boolean => !!userStore.user?.friends?.includes(player.uuid)
+
+const sentRequest = (player: IUser): boolean =>
+  !!player?.friendRequests?.includes(userStore.user?.uuid ?? '')
+
+const hasFriendRequest = (player: IUser): boolean =>
+  !!userStore.user?.friendRequests?.includes(player.uuid)
+
+const now = ref(new Date())
+const timerInterval = ref<number | undefined>(undefined)
+
+const pad = (num: number): string => String(num).padStart(2, '0')
+
+const formattedBanTime = computed(() => {
+  if (!userStore.selectedProfile?.isBanned) return
+
+  const banEndDateString = userStore.selectedProfile?.banEndDate as string | null
+
+  if (!banEndDateString?.length) {
+    return 'Permanentnie'
+  }
+
+  const banEndDate = parseISO(banEndDateString)
+  const remainingMs = differenceInMilliseconds(banEndDate, now.value)
+
+  if (remainingMs <= 0) {
+    clearInterval(timerInterval.value)
+    return 'Blokada zakończyła się'
+  }
+
+  const duration = intervalToDuration({
+    start: now.value,
+    end: banEndDate
+  })
+
+  const totalHours = (duration.days || 0) * 24 + (duration.hours || 0)
+  const hours = pad(totalHours)
+  const minutes = pad(duration.minutes || 0)
+  const seconds = pad(duration.seconds || 0)
+
+  return `Pozostało: ${hours}:${minutes}:${seconds}`
+})
+
+const handleAcceptFriendRequest = async (player: IUser): Promise<void> => {
+  try {
+    const res = await acceptFriendRequest(player.uuid)
+
+    if (res) {
+      await emit('refresh-data')
+      await userStore.updateProfile()
+      await chatsStore.setFriends(await getFriends(userStore.user!.uuid))
+
+      showToast(`Zaakceptowano zaproszenie od ${player.nickname}`, 'success')
+    }
+  } catch {
+    showToast(`Nie udało się zaakceptować zaproszenia od ${player.nickname}`, 'error')
+  }
+}
+
+const handleRejectFriendRequest = async (player: IUser): Promise<void> => {
+  try {
+    const res = await rejectFriendRequest(player.uuid)
+
+    if (res) {
+      await emit('refresh-data')
+      await userStore.updateProfile()
+      await chatsStore.setFriends(await getFriends(userStore.user!.uuid))
+
+      showToast(`Odrzucono zaproszenie od ${player.nickname}`, 'success')
+    }
+  } catch {
+    showToast(`Nie udało się odrzucić zaproszenia od ${player.nickname}`, 'error')
+  }
+}
+
+const handleRemoveFriend = async (player: IUser): Promise<void> => {
+  try {
+    const res = await removeFriend(player.uuid)
+
+    if (res) {
+      await emit('refresh-data')
+      await userStore.updateProfile()
+      await chatsStore.setFriends(await getFriends(userStore.user!.uuid))
+
+      showToast(`Usunięto ${player.nickname} z listy znajomych`, 'success')
+    }
+  } catch {
+    showToast(`Nie udało się usunąć ${player.nickname} z listy znajomych`, 'error')
+  }
+}
+
+const handleCopy = async (text: string): Promise<void> => {
+  await navigator.clipboard.writeText(text)
+}
+</script>
+
+<template>
+  <div class="modal-container">
+    <Transition name="fade-left">
+      <div v-if="player" class="modal-card">
+        <div class="flex gap-2 w-full justify-between shrink-0">
+          <div v-if="userStore.user" class="">
+            <div
+              class="flex w-[100px] h-[100px] player-profile rounded-2xl! hover:bg-[var(--bg-light)]/40! hover:cursor-pointer"
+              @click="openChangeSkinModal"
+            >
+              <SkinViewer :skin="skinUrl" />
+            </div>
+          </div>
+          <div class="flex w-full">
+            <div class="flex justify-between w-full">
+              <div class="flex flex-col">
+                <h1 class="font-bold text-lg">{{ player.nickname }}</h1>
+                <span
+                  :style="`
+                      background: var(--primary);
+                      color: white;
+                      font-size: 0.6rem;
+                      padding: 2px 6px;
+                      border-radius: 4px;
+                      margin-top: 4px;
+                      height: 1.2rem;
+                      font-weight: 800;
+                      flex-shrink: 0 !important;
+                      max-width: max-content !important;
+                      `"
+                  class="capitalize"
+                >
+                  {{ player.role }}
+                </span>
+              </div>
+            </div>
+            <div class="flex gap-2 flex-row-reverse">
+              <div class="nav-icon" @click="closeModal">
+                <i class="fa fa-times"></i>
+              </div>
+              <template
+                v-if="
+                  [UserRole.ADMIN, UserRole.DEV, UserRole.MODERATOR].includes(
+                    userStore.user?.role ?? UserRole.USER
+                  ) && ![UserRole.ADMIN, UserRole.DEV, UserRole.MODERATOR].includes(player.role)
+                "
+              >
+                <button
+                  v-if="!player?.isBanned"
+                  class="nav-icon"
+                  @click="$emit('ban-player', player)"
+                >
+                  <i :class="'fas fa-ban text-red-400'"></i>
+                </button>
+
+                <button v-else class="nav-icon" @click="$emit('unban-player', player)">
+                  <i :class="'fas fa-rotate-left text-green-400'"></i>
+                </button>
+
+                <button
+                  v-if="player?.accountType !== AccountType.MICROSOFT"
+                  class="nav-icon"
+                  @click="$emit('reset-password', player)"
+                >
+                  <i :class="'fas fa-key'"></i>
+                </button>
+              </template>
+            </div>
+          </div>
+        </div>
+        <div class="flex gap-2 flex-wrap mt-2">
+          <div
+            v-if="player.isOnline"
+            :style="`
+                      background: var(--primary);
+                      color: white;
+                      font-size: 0.6rem;
+                      padding: 2px 6px;
+                      border-radius: 4px;
+                      margin-top: 4px;
+                      height: 1.2rem;
+                      font-weight: 800;
+                      flex-shrink: 0 !important;
+                      max-width: max-content !important;
+                    `"
+          >
+            <i class="fas fa-user-friends"></i>
+            Online
+          </div>
+        </div>
+        <span
+          v-if="player.isBanned"
+          :style="`
+                      background: var(--primary);
+                      font-size: 0.6rem;
+                      color: white;
+                      padding: 2px 6px;
+                      border-radius: 4px;
+                      font-weight: 800;
+                      height: 1.2rem;
+                      margin-top: 4px;
+                      flex-shrink: 0 !important;
+                      max-width: max-content !important;
+                    `"
+          class="mx-auto"
+        >
+          Konto zablokowane. {{ formattedBanTime }}
+        </span>
+
+        <div class="flex flex-col text-xs mt-2">
+          <div
+            v-if="isFriend(player)"
+            :style="`
+                      background: var(--text-secondary);
+                      color: black;
+                      font-size: 0.6rem;
+                      padding: 2px 6px;
+                      border-radius: 4px;
+                      margin-top: 4px;
+                      height: 1.2rem;
+                      font-weight: 800;
+                      flex-shrink: 0 !important;
+                      max-width: max-content !important;
+                    `"
+            class="mx-auto"
+          >
+            <i class="fas fa-user-friends"></i>
+            Jesteście znajomymi
+          </div>
+          <div
+            v-if="sentRequest(player)"
+            :style="`
+                      background: var(--text-secondary);
+                      color: black;
+                      font-size: 0.6rem;
+                      padding: 2px 6px;
+                      border-radius: 4px;
+                      margin-top: 4px;
+                      height: 1.2rem;
+                      font-weight: 800;
+                      flex-shrink: 0 !important;
+                      max-width: max-content !important;
+                    `"
+            class="mx-auto"
+          >
+            <i class="fas fa-user-friends"></i>
+            Wysłano zaproszenie do znajomych
+          </div>
+          <div
+            v-if="
+              userStore.user &&
+              !player.isBanned &&
+              getPlayerID(player) !== getPlayerID(userStore.user)
+            "
+            class="flex gap-2 my-2"
+          >
+            <button
+              v-if="!isFriend(player) && hasFriendRequest(player)"
+              class="nav-icon !w-1/2 gap-2 text-xs"
+              @click="handleAcceptFriendRequest(player)"
+            >
+              <i :class="'fas fa-user-plus'" />
+              Accept request
+            </button>
+            <button
+              v-if="!isFriend(player) && hasFriendRequest(player)"
+              class="nav-icon !w-1/2 gap-2 text-xs"
+              @click="handleRejectFriendRequest(player)"
+            >
+              <i :class="'fas fa-user-minus'" />
+              Cancel request
+            </button>
+            <button
+              v-if="isFriend(player)"
+              class="nav-icon !w-full gap-2 text-xs"
+              @click="handleRemoveFriend(player)"
+            >
+              <i :class="'fas fa-user-minus'" />
+              Remove friend
+            </button>
+          </div>
+          <p
+            v-if="player.machineId"
+            class="text-[0.55rem] text-center w-full break-all rounded-xl bg-[var(--bg-dark)] px-2 py-1 text-[var(--text-muted)] cursor-pointer"
+            @click="handleCopy(player.machineId)"
+          >
+            {{ player.machineId }}
+          </p>
+          <div
+            v-else
+            :style="`
+                      background: var(--text-secondary);
+                      font-size: 0.6rem;
+                      color: black;
+                      padding: 2px 6px;
+                      border-radius: 4px;
+                      font-weight: 800;
+                      height: 1.2rem;
+                      margin-top: 4px;
+                      flex-shrink: 0 !important;
+                      max-width: max-content !important;
+                    `"
+            class="mx-auto"
+          >
+            Brakujący HWID
+          </div>
+          <div class="flex gap-2 mt-1">
+            <p
+              v-if="player.macAddress"
+              class="text-[0.55rem] text-center w-full break-all rounded-xl bg-[var(--bg-dark)] px-2 py-1 text-[var(--text-muted)] cursor-pointer"
+              @click="handleCopy(player.macAddress)"
+            >
+              {{ player.macAddress }}
+            </p>
+            <div
+              v-else
+              :style="`
+                      background: var(--text-secondary);
+                      font-size: 0.6rem;
+                      color: black;
+                      padding: 2px 6px;
+                      border-radius: 4px;
+                      font-weight: 800;
+                      height: 1.2rem;
+                      margin-top: 4px;
+                      flex-shrink: 0 !important;
+                      max-width: max-content !important;
+                    `"
+              class="mx-auto"
+            >
+              Brakujący adres Mac
+            </div>
+            <p
+              v-if="player.ipAddress"
+              class="text-[0.55rem] text-center w-full break-all rounded-xl bg-[var(--bg-dark)] px-2 py-1 text-[var(--text-muted)]"
+              @click="handleCopy(player.ipAddress)"
+            >
+              {{ player.ipAddress }}
+            </p>
+            <div
+              v-else
+              :style="`
+                      background: var(--text-secondary);
+                      font-size: 0.6rem;
+                      color: black;
+                      padding: 2px 6px;
+                      border-radius: 4px;
+                      font-weight: 800;
+                      height: 1.2rem;
+                      margin-top: 4px;
+                      flex-shrink: 0 !important;
+                      max-width: max-content !important;
+                    `"
+              class="mx-auto"
+            >
+              Brakujące IP
+            </div>
+          </div>
+        </div>
+
+        <h1 class="flex flex-wrap gap-2 my-2 text-lg font-black">
+          Znajomi
+          <span
+            :style="`
+                      background: var(--text-secondary);
+                      font-size: 0.6rem;
+                      color: black;
+                      padding: 2px 6px;
+                      border-radius: 4px;
+                      font-weight: 800;
+                      height: 1.2rem;
+                      margin-top: 4px;
+                      flex-shrink: 0 !important;
+                      max-width: max-content !important;
+                    `"
+          >
+            {{ player.friends?.length }}
+          </span>
+        </h1>
+        <div v-if="player.friends?.length" class="flex flex-col gap-2 overflow-y-auto">
+          <div
+            v-for="friend in friends"
+            :key="friend.uuid"
+            class="flex gap-2 items-center justify-between p-4 bg-[var(--bg-card)] rounded-xl"
+          >
+            <div class="flex gap-2 items-center">
+              <div class="!relative">
+                <img
+                  v-if="friend.headUrl"
+                  :src="friend.headUrl"
+                  class="!w-10 !h-10 !shrink-0 rounded-full"
+                  alt="Avatar"
+                />
+                <div
+                  v-else
+                  class="!wfull !shrink-0 rounded-full overflow-hidden flex items-center justify-center"
+                >
+                  <i class="fas fa-user"></i>
+                </div>
+              </div>
+              {{ friend.nickname }}
+            </div>
+            <div>
+              <button
+                class="nav-icon"
+                @click="
+                  () => {
+                    chatsStore.addActiveChat(friend)
+                    closeModal()
+                  }
+                "
+              >
+                <i class="fa fa-comment"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+        <span v-else class="text-xs text-[var(--text-muted)]">
+          Aktualnie
+          {{
+            userStore.user && getPlayerID(player) === getPlayerID(userStore.user)
+              ? 'nie masz'
+              : 'gracz nie ma'
+          }}
+          żadnych znajomych.
+        </span>
+      </div>
+    </Transition>
+
+    <ChangeSkinModal ref="changeSkinModalRef" />
+  </div>
+</template>
+
+<style scoped>
+.modal-container {
+  position: absolute;
+  top: 54.5px;
+  left: 0;
+  height: calc(100vh - 54.5px);
+  color: white;
+  display: flex;
+  align-items: end;
+  z-index: 500;
+}
+
+.error-message {
+  background: white;
+  backdrop-filter: blur(10px);
+}
+
+.modal-card {
+  height: 100%;
+  width: 35vw;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0 1rem var(--border-2);
+  background: var(--bg-card);
+  border-top-right-radius: 1rem;
+  border-bottom-right-radius: 1rem;
+  border: 1px dashed var(--border-2);
+  backdrop-filter: blur(10px);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.modal-content {
+  flex: 1;
+  margin-bottom: 1.5rem;
+}
+
+.online-dot {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid var(--bg-dark);
+  border-radius: 50%;
+}
+
+.fade-left-enter-active,
+.fade-left-leave-active {
+  transition: all 0.5s cubic-bezier(0.075, 0.82, 0.165, 1);
+  transform: translateX(0%);
+}
+
+.fade-left-enter-from,
+.fade-left-leave-to {
+  transform: translateX(-100%);
+}
+</style>

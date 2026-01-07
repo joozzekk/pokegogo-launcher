@@ -3,12 +3,16 @@
 import Header from '@ui/components/core/Header.vue'
 import Sidebar from '@ui/components/core/Sidebar.vue'
 import BannedModal from '@ui/components/modals/BannedModal.vue'
+import UserProfile from '@ui/components/modals/UserProfile.vue'
 import Background from '@ui/components/Background.vue'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useLauncherService } from '@ui/services/launcher-service'
 import { initAnimations } from '@ui/assets/scripts/animations'
 import { useRoute } from 'vue-router'
 import Chat from '../Chat.vue'
+import BanPlayerModal from '../modals/BanPlayerModal.vue'
+import PasswordResetConfirm from '../modals/PasswordResetConfirm.vue'
+import { IUser } from '@ui/env'
 
 const route = useRoute()
 
@@ -16,9 +20,10 @@ const transitionName = ref('slide-up')
 
 const { useMethods, useFetches, useVariables } = useLauncherService()
 
-const { startMicrosoftTokenRefreshInterval } = useMethods()
-const { fetchUpdateData, fetchEvents, fetchFriends } = useFetches()
-const { refreshInterval, events } = useVariables()
+const { startMicrosoftTokenRefreshInterval, handleRefreshDataAndProfile } = useMethods()
+const { fetchUpdateData, fetchEvents, fetchFriends, fetchPlayers } = useFetches()
+const { refreshInterval, events, allPlayers, filteredPlayers, hasMorePlayers, isLoadingPlayers } =
+  useVariables()
 
 const routeOrder = [
   '/app/events',
@@ -44,6 +49,21 @@ watch(
     }
   }
 )
+
+const banPlayerModalRef = ref()
+const passwordResetModalRef = ref()
+
+const handleLauncherBan = async (player: IUser): Promise<void> => {
+  banPlayerModalRef.value?.openModal(player)
+}
+
+const handleLauncherUnban = async (player: IUser): Promise<void> => {
+  banPlayerModalRef.value?.openModal(player, 'unban')
+}
+
+const handleResetPassword = async (player: IUser): Promise<void> => {
+  passwordResetModalRef.value?.openModal(player)
+}
 
 onMounted(async () => {
   initAnimations()
@@ -72,7 +92,16 @@ onUnmounted(() => {
     <main class="main-content !relative overflow-hidden !w-full">
       <RouterView v-slot="{ Component }">
         <Transition :name="transitionName">
-          <component :is="Component" :events="events" />
+          <component
+            :is="Component"
+            :events="events"
+            :all-players="allPlayers"
+            :filtered-players="filteredPlayers"
+            :has-more-players="hasMorePlayers"
+            :is-loading-players="isLoadingPlayers"
+            @fetch-players="fetchPlayers"
+            @refresh-data="fetchPlayers"
+          />
         </Transition>
       </RouterView>
     </main>
@@ -81,6 +110,14 @@ onUnmounted(() => {
   <div id="toastContainer" class="toast-container"></div>
   <BannedModal />
   <Chat />
+  <BanPlayerModal ref="banPlayerModalRef" @refresh-data="handleRefreshDataAndProfile" />
+  <PasswordResetConfirm ref="passwordResetModalRef" />
+  <UserProfile
+    @refresh-data="handleRefreshDataAndProfile"
+    @ban-player="handleLauncherBan"
+    @unban-player="handleLauncherUnban"
+    @reset-password="handleResetPassword"
+  />
 </template>
 
 <style>
