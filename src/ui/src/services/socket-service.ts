@@ -4,11 +4,14 @@ import api from '@ui/utils/client'
 import { isMachineIDBanned, showToast } from '@ui/utils'
 import useUserStore from '@ui/stores/user-store'
 import { useRouter } from 'vue-router'
+import { useChatsStore } from '@ui/stores/chats-store'
+import { connectPlayer, disconnectPlayer, getMessages } from '@ui/api/endpoints'
 
 export const useSocketService = (): {
   connect: (uuid: string) => void
 } => {
   let socket: Socket | null = null
+  const chatsStore = useChatsStore()
   const userStore = useUserStore()
   const router = useRouter()
 
@@ -35,13 +38,16 @@ export const useSocketService = (): {
 
     socket.on('connect', async () => {
       LOGGER.with('Socket Service').success(`Connected to websocket with uuid: `, uuid)
+      await connectPlayer()
+      if (userStore.user) await userStore.updateProfile()
     })
 
     socket.on('error', (err) => {
       LOGGER.with('Socket Service').err('Error with socket connection: ', err)
     })
 
-    socket.on('disconnect', () => {
+    socket.on('disconnect', async () => {
+      await disconnectPlayer()
       LOGGER.with('Socket Service').success('Disconected from websocket')
     })
 
@@ -89,6 +95,9 @@ export const useSocketService = (): {
 
     socket.on('player:receive-message', async (data: { senderUUID: string; message: string }) => {
       LOGGER.with('Socket Service').log('Player received message: ', data.message)
+      const activeChat = chatsStore.activeChats.find((chat) => chat.uuid === data.senderUUID)
+
+      if (activeChat) activeChat.messages = await getMessages(activeChat.uuid)
     })
 
     socket.on('friends:request', async (uuid: string) => {

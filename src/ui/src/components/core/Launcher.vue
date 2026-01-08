@@ -73,7 +73,7 @@ onMounted(async () => {
   await fetchFriends()
   await fetchEvents()
 
-  window.discord.setActivity(`W PokeGoGo Launcher`, 'Przeglądam..')
+  window.discord?.setActivity(`W PokeGoGo Launcher`, 'Przeglądam..')
 })
 
 onUnmounted(() => {
@@ -101,6 +101,9 @@ onUnmounted(() => {
             :is-loading-players="isLoadingPlayers"
             @fetch-players="fetchPlayers"
             @refresh-data="fetchPlayers"
+            @ban-player="handleLauncherBan"
+            @unban-player="handleLauncherUnban"
+            @reset-password="handleResetPassword"
           />
         </Transition>
       </RouterView>

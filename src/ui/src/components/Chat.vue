@@ -83,13 +83,19 @@ const handleChatToggle = async (uuid: string): Promise<void> => {
 }
 
 watch(
-  () => chatsStore.activeChats.map((c) => ({ uuid: c.uuid, toggled: c.chatToggled })),
-  async (states) => {
-    const opened = states.find((s) => s.toggled)
-    if (opened) {
-      await nextTick()
-      scrollToBottom(opened.uuid)
-      readMessages(opened.uuid)
+  () =>
+    chatsStore.activeChats
+      .filter((c) => c.chatToggled)
+      .map((c) => ({ uuid: c.uuid, len: c.messages.length })),
+  async (openedStates, prevStates) => {
+    for (const state of openedStates) {
+      const prev = prevStates?.find((p) => p.uuid === state.uuid)
+      const increased = !prev || state.len > prev.len
+
+      if (increased) {
+        await nextTick()
+        scrollToBottom(state.uuid)
+      }
     }
   },
   { deep: true }
@@ -120,19 +126,22 @@ watch(
         </div>
 
         <template v-else>
-          <div class="chat-container z-54">
+          <div
+            class="chat-container z-54"
+            :style="{ right: chat.chatToggled ? '0' : `${i * 3.5}rem` }"
+          >
             <div class="flex items-center gap-2 px-4 py-3 bg-[var(--bg-dark)]">
               <div class="relative">
                 <img :src="chat.headUrl" class="w-6 h-6 rounded-full" alt="Avatar" />
                 <div
-                  class="absolute -bottom-1 -right-1 z-10 w-2 h-2 rounded-full"
+                  class="absolute -bottom-2 -right-2 z-10 w-2 h-2 rounded-full"
                   :style="{ background: !chat?.isOnline ? '#ff4757' : '#00ff88' }"
                 ></div>
               </div>
 
               <span class="ml-1 font-semibold">{{ chat.nickname }}</span>
 
-              <button class="nav-icon ml-auto" @click="chatsStore.removeActiveChat(chat)">
+              <button class="nav-icon ml-auto" @click="handleChatToggle(chat.uuid)">
                 <i class="fa-solid fa-xmark"></i>
               </button>
             </div>

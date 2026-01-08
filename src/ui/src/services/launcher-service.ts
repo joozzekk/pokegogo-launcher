@@ -76,11 +76,13 @@ export const useLauncherService = (): {
 
   const setMachineData = async (): Promise<void> => {
     const machineData = await window.electron?.ipcRenderer?.invoke('data:machine')
-    generalStore.setMachineData(
-      machineData.machineId,
-      machineData.macAddress,
-      machineData.ipAddress
-    )
+
+    if (machineData)
+      generalStore.setMachineData(
+        machineData.machineId,
+        machineData.macAddress,
+        machineData.ipAddress
+      )
   }
 
   const fetchUpdateData = async (): Promise<void> => {
@@ -113,7 +115,7 @@ export const useLauncherService = (): {
   }
 
   const fetchFriends = async (): Promise<void> => {
-    chatsStore.setFriends(await getFriends(userStore.user!.uuid))
+    if (userStore.user) chatsStore.setFriends(await getFriends(userStore.user?.uuid))
   }
 
   async function fetchPlayers(query?: string, reset: boolean = false): Promise<void> {

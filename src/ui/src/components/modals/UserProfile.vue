@@ -38,6 +38,7 @@ watch(player, async () => {
       now.value = new Date()
     }, 1000)
     await fetchPlayerFriends()
+    window.addEventListener('keydown', handleEscape)
   }
 })
 
@@ -46,6 +47,7 @@ const closeModal = (): void => {
   if (timerInterval.value) {
     clearInterval(timerInterval.value)
   }
+  window.removeEventListener('keydown', handleEscape)
 }
 
 const changeSkinModalRef = ref()
@@ -166,8 +168,10 @@ const handleRemoveFriend = async (player: IUser): Promise<void> => {
   }
 }
 
-const handleCopy = async (text: string): Promise<void> => {
-  await navigator.clipboard.writeText(text)
+const handleEscape = (e: KeyboardEvent): void => {
+  if (e.key === 'Escape') {
+    closeModal()
+  }
 }
 </script>
 
@@ -211,33 +215,6 @@ const handleCopy = async (text: string): Promise<void> => {
               <div class="nav-icon" @click="closeModal">
                 <i class="fa fa-times"></i>
               </div>
-              <template
-                v-if="
-                  [UserRole.ADMIN, UserRole.DEV, UserRole.MODERATOR].includes(
-                    userStore.user?.role ?? UserRole.USER
-                  ) && ![UserRole.ADMIN, UserRole.DEV, UserRole.MODERATOR].includes(player.role)
-                "
-              >
-                <button
-                  v-if="!player?.isBanned"
-                  class="nav-icon"
-                  @click="$emit('ban-player', player)"
-                >
-                  <i :class="'fas fa-ban text-red-400'"></i>
-                </button>
-
-                <button v-else class="nav-icon" @click="$emit('unban-player', player)">
-                  <i :class="'fas fa-rotate-left text-green-400'"></i>
-                </button>
-
-                <button
-                  v-if="player?.accountType !== AccountType.MICROSOFT"
-                  class="nav-icon"
-                  @click="$emit('reset-password', player)"
-                >
-                  <i :class="'fas fa-key'"></i>
-                </button>
-              </template>
             </div>
           </div>
         </div>
@@ -260,6 +237,30 @@ const handleCopy = async (text: string): Promise<void> => {
             <i class="fas fa-user-friends"></i>
             Online
           </div>
+        </div>
+        <div
+          v-if="
+            [UserRole.ADMIN, UserRole.DEV, UserRole.MODERATOR].includes(
+              userStore.user?.role ?? UserRole.USER
+            ) && ![UserRole.ADMIN, UserRole.DEV, UserRole.MODERATOR].includes(player.role)
+          "
+          class="flex gap-2"
+        >
+          <button v-if="!player?.isBanned" class="nav-icon" @click="$emit('ban-player', player)">
+            <i :class="'fas fa-ban text-red-400'"></i>
+          </button>
+
+          <button v-else class="nav-icon" @click="$emit('unban-player', player)">
+            <i :class="'fas fa-rotate-left text-green-400'"></i>
+          </button>
+
+          <button
+            v-if="player?.accountType !== AccountType.MICROSOFT"
+            class="nav-icon"
+            @click="$emit('reset-password', player)"
+          >
+            <i :class="'fas fa-key'"></i>
+          </button>
         </div>
         <span
           v-if="player.isBanned"
@@ -351,83 +352,6 @@ const handleCopy = async (text: string): Promise<void> => {
               <i :class="'fas fa-user-minus'" />
               Remove friend
             </button>
-          </div>
-          <p
-            v-if="player.machineId"
-            class="text-[0.55rem] text-center w-full break-all rounded-xl bg-[var(--bg-dark)] px-2 py-1 text-[var(--text-muted)] cursor-pointer"
-            @click="handleCopy(player.machineId)"
-          >
-            {{ player.machineId }}
-          </p>
-          <div
-            v-else
-            :style="`
-                      background: var(--text-secondary);
-                      font-size: 0.6rem;
-                      color: black;
-                      padding: 2px 6px;
-                      border-radius: 4px;
-                      font-weight: 800;
-                      height: 1.2rem;
-                      margin-top: 4px;
-                      flex-shrink: 0 !important;
-                      max-width: max-content !important;
-                    `"
-            class="mx-auto"
-          >
-            Brakujący HWID
-          </div>
-          <div class="flex gap-2 mt-1">
-            <p
-              v-if="player.macAddress"
-              class="text-[0.55rem] text-center w-full break-all rounded-xl bg-[var(--bg-dark)] px-2 py-1 text-[var(--text-muted)] cursor-pointer"
-              @click="handleCopy(player.macAddress)"
-            >
-              {{ player.macAddress }}
-            </p>
-            <div
-              v-else
-              :style="`
-                      background: var(--text-secondary);
-                      font-size: 0.6rem;
-                      color: black;
-                      padding: 2px 6px;
-                      border-radius: 4px;
-                      font-weight: 800;
-                      height: 1.2rem;
-                      margin-top: 4px;
-                      flex-shrink: 0 !important;
-                      max-width: max-content !important;
-                    `"
-              class="mx-auto"
-            >
-              Brakujący adres Mac
-            </div>
-            <p
-              v-if="player.ipAddress"
-              class="text-[0.55rem] text-center w-full break-all rounded-xl bg-[var(--bg-dark)] px-2 py-1 text-[var(--text-muted)]"
-              @click="handleCopy(player.ipAddress)"
-            >
-              {{ player.ipAddress }}
-            </p>
-            <div
-              v-else
-              :style="`
-                      background: var(--text-secondary);
-                      font-size: 0.6rem;
-                      color: black;
-                      padding: 2px 6px;
-                      border-radius: 4px;
-                      font-weight: 800;
-                      height: 1.2rem;
-                      margin-top: 4px;
-                      flex-shrink: 0 !important;
-                      max-width: max-content !important;
-                    `"
-              class="mx-auto"
-            >
-              Brakujące IP
-            </div>
           </div>
         </div>
 

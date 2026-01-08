@@ -226,28 +226,6 @@ body {
   color: var(--primary);
 }
 
-.status-dot {
-  position: absolute;
-  bottom: 0px;
-  right: -1px;
-  width: 10px;
-  height: 10px;
-  background: var(--primary);
-  border: 1px solid var(--bg-dark);
-  border-radius: 50%;
-  animation: statusPulse 2s infinite;
-}
-
-@keyframes statusPulse {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 var(--status-pulse);
-  }
-  50% {
-    box-shadow: 0 0 0 8px rgba(197, 167, 34, 0);
-  }
-}
-
 .player-info {
   display: flex;
   flex-direction: column;

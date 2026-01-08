@@ -1,19 +1,12 @@
 <script setup lang="ts">
-import { IUser } from '@ui/env'
-import { LOGGER } from '@ui/services/logger-service'
 import useGeneralStore from '@ui/stores/general-store'
 import useUserStore from '@ui/stores/user-store'
-import { extractHead } from '@ui/utils'
-import { computed, ref, watch } from 'vue'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 const userStore = useUserStore()
 const generalStore = useGeneralStore()
 const router = useRouter()
-const playerName = computed(() => userStore.user?.nickname ?? 'Guest')
-const skinHeadUrl = ref<string | undefined>(undefined)
-
-const apiURL = import.meta.env.RENDERER_VITE_API_URL
 
 const handleLogout = async (): Promise<void> => {
   await userStore.logout()
@@ -22,47 +15,11 @@ const handleLogout = async (): Promise<void> => {
   }
 }
 
+const isOnline = computed(() => userStore.user?.isOnline)
+
 const handleChangeRoute = (newRoute: string): void => {
   router.push(newRoute)
 }
-
-const fallbackHeadUrl = computed(() => `https://mineskin.eu/helm/${playerName.value}/100.png`)
-
-async function loadCustomOrFallbackHead(): Promise<void> {
-  const currentName = playerName.value
-  const customSkinSource = `${apiURL}/skins/image/${currentName}`
-
-  try {
-    const base64Head = await extractHead(customSkinSource, 100)
-    skinHeadUrl.value = base64Head
-
-    if (userStore.user) {
-      userStore.user.headUrl = base64Head
-    }
-    LOGGER.with('SkinAPI').success(`Custom skin is loaded for ${currentName}.`)
-  } catch (error) {
-    LOGGER.with('SkinAPI').err('Error during skin load.', (error as Error)?.message)
-
-    skinHeadUrl.value = fallbackHeadUrl.value
-    if (userStore.user) {
-      userStore.user.headUrl = fallbackHeadUrl.value
-    }
-  }
-}
-
-watch(
-  playerName,
-  (newPlayerName, oldPlayerName) => {
-    if (oldPlayerName?.length) {
-      LOGGER.with('SkinAPI').log(`Nickname has changed to ${newPlayerName}. Loading skin...`)
-
-      loadCustomOrFallbackHead()
-    }
-  },
-  {
-    immediate: true
-  }
-)
 </script>
 
 <template>
@@ -71,14 +28,12 @@ watch(
       <div class="player-fullinfo">
         <div
           class="player-avatar cursor-pointer"
-          @click="
-            userStore.updateSelectedProfile({ ...userStore.user, headUrl: skinHeadUrl } as IUser)
-          "
+          @click="userStore.user && userStore.updateSelectedProfile(userStore.user)"
         >
           <img
-            v-if="skinHeadUrl"
+            v-if="userStore.user?.headUrl"
             id="playerSkin"
-            :src="skinHeadUrl"
+            :src="userStore.user?.headUrl"
             class="player-skin"
             alt="Player Skin"
             @dragstart.prevent="null"
@@ -91,7 +46,13 @@ watch(
           >
             <i class="fas fa-user"></i>
           </div>
-          <div class="status-dot"></div>
+          <div
+            class="status-dot"
+            :class="{
+              'bg-green-400': isOnline,
+              'bg-red-400': !isOnline
+            }"
+          ></div>
         </div>
       </div>
     </div>
@@ -173,3 +134,26 @@ watch(
     </div>
   </aside>
 </template>
+
+<style lang="scss">
+.status-dot {
+  position: absolute;
+  bottom: 0px;
+  right: -1px;
+  width: 10px;
+  height: 10px;
+  border: 1px solid var(--bg-dark);
+  border-radius: 50%;
+  animation: statusPulse 2.5s infinite;
+}
+
+@keyframes statusPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 var(--text-secondary);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(197, 167, 34, 0);
+  }
+}
+</style>

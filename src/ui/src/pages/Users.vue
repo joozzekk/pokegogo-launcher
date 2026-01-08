@@ -4,7 +4,7 @@ import { IUser } from '@ui/env'
 import { useChatsStore } from '@ui/stores/chats-store'
 import useGeneralStore from '@ui/stores/general-store'
 import useUserStore from '@ui/stores/user-store'
-import { UserRole } from '@ui/types/app'
+import { AccountType, UserRole } from '@ui/types/app'
 import { showToast } from '@ui/utils'
 import { nextTick } from 'process'
 import { ref, onMounted, onUnmounted } from 'vue'
@@ -19,6 +19,9 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'fetch-players', query?: string, reset?: boolean): Promise<void>
   (e: 'refresh-data', query?: string, reset?: boolean): Promise<void>
+  (e: 'ban-player', player: IUser): Promise<void>
+  (e: 'unban-player', player: IUser): Promise<void>
+  (e: 'reset-password', player: IUser): Promise<void>
 }>()
 
 const generalStore = useGeneralStore()
@@ -164,11 +167,12 @@ onUnmounted(() => {
           <article
             v-for="player in filteredPlayers"
             :key="player.mcid ? player.mcid : player.uuid"
-            class="flex flex-col gap-2 backdrop-blur-xl border rounded-xl px-4 py-3 border-[var(--primary)]/10"
+            class="flex flex-col gap-2 backdrop-blur-xl border rounded-xl px-4 py-3 border-[var(--primary)]/10 group cursor-pointer hover:opacity-95 hover:border-[var(--primary)]"
             :class="player.isBanned ? 'bg-red-400/20' : 'bg-[var(--bg-card)]'"
+            @click="handleOpenUserProfile(player)"
           >
-            <div class="flex flex-col shrink-0">
-              <div class="!relative p-4">
+            <div class="flex flex-col shrink-0 p-2">
+              <div class="!relative group-hover:opacity-60 duration-300">
                 <img
                   v-if="player.headUrl"
                   :src="player.headUrl"
@@ -181,46 +185,88 @@ onUnmounted(() => {
                 >
                   <i class="fas fa-user"></i>
                 </div>
+                <div
+                  v-if="player.isBanned"
+                  class="absolute p-4 top-0 flex items-center justify-center left-0 w-full h-full rounded-full border-4 border-red-500 bg-red-500/40"
+                >
+                  <span
+                    :style="`
+                      font-size: 1rem;
+                      color: white;
+                      padding: 2px 6px;
+                      border-radius: 4px;
+                      font-weight: 800;
+                      height: 1.8rem;
+                      flex-shrink: 0 !important;
+                      `"
+                    class="!max-w-content !shrink-0 bg-red-500"
+                  >
+                    BANNED
+                  </span>
+                </div>
               </div>
-              <h1 class="font-bold text-lg text-center">{{ player.nickname }}</h1>
+              <h1 class="font-bold text-lg text-center mt-2">{{ player.nickname }}</h1>
             </div>
-            <div class="flex gap-2 flex-col">
-              <button class="nav-icon !w-full gap-2" @click="handleOpenUserProfile(player)">
-                <i class="fa fa-user" />
-                Profile
-              </button>
-              <div
-                v-if="
-                  userStore.user &&
-                  !player.isBanned &&
-                  getPlayerID(player) !== getPlayerID(userStore.user)
-                "
-                class="flex gap-2 flex-col"
-              >
-                <button
-                  v-if="!isFriend(player) && !hasFriendRequest(player) && !sentRequest(player)"
-                  class="nav-icon !w-full gap-2 text-xs"
-                  @click="handleRequestFriend(player)"
+            <div class="flex gap-1 flex-col">
+              <div class="flex w-full gap-1">
+                <div
+                  v-if="
+                    userStore.user &&
+                    !player.isBanned &&
+                    getPlayerID(player) !== getPlayerID(userStore.user)
+                  "
+                  class="flex gap-1 flex-col"
                 >
-                  <i :class="'fas fa-user-plus'" />
-                  Add to friends
-                </button>
-                <button
-                  v-if="sentRequest(player)"
-                  class="nav-icon !w-full gap-2 text-xs"
-                  @click="handleCancelRequest(player)"
+                  <button
+                    v-if="!isFriend(player) && !hasFriendRequest(player) && !sentRequest(player)"
+                    class="nav-icon"
+                    @click.stop="handleRequestFriend(player)"
+                  >
+                    <i :class="'fas fa-user-plus'" />
+                  </button>
+                  <button
+                    v-if="sentRequest(player)"
+                    class="nav-icon"
+                    @click.stop="handleCancelRequest(player)"
+                  >
+                    <i :class="'fas fa-user-xmark'" />
+                  </button>
+                  <button
+                    v-if="isFriend(player)"
+                    class="nav-icon"
+                    @click.stop="handleRemoveFriend(player)"
+                  >
+                    <i :class="'fas fa-user-minus'" />
+                  </button>
+                </div>
+                <div
+                  v-if="
+                    [UserRole.ADMIN, UserRole.DEV, UserRole.MODERATOR].includes(
+                      userStore.user?.role ?? UserRole.USER
+                    ) && ![UserRole.ADMIN, UserRole.DEV, UserRole.MODERATOR].includes(player.role)
+                  "
+                  class="flex gap-1 !w-full"
                 >
-                  <i :class="'fas fa-user-minus'" />
-                  Cancel request
-                </button>
-                <button
-                  v-if="isFriend(player)"
-                  class="nav-icon !w-full gap-2 text-xs"
-                  @click="handleRemoveFriend(player)"
-                >
-                  <i :class="'fas fa-user-minus'" />
-                  Remove friend
-                </button>
+                  <button
+                    v-if="!player?.isBanned"
+                    class="nav-icon"
+                    @click.stop="$emit('ban-player', player)"
+                  >
+                    <i :class="'fas fa-ban text-red-400'"></i>
+                  </button>
+
+                  <button v-else class="nav-icon" @click="$emit('unban-player', player)">
+                    <i :class="'fas fa-rotate-left text-green-400'"></i>
+                  </button>
+
+                  <button
+                    v-if="player?.accountType !== AccountType.MICROSOFT"
+                    class="nav-icon"
+                    @click.stop="$emit('reset-password', player)"
+                  >
+                    <i :class="'fas fa-key'"></i>
+                  </button>
+                </div>
               </div>
             </div>
           </article>

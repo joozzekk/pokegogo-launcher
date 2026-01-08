@@ -5,6 +5,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { type SavedAccount } from '@ui/types/app'
 import { useChatsStore } from '@ui/stores/chats-store'
+import { loadCustomOrFallbackHead } from '@ui/utils'
 
 const useUserStore = defineStore('user', () => {
   const selectedProfile = ref<IUser | null>(null)
@@ -17,7 +18,9 @@ const useUserStore = defineStore('user', () => {
   const user = ref(null as IUser | null)
   const router = useRouter()
 
-  const setUser = (newUser: IUser): void => {
+  const setUser = async (newUser: IUser): Promise<void> => {
+    newUser.headUrl = await loadCustomOrFallbackHead(newUser)
+
     user.value = newUser
   }
 

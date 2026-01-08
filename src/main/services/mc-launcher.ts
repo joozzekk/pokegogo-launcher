@@ -5,7 +5,6 @@ import os from 'os'
 import Logger from 'electron-log'
 import { ChildProcessWithoutNullStreams } from 'child_process'
 
-// Token -> MCLC
 const toMCLC = (token: string): unknown => {
   const data = JSON.parse(token)
 
