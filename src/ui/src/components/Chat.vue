@@ -9,7 +9,7 @@ import type { IMessage } from '@ui/types/app'
 
 const userStore = useUserStore()
 const chatsStore = useChatsStore()
-const message = ref<string>('')
+const message = ref<string[]>([])
 
 const chatRefs = ref<Record<string, HTMLDivElement | null>>({})
 
@@ -29,11 +29,11 @@ const scrollToBottom = (uuid: string): void => {
   })
 }
 
-const handleSendMessage = async (uuid: string): Promise<void> => {
+const handleSendMessage = async (i: number, uuid: string): Promise<void> => {
   if (!message.value || !chatsStore.friends) return
 
-  const content = message.value
-  message.value = ''
+  const content = message.value[i]
+  message.value[i] = ''
 
   await sendMessage(uuid, content)
 
@@ -108,8 +108,16 @@ watch(
       <Transition name="fade">
         <div
           v-if="!chat.chatToggled"
-          class="absolute z-50 bottom-2 right-0 w-12 h-12 rounded-full"
-          :style="{ right: chat.chatToggled ? '0' : `${i * 3.5}rem` }"
+          class="absolute z-50 bottom-2 w-12 h-12 rounded-full"
+          :style="{
+            right: chatsStore.activeChats[i - 1]?.chatToggled
+              ? i === 0
+                ? `1rem`
+                : `${i * 5 + 15}rem`
+              : i === 0
+                ? `1rem`
+                : `${i * 5}rem`
+          }"
         >
           <div
             class="relative hover:opacity-80 cursor-pointer"
@@ -128,7 +136,15 @@ watch(
         <template v-else>
           <div
             class="chat-container z-54"
-            :style="{ right: chat.chatToggled ? '0' : `${i * 3.5}rem` }"
+            :style="{
+              right: chatsStore.activeChats[i - 1]?.chatToggled
+                ? i === 0
+                  ? `1rem`
+                  : `${i * 5 + 15}rem`
+                : i === 0
+                  ? `1rem`
+                  : `${i * 5}rem`
+            }"
           >
             <div class="flex items-center gap-2 px-4 py-3 bg-[var(--bg-dark)]">
               <div class="relative">
@@ -195,13 +211,13 @@ watch(
 
             <div class="flex absolute bottom-0 w-full items-center gap-2 pb-2 px-2">
               <input
-                v-model="message"
+                v-model="message[i]"
                 type="text"
                 class="w-full rounded-full px-4 py-2 text-xs border border-[var(--bg-card)] outline-none focus:outline-none focus:border-[var(--primary)] focus:ring-[var(--primary)]"
                 placeholder="Wpisz wiadomość..."
-                @keyup.enter="handleSendMessage(chat.uuid)"
+                @keyup.enter="handleSendMessage(i, chat.uuid)"
               />
-              <button class="nav-icon" @click="handleSendMessage(chat.uuid)">
+              <button class="nav-icon" @click="handleSendMessage(i, chat.uuid)">
                 <i class="fa-solid fa-paper-plane"></i>
               </button>
             </div>
@@ -232,7 +248,7 @@ watch(
   width: 18rem;
   height: 22rem;
   background-color: var(--bg-card);
-  backdrop-filter: blur(1rem);
+  backdrop-filter: blur(2rem);
   border-radius: 1rem;
   overflow: hidden;
 }

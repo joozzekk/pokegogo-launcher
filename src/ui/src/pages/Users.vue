@@ -59,7 +59,7 @@ const getPlayerID = (player: IUser): string => {
 
 const handleRequestFriend = async (player: IUser): Promise<void> => {
   try {
-    const res = await requestFriend(getPlayerID(player))
+    const res = await requestFriend(player.nickname)
 
     if (res) {
       await emit('fetch-players', searchQuery.value, true)
@@ -74,7 +74,7 @@ const handleRequestFriend = async (player: IUser): Promise<void> => {
 
 const handleCancelRequest = async (player: IUser): Promise<void> => {
   try {
-    const res = await cancelFriendRequest(getPlayerID(player))
+    const res = await cancelFriendRequest(player.nickname)
     if (res) {
       await emit('fetch-players', searchQuery.value, true)
       await userStore.updateProfile()
@@ -88,12 +88,12 @@ const handleCancelRequest = async (player: IUser): Promise<void> => {
 
 const handleRemoveFriend = async (player: IUser): Promise<void> => {
   try {
-    const res = await removeFriend(player.uuid)
+    const res = await removeFriend(player.nickname)
 
     if (res) {
       await emit('fetch-players', searchQuery.value, true)
       await userStore.updateProfile()
-      await chatsStore.setFriends(await getFriends(userStore.user!.uuid))
+      await chatsStore.setFriends(await getFriends(userStore.user!.nickname))
 
       showToast(`Usunięto ${player.nickname} z listy znajomych`, 'success')
     }
@@ -106,13 +106,13 @@ const handleOpenUserProfile = (player: IUser): void => {
   userStore.updateSelectedProfile(player)
 }
 
-const isFriend = (player: IUser): boolean => !!userStore.user?.friends?.includes(player.uuid)
+const isFriend = (player: IUser): boolean => !!userStore.user?.friends?.includes(player.nickname)
 
 const sentRequest = (player: IUser): boolean =>
-  !!player?.friendRequests?.includes(userStore.user?.uuid ?? '')
+  !!player?.friendRequests?.includes(userStore.user?.nickname ?? '')
 
 const hasFriendRequest = (player: IUser): boolean =>
-  !!userStore.user?.friendRequests?.includes(player.uuid)
+  !!userStore.user?.friendRequests?.includes(player.nickname)
 
 onMounted(async () => {
   await emit('fetch-players', searchQuery.value, true)
@@ -166,7 +166,7 @@ onUnmounted(() => {
         >
           <article
             v-for="player in filteredPlayers"
-            :key="player.mcid ? player.mcid : player.uuid"
+            :key="player.nickname"
             class="flex flex-col gap-2 backdrop-blur-xl border rounded-xl px-4 py-3 border-[var(--primary)]/10 group cursor-pointer hover:opacity-95 hover:border-[var(--primary)]"
             :class="player.isBanned ? 'bg-red-400/20' : 'bg-[var(--bg-card)]'"
             @click="handleOpenUserProfile(player)"

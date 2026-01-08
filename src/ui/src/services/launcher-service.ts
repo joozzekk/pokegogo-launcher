@@ -115,7 +115,7 @@ export const useLauncherService = (): {
   }
 
   const fetchFriends = async (): Promise<void> => {
-    if (userStore.user) chatsStore.setFriends(await getFriends(userStore.user?.uuid))
+    if (userStore.user) chatsStore.setFriends(await getFriends(userStore.user?.nickname))
   }
 
   async function fetchPlayers(query?: string, reset: boolean = false): Promise<void> {

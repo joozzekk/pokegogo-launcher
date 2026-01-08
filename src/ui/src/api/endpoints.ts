@@ -253,8 +253,8 @@ export const removeUser = async (uuid: string): Promise<any> => {
   return res.data
 }
 
-export const getFriends = async (uuid: string): Promise<any> => {
-  const res = await api.get(`/users/friends/${uuid}`)
+export const getFriends = async (nicname: string): Promise<any> => {
+  const res = await api.get(`/users/friends/${nicname}`)
 
   return res.data
 }
@@ -279,41 +279,41 @@ export const readMessages = async (uuid: string): Promise<any> => {
   return res.data
 }
 
-export const requestFriend = async (uuid: string): Promise<any> => {
+export const requestFriend = async (nickname: string): Promise<any> => {
   const res = await api.post(`/users/friends/request`, {
-    friendUuid: uuid
+    friendNickname: nickname
   })
 
   return res.data
 }
 
-export const acceptFriendRequest = async (uuid: string): Promise<any> => {
+export const acceptFriendRequest = async (nickname: string): Promise<any> => {
   const res = await api.post(`/users/friends/accept`, {
-    friendUuid: uuid
+    friendNickname: nickname
   })
 
   return res.data
 }
 
-export const rejectFriendRequest = async (uuid: string): Promise<any> => {
+export const rejectFriendRequest = async (nickname: string): Promise<any> => {
   const res = await api.post(`/users/friends/decline`, {
-    friendUuid: uuid
+    friendNickname: nickname
   })
 
   return res.data
 }
 
-export const cancelFriendRequest = async (uuid: string): Promise<any> => {
+export const cancelFriendRequest = async (nickname: string): Promise<any> => {
   const res = await api.post(`/users/friends/cancel`, {
-    friendUuid: uuid
+    friendNickname: nickname
   })
 
   return res.data
 }
 
-export const removeFriend = async (uuid: string): Promise<any> => {
+export const removeFriend = async (nickname: string): Promise<any> => {
   const res = await api.post(`/users/friends/remove`, {
-    friendUuid: uuid
+    friendNickname: nickname
   })
 
   return res.data

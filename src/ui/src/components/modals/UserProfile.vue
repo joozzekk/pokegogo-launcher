@@ -65,7 +65,7 @@ const getPlayerID = (player: IUser): string => {
 const fetchPlayerFriends = async (): Promise<void> => {
   if (!player.value) return
 
-  const result = await getFriends(player.value.uuid)
+  const result = await getFriends(player.value.nickname)
 
   if (result) {
     for (const friend of result) {
@@ -77,13 +77,13 @@ const fetchPlayerFriends = async (): Promise<void> => {
   }
 }
 
-const isFriend = (player: IUser): boolean => !!userStore.user?.friends?.includes(player.uuid)
+const isFriend = (player: IUser): boolean => !!userStore.user?.friends?.includes(player.nickname)
 
 const sentRequest = (player: IUser): boolean =>
-  !!player?.friendRequests?.includes(userStore.user?.uuid ?? '')
+  !!player?.friendRequests?.includes(userStore.user?.nickname ?? '')
 
 const hasFriendRequest = (player: IUser): boolean =>
-  !!userStore.user?.friendRequests?.includes(player.uuid)
+  !!userStore.user?.friendRequests?.includes(player.nickname)
 
 const now = ref(new Date())
 const timerInterval = ref<number | undefined>(undefined)
@@ -122,12 +122,12 @@ const formattedBanTime = computed(() => {
 
 const handleAcceptFriendRequest = async (player: IUser): Promise<void> => {
   try {
-    const res = await acceptFriendRequest(player.uuid)
+    const res = await acceptFriendRequest(player.nickname)
 
     if (res) {
       await emit('refresh-data')
       await userStore.updateProfile()
-      await chatsStore.setFriends(await getFriends(userStore.user!.uuid))
+      await chatsStore.setFriends(await getFriends(userStore.user!.nickname))
 
       showToast(`Zaakceptowano zaproszenie od ${player.nickname}`, 'success')
     }
@@ -138,12 +138,12 @@ const handleAcceptFriendRequest = async (player: IUser): Promise<void> => {
 
 const handleRejectFriendRequest = async (player: IUser): Promise<void> => {
   try {
-    const res = await rejectFriendRequest(player.uuid)
+    const res = await rejectFriendRequest(player.nickname)
 
     if (res) {
       await emit('refresh-data')
       await userStore.updateProfile()
-      await chatsStore.setFriends(await getFriends(userStore.user!.uuid))
+      await chatsStore.setFriends(await getFriends(userStore.user!.nickname))
 
       showToast(`Odrzucono zaproszenie od ${player.nickname}`, 'success')
     }
@@ -154,12 +154,12 @@ const handleRejectFriendRequest = async (player: IUser): Promise<void> => {
 
 const handleRemoveFriend = async (player: IUser): Promise<void> => {
   try {
-    const res = await removeFriend(player.uuid)
+    const res = await removeFriend(player.nickname)
 
     if (res) {
       await emit('refresh-data')
       await userStore.updateProfile()
-      await chatsStore.setFriends(await getFriends(userStore.user!.uuid))
+      await chatsStore.setFriends(await getFriends(userStore.user!.nickname))
 
       showToast(`Usunięto ${player.nickname} z listy znajomych`, 'success')
     }
@@ -211,9 +211,37 @@ const handleEscape = (e: KeyboardEvent): void => {
                 </span>
               </div>
             </div>
-            <div class="flex gap-2 flex-row-reverse">
+            <div class="flex gap-2 flex-col">
               <div class="nav-icon" @click="closeModal">
                 <i class="fa fa-times"></i>
+              </div>
+              <div
+                v-if="
+                  [UserRole.ADMIN, UserRole.DEV, UserRole.MODERATOR].includes(
+                    userStore.user?.role ?? UserRole.USER
+                  ) && ![UserRole.ADMIN, UserRole.DEV, UserRole.MODERATOR].includes(player.role)
+                "
+                class="flex flex-col gap-2"
+              >
+                <button
+                  v-if="!player?.isBanned"
+                  class="nav-icon"
+                  @click="$emit('ban-player', player)"
+                >
+                  <i :class="'fas fa-ban text-red-400'"></i>
+                </button>
+
+                <button v-else class="nav-icon" @click="$emit('unban-player', player)">
+                  <i :class="'fas fa-rotate-left text-green-400'"></i>
+                </button>
+
+                <button
+                  v-if="player?.accountType !== AccountType.MICROSOFT"
+                  class="nav-icon"
+                  @click="$emit('reset-password', player)"
+                >
+                  <i :class="'fas fa-key'"></i>
+                </button>
               </div>
             </div>
           </div>
@@ -237,30 +265,6 @@ const handleEscape = (e: KeyboardEvent): void => {
             <i class="fas fa-user-friends"></i>
             Online
           </div>
-        </div>
-        <div
-          v-if="
-            [UserRole.ADMIN, UserRole.DEV, UserRole.MODERATOR].includes(
-              userStore.user?.role ?? UserRole.USER
-            ) && ![UserRole.ADMIN, UserRole.DEV, UserRole.MODERATOR].includes(player.role)
-          "
-          class="flex gap-2"
-        >
-          <button v-if="!player?.isBanned" class="nav-icon" @click="$emit('ban-player', player)">
-            <i :class="'fas fa-ban text-red-400'"></i>
-          </button>
-
-          <button v-else class="nav-icon" @click="$emit('unban-player', player)">
-            <i :class="'fas fa-rotate-left text-green-400'"></i>
-          </button>
-
-          <button
-            v-if="player?.accountType !== AccountType.MICROSOFT"
-            class="nav-icon"
-            @click="$emit('reset-password', player)"
-          >
-            <i :class="'fas fa-key'"></i>
-          </button>
         </div>
         <span
           v-if="player.isBanned"
@@ -456,7 +460,7 @@ const handleEscape = (e: KeyboardEvent): void => {
   border-top-right-radius: 1rem;
   border-bottom-right-radius: 1rem;
   border: 1px dashed var(--border-2);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(24px);
 }
 
 .modal-header {
