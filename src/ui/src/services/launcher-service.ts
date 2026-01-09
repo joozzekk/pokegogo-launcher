@@ -14,11 +14,12 @@ import {
   refreshMicrosoftToken,
   showToast
 } from '@ui/utils'
-import { ref, type Ref } from 'vue'
+import { ref, watch, type Ref } from 'vue'
 import { useSocketService } from './socket-service'
 import { AccountType } from '@ui/types/app'
 import { useChatsStore } from '@ui/stores/chats-store'
 import { IUser } from '@ui/env'
+import { LOGGER } from './logger-service'
 
 export const useLauncherService = (): {
   useVariables: () => {
@@ -55,6 +56,13 @@ export const useLauncherService = (): {
   const { connect } = useSocketService()
 
   const events = ref<any[]>([])
+
+  watch(
+    () => userStore.user,
+    () => {
+      if (userStore.user) connect(userStore.user.uuid)
+    }
+  )
 
   const startMicrosoftTokenRefreshInterval = (): void => {
     if (userStore.user?.accountType === 'microsoft') {
@@ -105,8 +113,6 @@ export const useLauncherService = (): {
       })
 
       await isMachineIDBanned()
-
-      connect(userStore.user.uuid)
     }
   }
 

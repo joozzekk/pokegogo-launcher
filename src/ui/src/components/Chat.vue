@@ -3,7 +3,7 @@
 <script lang="ts" setup>
 import { readMessages, sendMessage } from '@ui/api/endpoints'
 import useUserStore from '@ui/stores/user-store'
-import { nextTick, ref, watch } from 'vue'
+import { nextTick, ref, watch, computed } from 'vue'
 import { useChatsStore } from '@ui/stores/chats-store'
 import type { IMessage } from '@ui/types/app'
 
@@ -95,11 +95,56 @@ watch(
       if (increased) {
         await nextTick()
         scrollToBottom(state.uuid)
+        await readMessages(state.uuid)
       }
     }
   },
   { deep: true }
 )
+
+/**
+ * Jedna wspólna taśma slotów od prawej do lewej.
+ * - chatToggled === true → szeroki slot (CHAT_SLOT_REM)
+ * - chatToggled === false → wąski slot (AVATAR_SLOT_REM)
+ * Każdy element ma offset będący sumą slotów wszystkich elementów znajdujących się po prawej w kolejności.
+ */
+
+// Parametry layoutu
+const BASE_RIGHT_REM = 1 // bazowy margines od prawej
+const CHAT_SLOT_REM = 18.5 // szerokość slotu dla otwartego czatu
+const AVATAR_SLOT_REM = 3.5 // szerokość slotu dla zamkniętej główki
+const GAP_PER_ITEM_REM = 0 // dodatkowa szczelina między slotami (zwykle 0, bo sloty zawierają margines)
+
+// Prekomputacja slotów zgodnie z kolejnością activeChats
+type Slot = { uuid: string; sizeRem: number }
+const slots = computed<Slot[]>(() =>
+  chatsStore.activeChats.map((c) => ({
+    uuid: c.uuid,
+    sizeRem: c.chatToggled ? CHAT_SLOT_REM : AVATAR_SLOT_REM
+  }))
+)
+
+/**
+ * Zwraca offset right dla elementu o danym uuid, jako suma rozmiarów
+ * slotów wszystkich elementów znajdujących się po prawej stronie od niego,
+ * plus bazowy margines.
+ *
+ * Przykład: [A(avatar), B(chat), C(avatar)] — indeksy 0..2
+ * right(A) = BASE + size(B) + size(C)
+ * right(B) = BASE + size(C)
+ * right(C) = BASE
+ */
+const computeRightOffset = (uuid: string): string => {
+  const arr = slots.value
+  const idx = arr.findIndex((s) => s.uuid === uuid)
+  if (idx === -1) return `${BASE_RIGHT_REM}rem`
+
+  let sum = BASE_RIGHT_REM
+  for (let i = idx + 1; i < arr.length; i++) {
+    sum += arr[i].sizeRem + GAP_PER_ITEM_REM
+  }
+  return `${sum}rem`
+}
 </script>
 
 <template>
@@ -109,15 +154,7 @@ watch(
         <div
           v-if="!chat.chatToggled"
           class="absolute z-50 bottom-2 w-12 h-12 rounded-full"
-          :style="{
-            right: chatsStore.activeChats[i - 1]?.chatToggled
-              ? i === 0
-                ? `1rem`
-                : `${i * 5 + 15}rem`
-              : i === 0
-                ? `1rem`
-                : `${i * 5}rem`
-          }"
+          :style="{ right: computeRightOffset(chat.uuid) }"
         >
           <div
             class="relative hover:opacity-80 cursor-pointer"
@@ -134,18 +171,7 @@ watch(
         </div>
 
         <template v-else>
-          <div
-            class="chat-container z-54"
-            :style="{
-              right: chatsStore.activeChats[i - 1]?.chatToggled
-                ? i === 0
-                  ? `1rem`
-                  : `${i * 5 + 15}rem`
-                : i === 0
-                  ? `1rem`
-                  : `${i * 5}rem`
-            }"
-          >
+          <div class="chat-container z-54" :style="{ right: computeRightOffset(chat.uuid) }">
             <div class="flex items-center gap-2 px-4 py-3 bg-[var(--bg-dark)]">
               <div class="relative">
                 <img :src="chat.headUrl" class="w-6 h-6 rounded-full" alt="Avatar" />

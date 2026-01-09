@@ -30,6 +30,7 @@ export const useSocketService = (): {
   }
 
   const connect = (uuid: string): void => {
+    if (socket) return
     socket = io(import.meta.env.RENDERER_VITE_SOCKET_URL, {
       query: {
         uuid
@@ -37,7 +38,7 @@ export const useSocketService = (): {
     })
 
     socket.on('connect', async () => {
-      LOGGER.with('Socket Service').success(`Connected to websocket with uuid: `, uuid)
+      LOGGER.with('Socket Service').success(`Connected to websocket as ${userStore.user?.nickname}`)
       await connectPlayer()
       if (userStore.user) await userStore.updateProfile()
     })
@@ -100,8 +101,8 @@ export const useSocketService = (): {
       if (activeChat) activeChat.messages = await getMessages(activeChat.uuid)
     })
 
-    socket.on('friends:request', async (uuid: string) => {
-      const isForCurrentUser = userStore.user?.uuid === uuid || userStore.user?.mcid === uuid
+    socket.on('friends:request', async (nickname: string) => {
+      const isForCurrentUser = userStore.user?.nickname === nickname
 
       if (isForCurrentUser) {
         showToast('Otrzymałeś nowe zaproszenie do znajomych', 'info')

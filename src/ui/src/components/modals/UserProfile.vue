@@ -79,10 +79,10 @@ const fetchPlayerFriends = async (): Promise<void> => {
 
 const isFriend = (player: IUser): boolean => !!userStore.user?.friends?.includes(player.nickname)
 
-const sentRequest = (player: IUser): boolean =>
+const hasFriendRequestFromMe = (player: IUser): boolean =>
   !!player?.friendRequests?.includes(userStore.user?.nickname ?? '')
 
-const hasFriendRequest = (player: IUser): boolean =>
+const hasFriendRequestFromPlayer = (player: IUser): boolean =>
   !!userStore.user?.friendRequests?.includes(player.nickname)
 
 const now = ref(new Date())
@@ -246,26 +246,6 @@ const handleEscape = (e: KeyboardEvent): void => {
             </div>
           </div>
         </div>
-        <div class="flex gap-2 flex-wrap mt-2">
-          <div
-            v-if="player.isOnline"
-            :style="`
-                      background: var(--primary);
-                      color: white;
-                      font-size: 0.6rem;
-                      padding: 2px 6px;
-                      border-radius: 4px;
-                      margin-top: 4px;
-                      height: 1.2rem;
-                      font-weight: 800;
-                      flex-shrink: 0 !important;
-                      max-width: max-content !important;
-                    `"
-          >
-            <i class="fas fa-user-friends"></i>
-            Online
-          </div>
-        </div>
         <span
           v-if="player.isBanned"
           :style="`
@@ -306,7 +286,7 @@ const handleEscape = (e: KeyboardEvent): void => {
             Jesteście znajomymi
           </div>
           <div
-            v-if="sentRequest(player)"
+            v-if="hasFriendRequestFromMe(player)"
             :style="`
                       background: var(--text-secondary);
                       color: black;
@@ -333,7 +313,7 @@ const handleEscape = (e: KeyboardEvent): void => {
             class="flex gap-2 my-2"
           >
             <button
-              v-if="!isFriend(player) && hasFriendRequest(player)"
+              v-if="!isFriend(player) && hasFriendRequestFromPlayer(player)"
               class="nav-icon !w-1/2 gap-2 text-xs"
               @click="handleAcceptFriendRequest(player)"
             >
@@ -341,7 +321,7 @@ const handleEscape = (e: KeyboardEvent): void => {
               Accept request
             </button>
             <button
-              v-if="!isFriend(player) && hasFriendRequest(player)"
+              v-if="!isFriend(player) && hasFriendRequestFromPlayer(player)"
               class="nav-icon !w-1/2 gap-2 text-xs"
               @click="handleRejectFriendRequest(player)"
             >
@@ -401,7 +381,7 @@ const handleEscape = (e: KeyboardEvent): void => {
               </div>
               {{ friend.nickname }}
             </div>
-            <div>
+            <div v-if="userStore.user?.nickname === userStore.selectedProfile?.nickname">
               <button
                 class="nav-icon"
                 @click="

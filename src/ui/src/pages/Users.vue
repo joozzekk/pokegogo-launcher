@@ -1,5 +1,12 @@
 <script lang="ts" setup>
-import { cancelFriendRequest, getFriends, removeFriend, requestFriend } from '@ui/api/endpoints'
+import {
+  acceptFriendRequest,
+  cancelFriendRequest,
+  getFriends,
+  rejectFriendRequest,
+  removeFriend,
+  requestFriend
+} from '@ui/api/endpoints'
 import { IUser } from '@ui/env'
 import { useChatsStore } from '@ui/stores/chats-store'
 import useGeneralStore from '@ui/stores/general-store'
@@ -108,11 +115,43 @@ const handleOpenUserProfile = (player: IUser): void => {
 
 const isFriend = (player: IUser): boolean => !!userStore.user?.friends?.includes(player.nickname)
 
-const sentRequest = (player: IUser): boolean =>
+const hasFriendRequestFromMe = (player: IUser): boolean =>
   !!player?.friendRequests?.includes(userStore.user?.nickname ?? '')
 
-const hasFriendRequest = (player: IUser): boolean =>
+const hasFriendRequestFromPlayer = (player: IUser): boolean =>
   !!userStore.user?.friendRequests?.includes(player.nickname)
+
+const handleAcceptFriendRequest = async (player: IUser): Promise<void> => {
+  try {
+    const res = await acceptFriendRequest(player.nickname)
+
+    if (res) {
+      await emit('refresh-data')
+      await userStore.updateProfile()
+      await chatsStore.setFriends(await getFriends(userStore.user!.nickname))
+
+      showToast(`Zaakceptowano zaproszenie od ${player.nickname}`, 'success')
+    }
+  } catch {
+    showToast(`Nie udało się zaakceptować zaproszenia od ${player.nickname}`, 'error')
+  }
+}
+
+const handleRejectFriendRequest = async (player: IUser): Promise<void> => {
+  try {
+    const res = await rejectFriendRequest(player.nickname)
+
+    if (res) {
+      await emit('refresh-data')
+      await userStore.updateProfile()
+      await chatsStore.setFriends(await getFriends(userStore.user!.nickname))
+
+      showToast(`Odrzucono zaproszenie od ${player.nickname}`, 'success')
+    }
+  } catch {
+    showToast(`Nie udało się odrzucić zaproszenia od ${player.nickname}`, 'error')
+  }
+}
 
 onMounted(async () => {
   await emit('fetch-players', searchQuery.value, true)
@@ -215,19 +254,37 @@ onUnmounted(() => {
                     !player.isBanned &&
                     getPlayerID(player) !== getPlayerID(userStore.user)
                   "
-                  class="flex gap-1 flex-col"
+                  class="flex gap-1"
                 >
                   <button
-                    v-if="!isFriend(player) && !hasFriendRequest(player) && !sentRequest(player)"
+                    v-if="
+                      !isFriend(player) &&
+                      !hasFriendRequestFromMe(player) &&
+                      !hasFriendRequestFromPlayer(player)
+                    "
                     class="nav-icon"
                     @click.stop="handleRequestFriend(player)"
                   >
                     <i :class="'fas fa-user-plus'" />
                   </button>
                   <button
-                    v-if="sentRequest(player)"
+                    v-if="hasFriendRequestFromMe(player)"
                     class="nav-icon"
                     @click.stop="handleCancelRequest(player)"
+                  >
+                    <i :class="'fas fa-user-xmark'" />
+                  </button>
+                  <button
+                    v-if="!isFriend(player) && hasFriendRequestFromPlayer(player)"
+                    class="nav-icon"
+                    @click.stop="handleAcceptFriendRequest(player)"
+                  >
+                    <i :class="'fas fa-user-plus'" />
+                  </button>
+                  <button
+                    v-if="!isFriend(player) && hasFriendRequestFromPlayer(player)"
+                    class="nav-icon"
+                    @click.stop="handleRejectFriendRequest(player)"
                   >
                     <i :class="'fas fa-user-xmark'" />
                   </button>
