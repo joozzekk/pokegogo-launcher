@@ -50,7 +50,7 @@ const useUserStore = defineStore('user', () => {
     setUser(profile)
   }
 
-  const updateSelectedProfile = (player: IUser): void => {
+  const updateSelectedProfile = (player: IUser | null): void => {
     selectedProfile.value = player
   }
 

@@ -1,11 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import {
-  getEvents,
-  getFriends,
-  getPlayers,
-  updateMachineData,
-  updateProfileData
-} from '@ui/api/endpoints'
+import { getEvents, getPlayers, updateMachineData, updateProfileData } from '@ui/api/endpoints'
 import useGeneralStore from '@ui/stores/general-store'
 import useUserStore from '@ui/stores/user-store'
 import {
@@ -17,9 +11,7 @@ import {
 import { ref, watch, type Ref } from 'vue'
 import { useSocketService } from './socket-service'
 import { AccountType } from '@ui/types/app'
-import { useChatsStore } from '@ui/stores/chats-store'
 import { IUser } from '@ui/env'
-import { LOGGER } from './logger-service'
 
 export const useLauncherService = (): {
   useVariables: () => {
@@ -33,7 +25,6 @@ export const useLauncherService = (): {
   useFetches: () => {
     fetchUpdateData: () => Promise<void>
     fetchEvents: () => Promise<void>
-    fetchFriends: () => Promise<void>
     fetchPlayers: (query?: string, reset?: boolean) => Promise<void>
   }
   useMethods: () => {
@@ -52,7 +43,6 @@ export const useLauncherService = (): {
   const refreshInterval = ref<any>(null)
   const generalStore = useGeneralStore()
   const userStore = useUserStore()
-  const chatsStore = useChatsStore()
   const { connect } = useSocketService()
 
   const events = ref<any[]>([])
@@ -118,10 +108,6 @@ export const useLauncherService = (): {
 
   const fetchEvents = async (): Promise<void> => {
     events.value = await getEvents()
-  }
-
-  const fetchFriends = async (): Promise<void> => {
-    if (userStore.user) chatsStore.setFriends(await getFriends(userStore.user?.nickname))
   }
 
   async function fetchPlayers(query?: string, reset: boolean = false): Promise<void> {
@@ -202,7 +188,6 @@ export const useLauncherService = (): {
     useFetches: () => ({
       fetchUpdateData,
       fetchEvents,
-      fetchFriends,
       fetchPlayers
     }),
     useMethods: () => ({

@@ -259,6 +259,14 @@ export const getFriends = async (nicname: string): Promise<any> => {
   return res.data
 }
 
+export const getFriendRequests = async (nicknames: string[]): Promise<any> => {
+  const res = await api.post(`/users/friends/requests`, {
+    nicknames
+  })
+
+  return res.data
+}
+
 export const getMessages = async (uuid: string): Promise<any> => {
   const res = await api.get(`/messages/${uuid}`)
 
@@ -315,6 +323,12 @@ export const removeFriend = async (nickname: string): Promise<any> => {
   const res = await api.post(`/users/friends/remove`, {
     friendNickname: nickname
   })
+
+  return res.data
+}
+
+export const getProfileByUUIDorNickname = async (uuidOrNickname: string): Promise<any> => {
+  const res = await api.get(`/users/profile/${uuidOrNickname}`)
 
   return res.data
 }

@@ -21,7 +21,7 @@ const transitionName = ref('slide-up')
 const { useMethods, useFetches, useVariables } = useLauncherService()
 
 const { startMicrosoftTokenRefreshInterval, handleRefreshDataAndProfile } = useMethods()
-const { fetchUpdateData, fetchEvents, fetchFriends, fetchPlayers } = useFetches()
+const { fetchUpdateData, fetchEvents, fetchPlayers } = useFetches()
 const { refreshInterval, events, allPlayers, filteredPlayers, hasMorePlayers, isLoadingPlayers } =
   useVariables()
 
@@ -70,7 +70,6 @@ onMounted(async () => {
   startMicrosoftTokenRefreshInterval()
 
   await fetchUpdateData()
-  await fetchFriends()
   await fetchEvents()
 
   window.discord?.setActivity(`W PokeGoGo Launcher`, 'Przeglądam..')

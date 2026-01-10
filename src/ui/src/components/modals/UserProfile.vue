@@ -1,3 +1,5 @@
+// PlayerProfileModal.vue
+
 <script lang="ts" setup>
 import { IUser } from '@ui/env'
 import useUserStore from '@ui/stores/user-store'
@@ -9,11 +11,13 @@ import ChangeSkinModal from '@ui/components/modals/ChangeSkinModal.vue'
 import { useChatsStore } from '@ui/stores/chats-store'
 import {
   acceptFriendRequest,
+  getFriendRequests,
   getFriends,
   rejectFriendRequest,
   removeFriend
 } from '@ui/api/endpoints'
-import { loadCustomOrFallbackHead, showToast } from '@ui/utils'
+import { getHeadUrl, showToast } from '@ui/utils'
+import { useUserCacheStore } from '@ui/stores/user-cache-store'
 
 const emit = defineEmits<{
   (e: 'refresh-data', query?: string, reset?: boolean): Promise<void>
@@ -31,6 +35,66 @@ const chatsStore = useChatsStore()
 const userStore = useUserStore()
 const player = computed(() => userStore.selectedProfile)
 const friends = ref<IUser[]>([])
+const friendRequests = ref<IUser[]>([])
+const isFriendsLoading = ref<boolean>(false)
+const isFriendRequestsLoading = ref<boolean>(false)
+
+const userCache = useUserCacheStore()
+
+const fetchPlayerFriends = async (): Promise<void> => {
+  if (!player.value) return
+  try {
+    isFriendsLoading.value = true
+    // spróbuj z cache
+    const cached = userCache.getFriendsCached(player.value.nickname)
+    if (cached) {
+      friends.value = cached
+      return
+    }
+
+    const result = await getFriends(player.value.nickname)
+    if (result) {
+      // wzbogacenie przez cache awatarów
+      const enriched = await Promise.all(
+        result.map(async (friend) => ({
+          ...friend,
+          headUrl: await getHeadUrl(friend)
+        }))
+      )
+      friends.value = enriched
+      userCache.cacheFriends(player.value.nickname, enriched)
+    } else {
+      friends.value = []
+    }
+  } catch {
+    friends.value = []
+  } finally {
+    isFriendsLoading.value = false
+  }
+}
+
+const fetchPlayerFriendRequests = async (): Promise<void> => {
+  if (!userStore.user) return
+  try {
+    isFriendRequestsLoading.value = true
+    const result = await getFriendRequests(userStore.user?.friendRequests)
+    if (result) {
+      const enriched = await Promise.all(
+        result.map(async (friend) => ({
+          ...friend,
+          headUrl: await getHeadUrl(friend)
+        }))
+      )
+      friendRequests.value = enriched
+    } else {
+      friendRequests.value = []
+    }
+  } catch {
+    friendRequests.value = []
+  } finally {
+    isFriendRequestsLoading.value = false
+  }
+}
 
 watch(player, async () => {
   if (player.value) {
@@ -38,6 +102,7 @@ watch(player, async () => {
       now.value = new Date()
     }, 1000)
     await fetchPlayerFriends()
+    await fetchPlayerFriendRequests()
     window.addEventListener('keydown', handleEscape)
   }
 })
@@ -62,28 +127,10 @@ const getPlayerID = (player: IUser): string => {
   return '(Brak)'
 }
 
-const fetchPlayerFriends = async (): Promise<void> => {
-  if (!player.value) return
-
-  const result = await getFriends(player.value.nickname)
-
-  if (result) {
-    for (const friend of result) {
-      const headUrl = await loadCustomOrFallbackHead(friend)
-      friend.headUrl = headUrl
-    }
-
-    friends.value = result
-  }
-}
-
 const isFriend = (player: IUser): boolean => !!userStore.user?.friends?.includes(player.nickname)
 
 const hasFriendRequestFromMe = (player: IUser): boolean =>
   !!player?.friendRequests?.includes(userStore.user?.nickname ?? '')
-
-const hasFriendRequestFromPlayer = (player: IUser): boolean =>
-  !!userStore.user?.friendRequests?.includes(player.nickname)
 
 const now = ref(new Date())
 const timerInterval = ref<number | undefined>(undefined)
@@ -127,7 +174,7 @@ const handleAcceptFriendRequest = async (player: IUser): Promise<void> => {
     if (res) {
       await emit('refresh-data')
       await userStore.updateProfile()
-      await chatsStore.setFriends(await getFriends(userStore.user!.nickname))
+      await fetchPlayerFriendRequests()
 
       showToast(`Zaakceptowano zaproszenie od ${player.nickname}`, 'success')
     }
@@ -143,7 +190,7 @@ const handleRejectFriendRequest = async (player: IUser): Promise<void> => {
     if (res) {
       await emit('refresh-data')
       await userStore.updateProfile()
-      await chatsStore.setFriends(await getFriends(userStore.user!.nickname))
+      await fetchPlayerFriendRequests()
 
       showToast(`Odrzucono zaproszenie od ${player.nickname}`, 'success')
     }
@@ -159,7 +206,7 @@ const handleRemoveFriend = async (player: IUser): Promise<void> => {
     if (res) {
       await emit('refresh-data')
       await userStore.updateProfile()
-      await chatsStore.setFriends(await getFriends(userStore.user!.nickname))
+      await fetchPlayerFriends()
 
       showToast(`Usunięto ${player.nickname} z listy znajomych`, 'success')
     }
@@ -311,33 +358,51 @@ const handleEscape = (e: KeyboardEvent): void => {
               getPlayerID(player) !== getPlayerID(userStore.user)
             "
             class="flex gap-2 my-2"
-          >
-            <button
-              v-if="!isFriend(player) && hasFriendRequestFromPlayer(player)"
-              class="nav-icon !w-1/2 gap-2 text-xs"
-              @click="handleAcceptFriendRequest(player)"
-            >
-              <i :class="'fas fa-user-plus'" />
-              Accept request
-            </button>
-            <button
-              v-if="!isFriend(player) && hasFriendRequestFromPlayer(player)"
-              class="nav-icon !w-1/2 gap-2 text-xs"
-              @click="handleRejectFriendRequest(player)"
-            >
-              <i :class="'fas fa-user-minus'" />
-              Cancel request
-            </button>
-            <button
-              v-if="isFriend(player)"
-              class="nav-icon !w-full gap-2 text-xs"
-              @click="handleRemoveFriend(player)"
-            >
-              <i :class="'fas fa-user-minus'" />
-              Remove friend
-            </button>
-          </div>
+          ></div>
         </div>
+
+        <template v-if="player.friendRequests">
+          <div
+            v-for="friend in friendRequests"
+            :key="friend.uuid"
+            class="flex gap-2 items-center justify-between px-4 py-2 bg-[var(--bg-card)] rounded-xl"
+          >
+            <div class="flex gap-2 items-center">
+              <div class="!relative">
+                <img
+                  v-if="friend.headUrl"
+                  :src="friend.headUrl"
+                  class="!w-10 !h-10 !shrink-0 rounded-full"
+                  alt="Avatar"
+                />
+                <div
+                  v-else
+                  class="!wfull !shrink-0 rounded-full overflow-hidden flex items-center justify-center"
+                >
+                  <i class="fas fa-user"></i>
+                </div>
+              </div>
+              {{ friend.nickname }}
+            </div>
+            <div
+              v-if="userStore.user?.nickname === userStore.selectedProfile?.nickname"
+              class="flex gap-2"
+            >
+              <button
+                class="nav-icon !text-green-400"
+                @click.stop="handleAcceptFriendRequest(friend)"
+              >
+                <i :class="'fas fa-user-plus'" />
+              </button>
+              <button
+                class="nav-icon !text-red-400"
+                @click.stop="handleRejectFriendRequest(friend)"
+              >
+                <i :class="'fas fa-user-xmark'" />
+              </button>
+            </div>
+          </div>
+        </template>
 
         <h1 class="flex flex-wrap gap-2 my-2 text-lg font-black">
           Znajomi
@@ -358,53 +423,78 @@ const handleEscape = (e: KeyboardEvent): void => {
             {{ player.friends?.length }}
           </span>
         </h1>
-        <div v-if="player.friends?.length" class="flex flex-col gap-2 overflow-y-auto">
-          <div
-            v-for="friend in friends"
-            :key="friend.uuid"
-            class="flex gap-2 items-center justify-between p-4 bg-[var(--bg-card)] rounded-xl"
-          >
-            <div class="flex gap-2 items-center">
-              <div class="!relative">
-                <img
-                  v-if="friend.headUrl"
-                  :src="friend.headUrl"
-                  class="!w-10 !h-10 !shrink-0 rounded-full"
-                  alt="Avatar"
-                />
-                <div
-                  v-else
-                  class="!wfull !shrink-0 rounded-full overflow-hidden flex items-center justify-center"
-                >
-                  <i class="fas fa-user"></i>
-                </div>
+
+        <!-- Friends list -->
+        <div class="flex flex-col gap-1 overflow-y-auto">
+          <!-- Skeletons: friends -->
+          <div v-if="isFriendsLoading" class="flex flex-col gap-1">
+            <div v-for="n in 5" :key="n" class="skeleton-row px-4 py-2 rounded-xl">
+              <div class="skeleton-avatar"></div>
+              <div class="skeleton-text w-28"></div>
+              <div class="skeleton-actions">
+                <div class="skeleton-button w-6"></div>
+                <div class="skeleton-button w-6"></div>
               </div>
-              {{ friend.nickname }}
-            </div>
-            <div v-if="userStore.user?.nickname === userStore.selectedProfile?.nickname">
-              <button
-                class="nav-icon"
-                @click="
-                  () => {
-                    chatsStore.addActiveChat(friend)
-                    closeModal()
-                  }
-                "
-              >
-                <i class="fa fa-comment"></i>
-              </button>
             </div>
           </div>
+
+          <!-- Actual friends -->
+          <div v-else-if="player.friends?.length" class="flex flex-col gap-1">
+            <div
+              v-for="friend in friends"
+              :key="friend.uuid"
+              class="flex gap-2 items-center justify-between px-4 py-2 bg-[var(--bg-card)] rounded-xl"
+            >
+              <div class="flex gap-2 items-center">
+                <div class="!relative">
+                  <img
+                    v-if="friend.headUrl"
+                    :src="friend.headUrl"
+                    class="!w-10 !h-10 !shrink-0 rounded-full"
+                    alt="Avatar"
+                  />
+                  <div
+                    v-else
+                    class="!wfull !shrink-0 rounded-full overflow-hidden flex items-center justify-center"
+                  >
+                    <i class="fas fa-user"></i>
+                  </div>
+                </div>
+                {{ friend.nickname }}
+              </div>
+              <div
+                v-if="userStore.user?.nickname === userStore.selectedProfile?.nickname"
+                class="flex gap-1"
+              >
+                <button
+                  class="nav-icon"
+                  @click="
+                    () => {
+                      chatsStore.addActiveChat(friend)
+                      closeModal()
+                    }
+                  "
+                >
+                  <i class="fa fa-comment"></i>
+                </button>
+                <button class="nav-icon !text-red-400" @click="handleRemoveFriend(friend)">
+                  <i :class="'fas fa-user-minus'" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty state for friends -->
+          <span v-else class="text-xs text-[var(--text-muted)]">
+            Aktualnie
+            {{
+              userStore.user && getPlayerID(player) === getPlayerID(userStore.user)
+                ? 'nie masz'
+                : 'gracz nie ma'
+            }}
+            żadnych znajomych.
+          </span>
         </div>
-        <span v-else class="text-xs text-[var(--text-muted)]">
-          Aktualnie
-          {{
-            userStore.user && getPlayerID(player) === getPlayerID(userStore.user)
-              ? 'nie masz'
-              : 'gracz nie ma'
-          }}
-          żadnych znajomych.
-        </span>
       </div>
     </Transition>
 
@@ -471,5 +561,56 @@ const handleEscape = (e: KeyboardEvent): void => {
 .fade-left-enter-from,
 .fade-left-leave-to {
   transform: translateX(-100%);
+}
+
+/* Skeleton styles */
+.skeleton-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-card);
+}
+
+.skeleton-avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  background: var(--border-2);
+  opacity: 0.6;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.skeleton-text {
+  height: 0.9rem;
+  border-radius: 0.25rem;
+  background: var(--border-2);
+  opacity: 0.6;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.skeleton-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.skeleton-button {
+  height: 1.5rem;
+  border-radius: 0.375rem;
+  background: var(--border-2);
+  opacity: 0.6;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 0.3;
+  }
+  100% {
+    opacity: 0.6;
+  }
 }
 </style>

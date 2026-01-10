@@ -11,6 +11,8 @@ const userStore = useUserStore()
 const chatsStore = useChatsStore()
 const message = ref<string[]>([])
 
+const activeChats = computed(() => chatsStore.activeChats)
+
 const chatRefs = ref<Record<string, HTMLDivElement | null>>({})
 
 const setChatRef = (uuid: string, el: HTMLDivElement | null): void => {
@@ -30,7 +32,7 @@ const scrollToBottom = (uuid: string): void => {
 }
 
 const handleSendMessage = async (i: number, uuid: string): Promise<void> => {
-  if (!message.value || !chatsStore.friends) return
+  if (!message.value[i]?.length) return
 
   const content = message.value[i]
   message.value[i] = ''
@@ -102,20 +104,11 @@ watch(
   { deep: true }
 )
 
-/**
- * Jedna wspólna taśma slotów od prawej do lewej.
- * - chatToggled === true → szeroki slot (CHAT_SLOT_REM)
- * - chatToggled === false → wąski slot (AVATAR_SLOT_REM)
- * Każdy element ma offset będący sumą slotów wszystkich elementów znajdujących się po prawej w kolejności.
- */
-
-// Parametry layoutu
 const BASE_RIGHT_REM = 1 // bazowy margines od prawej
 const CHAT_SLOT_REM = 18.5 // szerokość slotu dla otwartego czatu
 const AVATAR_SLOT_REM = 3.5 // szerokość slotu dla zamkniętej główki
 const GAP_PER_ITEM_REM = 0 // dodatkowa szczelina między slotami (zwykle 0, bo sloty zawierają margines)
 
-// Prekomputacja slotów zgodnie z kolejnością activeChats
 type Slot = { uuid: string; sizeRem: number }
 const slots = computed<Slot[]>(() =>
   chatsStore.activeChats.map((c) => ({
@@ -124,16 +117,6 @@ const slots = computed<Slot[]>(() =>
   }))
 )
 
-/**
- * Zwraca offset right dla elementu o danym uuid, jako suma rozmiarów
- * slotów wszystkich elementów znajdujących się po prawej stronie od niego,
- * plus bazowy margines.
- *
- * Przykład: [A(avatar), B(chat), C(avatar)] — indeksy 0..2
- * right(A) = BASE + size(B) + size(C)
- * right(B) = BASE + size(C)
- * right(C) = BASE
- */
 const computeRightOffset = (uuid: string): string => {
   const arr = slots.value
   const idx = arr.findIndex((s) => s.uuid === uuid)
@@ -149,11 +132,11 @@ const computeRightOffset = (uuid: string): string => {
 
 <template>
   <div class="flex">
-    <div v-for="(chat, i) in chatsStore.activeChats" :key="chat.uuid">
+    <div v-for="(chat, i) in activeChats" :key="chat.uuid">
       <Transition name="fade">
         <div
           v-if="!chat.chatToggled"
-          class="absolute z-50 bottom-2 w-12 h-12 rounded-full"
+          class="absolute z-50 bottom-2 w-12 h-12 rounded-full group"
           :style="{ right: computeRightOffset(chat.uuid) }"
         >
           <div
@@ -176,7 +159,7 @@ const computeRightOffset = (uuid: string): string => {
               <div class="relative">
                 <img :src="chat.headUrl" class="w-6 h-6 rounded-full" alt="Avatar" />
                 <div
-                  class="absolute -bottom-2 -right-2 z-10 w-2 h-2 rounded-full"
+                  class="absolute -bottom-0.5 -right-0.5 z-10 w-2 h-2 rounded-full"
                   :style="{ background: !chat?.isOnline ? '#ff4757' : '#00ff88' }"
                 ></div>
               </div>
@@ -184,6 +167,10 @@ const computeRightOffset = (uuid: string): string => {
               <span class="ml-1 font-semibold">{{ chat.nickname }}</span>
 
               <button class="nav-icon ml-auto" @click="handleChatToggle(chat.uuid)">
+                <i class="fa-solid fa-minus"></i>
+              </button>
+
+              <button class="nav-icon" @click="chatsStore.removeActiveChat(chat)">
                 <i class="fa-solid fa-xmark"></i>
               </button>
             </div>

@@ -4,8 +4,10 @@ import api from '@ui/utils/client'
 import { isMachineIDBanned, showToast } from '@ui/utils'
 import useUserStore from '@ui/stores/user-store'
 import { useRouter } from 'vue-router'
-import { useChatsStore } from '@ui/stores/chats-store'
-import { connectPlayer, disconnectPlayer, getMessages } from '@ui/api/endpoints'
+import { IChat, useChatsStore } from '@ui/stores/chats-store'
+import { connectPlayer, disconnectPlayer } from '@ui/api/endpoints'
+import { IMessage } from '@ui/types/app'
+import { useUserCacheStore } from '@ui/stores/user-cache-store'
 
 export const useSocketService = (): {
   connect: (uuid: string) => void
@@ -13,6 +15,7 @@ export const useSocketService = (): {
   let socket: Socket | null = null
   const chatsStore = useChatsStore()
   const userStore = useUserStore()
+  const userCache = useUserCacheStore()
   const router = useRouter()
 
   const refreshToken = async (): Promise<void> => {
@@ -94,19 +97,54 @@ export const useSocketService = (): {
       }
     })
 
-    socket.on('player:receive-message', async (data: { senderUUID: string; message: string }) => {
-      LOGGER.with('Socket Service').log('Player received message: ', data.message)
-      const activeChat = chatsStore.activeChats.find((chat) => chat.uuid === data.senderUUID)
+    async function ensureActiveChatOpened(
+      senderUUID: string,
+      senderNickname?: string
+    ): Promise<IChat | null> {
+      const chat = chatsStore.activeChats.find((c) => c.uuid === senderUUID)
+      if (chat) {
+        chat.chatToggled = true
+        return chat
+      }
 
-      if (activeChat) activeChat.messages = await getMessages(activeChat.uuid)
-    })
+      const user = await userCache.getOrFetchUser({ uuid: senderUUID, nickname: senderNickname })
+      if (!user) return null
+
+      const messages: IMessage[] = []
+
+      const newChat: IChat = {
+        ...user,
+        headUrl: user.headUrl || '',
+        messages,
+        chatToggled: true
+      }
+
+      chatsStore.activeChats.push(newChat)
+      return chatsStore.activeChats.find((c) => c.uuid === senderUUID) ?? null
+    }
+
+    // socket handler
+    socket.on(
+      'player:receive-message',
+      async (data: { senderUUID: string; senderNickname?: string; message: string }) => {
+        const { senderUUID, senderNickname, message } = data
+
+        const chat = await ensureActiveChatOpened(senderUUID, senderNickname)
+        if (!chat || !userStore.user) return
+
+        chat.messages.push({
+          sender: senderUUID,
+          receiver: userStore.user.uuid,
+          content: message,
+          read: false
+        })
+      }
+    )
 
     socket.on('friends:request', async (nickname: string) => {
-      const isForCurrentUser = userStore.user?.nickname === nickname
-
-      if (isForCurrentUser) {
-        showToast('Otrzymałeś nowe zaproszenie do znajomych', 'info')
-      }
+      LOGGER.with('Socket Service').log('Player received friend request from: ', nickname)
+      showToast('Nowe zaproszenie do znajomych od: ' + nickname)
+      await userStore.updateProfile()
     })
   }
 

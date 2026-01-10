@@ -279,3 +279,34 @@ export const loadCustomOrFallbackHead = async (player: IUser): Promise<string> =
     return fallbackHeadUrl(player.nickname)
   }
 }
+
+const headUrlCache = new Map<string, string>()
+const inflight = new Map<string, Promise<string>>()
+
+export async function getHeadUrl(user: Pick<IUser, 'uuid' | 'nickname'>): Promise<string> {
+  const key = user.nickname || user.uuid
+  if (!key) return ''
+  if (headUrlCache.has(key)) return headUrlCache.get(key)!
+
+  if (inflight.has(key)) return inflight.get(key)!
+
+  const p = loadCustomOrFallbackHead(user as IUser)
+    .then((url) => {
+      headUrlCache.set(key, url)
+      inflight.delete(key)
+      return url
+    })
+    .catch((err) => {
+      inflight.delete(key)
+      throw err
+    })
+
+  inflight.set(key, p)
+  return p
+}
+
+export function invalidateHeadUrl(nicknameOrUuid?: string): void {
+  if (!nicknameOrUuid) return
+  headUrlCache.delete(nicknameOrUuid)
+  inflight.delete(nicknameOrUuid)
+}

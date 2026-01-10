@@ -32,8 +32,6 @@ const handleToggleGame = async (e: Event): Promise<void> => {
   try {
     switch (generalStore.currentState) {
       case 'files-verify':
-        await handleKillVerify()
-        break
       case 'minecraft-started':
       case 'minecraft-start':
         await handleKillGame()
@@ -52,12 +50,10 @@ const handleToggleGame = async (e: Event): Promise<void> => {
   } catch (err) {
     LOGGER.with('Launch State').err((err as Error).toString())
     showToast('Wystąpił błąd podczas uruchamiania gry.', 'error')
-    generalStore.setIsOpeningGame(false)
   }
 }
 
 const handleLaunchGame = async (e: Event): Promise<void> => {
-  generalStore.setIsOpeningGame(true)
   createParticles(e.target as HTMLElement)
 
   let mcToken = localStorage.getItem('mcToken')
@@ -88,7 +84,6 @@ const handleLaunchGame = async (e: Event): Promise<void> => {
         LOGGER.with('Launch State').err('Błąd odświażania tokenu.', `${err}`)
         showToast('Błąd odświeżania tokenu MC. Spróbuj ponownie za chwilę.')
 
-        generalStore.setIsOpeningGame(false)
         generalStore.setCurrentState('start')
         return
       }
@@ -117,19 +112,11 @@ const state = computed(() => {
 })
 
 const handleKillGame = async (): Promise<void> => {
+  if (!generalStore.isOpeningGame) return
+
   await window.electron?.ipcRenderer?.invoke('launch:exit', generalStore.mcInstance)
   generalStore.mcInstance = null
   generalStore.setCurrentState('start')
-  generalStore.setIsOpeningGame(false)
-  setTimeout(() => {
-    generalStore.setCurrentLog('')
-  }, 250)
-}
-
-const handleKillVerify = async (): Promise<void> => {
-  await window.electron?.ipcRenderer?.invoke('launch:exit-verify')
-  generalStore.setCurrentState('start')
-  generalStore.setIsOpeningGame(false)
   setTimeout(() => {
     generalStore.setCurrentLog('')
   }, 250)
@@ -174,11 +161,11 @@ window.electron?.ipcRenderer?.on('launch:change-state', async (_event, state: st
 
   if (parsedState === 'minecraft-start') {
     window.discord.setActivity(`W PokeGoGo Launcher`, 'Uruchamiam grę..')
-    generalStore.setIsOpeningGame(true)
   }
 
   if (parsedState === 'minecraft-started') {
     LOGGER.with('Launch State').log('Minecraft is running..')
+    generalStore.setIsOpeningGame(true)
     window.discord.setActivity(`W PokeGoGo Launcher`, 'Gram..')
     await connectPlayer()
   }
@@ -244,7 +231,7 @@ onUnmounted(() => {
       @click="(e) => handleToggleGame(e)"
     >
       <div class="launch-button-bg"></div>
-      <template v-if="!generalStore.isOpeningGame">
+      <template v-if="currentState === 'start'">
         <div class="title">
           <template v-if="isBanned">
             <i class="fas fa-exclamation-triangle text-2xl"></i>
@@ -267,24 +254,13 @@ onUnmounted(() => {
         <div
           class="title"
           :class="{
-            'margin-title':
-              generalStore.isOpeningGame &&
-              currentState !== 'java-install' &&
-              currentState !== 'files-verify'
+            'margin-title': generalStore.isOpeningGame
           }"
         >
-          <i v-if="generalStore.isOpeningGame" class="fas fa-spinner fa-spin"></i>
+          <i v-if="currentState !== 'start'" class="fas fa-spinner fa-spin"></i>
           <span>{{ state }}</span>
         </div>
-        <span
-          v-if="
-            generalStore.isOpeningGame &&
-            currentState !== 'java-install' &&
-            currentState !== 'files-verify'
-          "
-          class="info"
-          >Kliknij, aby przerwać</span
-        >
+        <span v-if="generalStore.isOpeningGame" class="info">Kliknij, aby przerwać</span>
       </div>
     </button>
     <Transition name="slide-down">
