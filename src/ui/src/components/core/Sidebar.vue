@@ -4,11 +4,16 @@ import useUserStore from '@ui/stores/user-store'
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
+const emit = defineEmits<{
+  (e: 'disconnect'): void | Promise<void>
+}>()
+
 const userStore = useUserStore()
 const generalStore = useGeneralStore()
 const router = useRouter()
 
 const handleLogout = async (): Promise<void> => {
+  await emit('disconnect')
   await userStore.logout()
   if (generalStore.currentState === 'minecraft-started') {
     await window.electron?.ipcRenderer?.invoke('launch:exit')
@@ -126,7 +131,7 @@ const handleChangeRoute = (newRoute: string): void => {
       </button>
     </div>
 
-    <div class="flex flex-col mx-2" :class="{ 'mx-4': !generalStore.settings.isSidebarCollapsed }">
+    <div class="flex flex-col mx-2">
       <button id="logout" class="nav-item hover:cursor-pointer select-none" @click="handleLogout">
         <i class="nav-icon fa-solid fa-door-open"></i>
         <label for="logout" class="hover:cursor-pointer text-[0.5rem] mt-[0.3rem]">Logout</label>

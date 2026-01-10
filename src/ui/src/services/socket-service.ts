@@ -11,7 +11,10 @@ import { connectPlayer, disconnectPlayer } from '@ui/api/endpoints'
 import type { IMessage } from '@ui/types/app'
 import { useUserCacheStore } from '@ui/stores/user-cache-store'
 
-export const useSocketService = (): { connect: (uuid: string, nickname?: string) => void } => {
+export const useSocketService = (): {
+  connect: (uuid: string, nickname?: string) => void
+  disconnect: () => void
+} => {
   let socket: Socket | null = null
   const chatsStore = useChatsStore()
   const userStore = useUserStore()
@@ -30,6 +33,10 @@ export const useSocketService = (): { connect: (uuid: string, nickname?: string)
       .catch((err) => {
         LOGGER.with('Socket Service').log(err)
       })
+  }
+
+  const disconnect = (): void => {
+    socket?.disconnect()
   }
 
   const connect = (uuid: string, nickname?: string): void => {
@@ -228,5 +235,5 @@ export const useSocketService = (): { connect: (uuid: string, nickname?: string)
     )
   }
 
-  return { connect }
+  return { disconnect, connect }
 }

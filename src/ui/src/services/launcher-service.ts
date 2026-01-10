@@ -31,6 +31,7 @@ export const useLauncherService = (): {
     startMicrosoftTokenRefreshInterval: () => void
     setMachineData: () => Promise<void>
     handleRefreshDataAndProfile: () => Promise<void>
+    disconnect: () => void
   }
 } => {
   const currentPage = ref(1)
@@ -43,7 +44,7 @@ export const useLauncherService = (): {
   const refreshInterval = ref<any>(null)
   const generalStore = useGeneralStore()
   const userStore = useUserStore()
-  const { connect } = useSocketService()
+  const { connect, disconnect } = useSocketService()
 
   const events = ref<any[]>([])
 
@@ -193,7 +194,8 @@ export const useLauncherService = (): {
     useMethods: () => ({
       startMicrosoftTokenRefreshInterval,
       setMachineData,
-      handleRefreshDataAndProfile
+      handleRefreshDataAndProfile,
+      disconnect
     })
   }
 }

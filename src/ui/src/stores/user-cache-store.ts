@@ -14,6 +14,12 @@ export const useUserCacheStore = defineStore('user-cache', () => {
 
   const isFresh = (t?: number): boolean => !!t && Date.now() - t < TTL_MS
 
+  const resetCache = (): void => {
+    usersByUuid.clear()
+    usersByNickname.clear()
+    friendsByNickname.clear()
+  }
+
   function cacheUser(u: IUser): void {
     const wrap = { at: Date.now(), data: u }
     if (u.uuid) usersByUuid.set(u.uuid, wrap)
@@ -80,6 +86,7 @@ export const useUserCacheStore = defineStore('user-cache', () => {
     getFriendsCached,
     invalidateUser,
     invalidateFriends,
-    getOrFetchUser
+    getOrFetchUser,
+    resetCache
   }
 })

@@ -20,7 +20,7 @@ const transitionName = ref('slide-up')
 
 const { useMethods, useFetches, useVariables } = useLauncherService()
 
-const { startMicrosoftTokenRefreshInterval, handleRefreshDataAndProfile } = useMethods()
+const { startMicrosoftTokenRefreshInterval, handleRefreshDataAndProfile, disconnect } = useMethods()
 const { fetchUpdateData, fetchEvents, fetchPlayers } = useFetches()
 const { refreshInterval, events, allPlayers, filteredPlayers, hasMorePlayers, isLoadingPlayers } =
   useVariables()
@@ -86,7 +86,7 @@ onUnmounted(() => {
   <Header />
 
   <div class="launcher-container">
-    <Sidebar />
+    <Sidebar @disconnect="disconnect" />
 
     <main class="main-content !relative overflow-hidden !w-full">
       <RouterView v-slot="{ Component }">
