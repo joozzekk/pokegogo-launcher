@@ -44,7 +44,9 @@ if (!gotTheLock) {
   app.whenReady().then(async () => {
     electronApp.setAppUserModelId('pl.pokemongogo.launcher')
     const { createHandlers } = useFTPService()
+    await installExtension(VUEJS_DEVTOOLS)
 
+    initDiscord()
     ensureDir(process.cwd() + '/tmp')
 
     const { createMainWindow, createLoadingWindow } = useWindowService()
@@ -52,12 +54,9 @@ if (!gotTheLock) {
     const { startApp } = createLoadingWindow()
     useAppUpdater(mainWindow)
 
-    await startApp(mainWindow)
     createTray(mainWindow)
-    await installExtension(VUEJS_DEVTOOLS)
     createHandlers(mainWindow)
-
-    initDiscord()
+    await startApp(mainWindow)
 
     if (!ipcMain.listenerCount('notification:show'))
       ipcMain.handle(
@@ -124,10 +123,8 @@ if (!gotTheLock) {
       }
     })
 
-    app.on('activate', () => {
-      if (mainWindow) return
-      mainWindow = createMainWindow()
-      mainWindow.show()
+    app.on('activate', async () => {
+      mainWindow?.show()
     })
 
     const template: Electron.MenuItemConstructorOptions[] = [
@@ -135,29 +132,35 @@ if (!gotTheLock) {
         label: 'File',
         submenu: [
           {
-            label: 'New Window',
-            accelerator: 'CmdOrCtrl+N',
+            label: 'Quit app',
+            accelerator: 'CmdOrCtrl+Q',
             click: () => {
               try {
-                if (mainWindow) return
-                mainWindow = createMainWindow()
-                mainWindow.show()
+                app.quit()
+              } catch (err) {
+                console.error('[Menu] Failed to quit app:', err)
+              }
+            }
+          },
+          {
+            label: 'Show window',
+            accelerator: 'CmdOrCtrl+N',
+            click: async () => {
+              try {
+                mainWindow?.show()
               } catch (err) {
                 console.error('[Menu] Failed to open new window:', err)
               }
             }
           },
           {
-            label: 'Close window',
+            label: 'Hide window',
             accelerator: 'CmdOrCtrl+W',
             click: () => {
               try {
-                if (!mainWindow) return
-
-                mainWindow.close()
-                mainWindow = null
+                mainWindow?.hide()
               } catch (err) {
-                console.error('[Menu] Failed to open new window:', err)
+                console.error('[Menu] Failed to close window:', err)
               }
             }
           }
