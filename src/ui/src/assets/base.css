@@ -1010,11 +1010,12 @@ body {
 /* -------------------------------------- Powiadomienia ---------------------------- */
 .toast-container {
   position: fixed;
-  bottom: 20px;
+  top: 62.5px;
   right: 20px;
   z-index: 1500;
   display: flex;
   flex-direction: column;
+  max-height: max-content;
   gap: 10px;
 }
 

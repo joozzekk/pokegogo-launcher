@@ -5,7 +5,7 @@ import { IUser } from '@ui/env'
 import useUserStore from '@ui/stores/user-store'
 import { AccountType, UserRole } from '@ui/types/app'
 import { differenceInMilliseconds, intervalToDuration, parseISO } from 'date-fns'
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import SkinViewer from '@ui/components/SkinViewer.vue'
 import ChangeSkinModal from '@ui/components/modals/ChangeSkinModal.vue'
 import { useChatsStore } from '@ui/stores/chats-store'
@@ -41,20 +41,23 @@ const isFriendRequestsLoading = ref<boolean>(false)
 
 const userCache = useUserCacheStore()
 
-const fetchPlayerFriends = async (): Promise<void> => {
+const fetchPlayerFriends = async (opts?: { force?: boolean }): Promise<void> => {
   if (!player.value) return
   try {
     isFriendsLoading.value = true
-    // spróbuj z cache
-    const cached = userCache.getFriendsCached(player.value.nickname)
-    if (cached) {
-      friends.value = cached
-      return
+
+    const ownerNickname = player.value.nickname
+
+    if (!opts?.force) {
+      const cached = userCache.getFriendsCached(ownerNickname)
+      if (cached) {
+        friends.value = cached
+        return
+      }
     }
 
-    const result = await getFriends(player.value.nickname)
-    if (result) {
-      // wzbogacenie przez cache awatarów
+    const result = await getFriends(ownerNickname)
+    if (result?.length) {
       const enriched = await Promise.all(
         result.map(async (friend) => ({
           ...friend,
@@ -62,9 +65,10 @@ const fetchPlayerFriends = async (): Promise<void> => {
         }))
       )
       friends.value = enriched
-      userCache.cacheFriends(player.value.nickname, enriched)
+      userCache.cacheFriends(ownerNickname, enriched)
     } else {
       friends.value = []
+      userCache.cacheFriends(ownerNickname, [])
     }
   } catch {
     friends.value = []
@@ -72,13 +76,26 @@ const fetchPlayerFriends = async (): Promise<void> => {
     isFriendsLoading.value = false
   }
 }
-
 const fetchPlayerFriendRequests = async (): Promise<void> => {
   if (!userStore.user) return
   try {
     isFriendRequestsLoading.value = true
-    const result = await getFriendRequests(userStore.user?.friendRequests)
-    if (result) {
+
+    let pending = userStore.user.friendRequests ?? []
+
+    // fallback: jeśli pusto, odśwież profil i spróbuj jeszcze raz
+    if (!pending.length) {
+      await userStore.updateProfile()
+      pending = userStore.user.friendRequests ?? []
+    }
+
+    if (!pending.length) {
+      friendRequests.value = []
+      return
+    }
+
+    const result = await getFriendRequests(pending)
+    if (result?.length) {
       const enriched = await Promise.all(
         result.map(async (friend) => ({
           ...friend,
@@ -96,13 +113,43 @@ const fetchPlayerFriendRequests = async (): Promise<void> => {
   }
 }
 
+const handleFriendRequestRefresh = async (): Promise<void> => {
+  // odświeżaj tylko gdy modal pokazuje profil zalogowanego użytkownika
+  if (userStore.user?.nickname && player.value?.nickname === userStore.user.nickname) {
+    // micro-debounce, aby backend i userStore zdążyły zaktualizować friendRequests
+    requestAnimationFrame(async () => {
+      await fetchPlayerFriendRequests()
+    })
+  }
+}
+
+const handleFriendsListRefresh = async (): Promise<void> => {
+  if (player.value?.nickname) {
+    requestAnimationFrame(async () => {
+      await fetchPlayerFriends({ force: true })
+    })
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('friends:request-refresh', handleFriendRequestRefresh)
+  window.addEventListener('friends:list-refresh', handleFriendsListRefresh)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('friends:request-refresh', handleFriendRequestRefresh)
+  window.removeEventListener('friends:list-refresh', handleFriendsListRefresh)
+})
+
 watch(player, async () => {
   if (player.value) {
     timerInterval.value = window.setInterval(() => {
       now.value = new Date()
     }, 1000)
+
     await fetchPlayerFriends()
     await fetchPlayerFriendRequests()
+
     window.addEventListener('keydown', handleEscape)
   }
 })
@@ -174,6 +221,8 @@ const handleAcceptFriendRequest = async (player: IUser): Promise<void> => {
     if (res) {
       await emit('refresh-data')
       await userStore.updateProfile()
+      userCache.invalidateFriends(userStore.user!.nickname)
+      await fetchPlayerFriends()
       await fetchPlayerFriendRequests()
 
       showToast(`Zaakceptowano zaproszenie od ${player.nickname}`, 'success')
@@ -190,6 +239,8 @@ const handleRejectFriendRequest = async (player: IUser): Promise<void> => {
     if (res) {
       await emit('refresh-data')
       await userStore.updateProfile()
+      userCache.invalidateFriends(userStore.user!.nickname)
+      await fetchPlayerFriends()
       await fetchPlayerFriendRequests()
 
       showToast(`Odrzucono zaproszenie od ${player.nickname}`, 'success')
@@ -199,19 +250,27 @@ const handleRejectFriendRequest = async (player: IUser): Promise<void> => {
   }
 }
 
-const handleRemoveFriend = async (player: IUser): Promise<void> => {
+const handleRemoveFriend = async (playerToRemove: IUser): Promise<void> => {
   try {
-    const res = await removeFriend(player.nickname)
+    const res = await removeFriend(playerToRemove.nickname)
 
     if (res) {
       await emit('refresh-data')
       await userStore.updateProfile()
-      await fetchPlayerFriends()
 
-      showToast(`Usunięto ${player.nickname} z listy znajomych`, 'success')
+      const ownerNick = player.value?.nickname ?? userStore.user?.nickname
+      if (ownerNick) {
+        userCache.invalidateFriends(ownerNick)
+      }
+
+      await fetchPlayerFriends({ force: true })
+
+      chatsStore.removeActiveChat(playerToRemove)
+
+      showToast(`Usunięto ${playerToRemove.nickname} z listy znajomych`, 'success')
     }
   } catch {
-    showToast(`Nie udało się usunąć ${player.nickname} z listy znajomych`, 'error')
+    showToast(`Nie udało się usunąć ${playerToRemove.nickname} z listy znajomych`, 'error')
   }
 }
 

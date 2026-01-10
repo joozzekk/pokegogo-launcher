@@ -30,8 +30,11 @@ const scrollToBottom = (uuid: string): void => {
     })
   })
 }
-
 const handleSendMessage = async (i: number, uuid: string): Promise<void> => {
+  const chat = chatsStore.activeChats.find((c) => c.uuid === uuid)
+  if (!chat) return
+
+  if (!userStore.user?.friends?.includes(chat.nickname)) return
   if (!message.value[i]?.length) return
 
   const content = message.value[i]
@@ -39,8 +42,7 @@ const handleSendMessage = async (i: number, uuid: string): Promise<void> => {
 
   await sendMessage(uuid, content)
 
-  const chat = chatsStore.activeChats.find((c) => c.uuid === uuid)
-  chat?.messages.push({
+  chat.messages.push({
     sender: userStore.user!.uuid,
     receiver: uuid,
     content,
@@ -156,7 +158,7 @@ const computeRightOffset = (uuid: string): string => {
         <template v-else>
           <div class="chat-container z-54" :style="{ right: computeRightOffset(chat.uuid) }">
             <div class="flex items-center gap-2 px-4 py-3 bg-[var(--bg-dark)]">
-              <div class="relative">
+              <div class="relative cursor-pointer" @click="userStore.updateSelectedProfile(chat)">
                 <img :src="chat.headUrl" class="w-6 h-6 rounded-full" alt="Avatar" />
                 <div
                   class="absolute -bottom-0.5 -right-0.5 z-10 w-2 h-2 rounded-full"
@@ -195,15 +197,20 @@ const computeRightOffset = (uuid: string): string => {
                   'flex-row-reverse justify-start': msg.sender === chat.uuid
                 }"
               >
-                <div class="w-6 h-6 shrink-0 my-auto flex items-center justify-center">
+                <div
+                  class="w-6 h-6 shrink-0 my-auto flex items-center justify-center rounded-full overflow-hidden cursor-pointer"
+                  @click="
+                    msg.sender && userStore.updateSelectedProfile({ ...chat, uuid: msg.sender })
+                  "
+                >
                   <template v-if="isLastInSequence(chat.uuid, index)">
                     <img
                       v-if="msg.sender === userStore.user?.uuid"
                       :src="userStore.user?.headUrl"
-                      class="w-6 h-6 rounded-full"
+                      class="w-6 h-6"
                       alt="Avatar"
                     />
-                    <img v-else :src="chat.headUrl" class="w-6 h-6 rounded-full" alt="Avatar" />
+                    <img v-else :src="chat.headUrl" class="w-6 h-6" alt="Avatar" />
                   </template>
                 </div>
 
@@ -223,16 +230,23 @@ const computeRightOffset = (uuid: string): string => {
             </div>
 
             <div class="flex absolute bottom-0 w-full items-center gap-2 pb-2 px-2">
-              <input
-                v-model="message[i]"
-                type="text"
-                class="w-full rounded-full px-4 py-2 text-xs border border-[var(--bg-card)] outline-none focus:outline-none focus:border-[var(--primary)] focus:ring-[var(--primary)]"
-                placeholder="Wpisz wiadomość..."
-                @keyup.enter="handleSendMessage(i, chat.uuid)"
-              />
-              <button class="nav-icon" @click="handleSendMessage(i, chat.uuid)">
-                <i class="fa-solid fa-paper-plane"></i>
-              </button>
+              <template v-if="userStore.user?.friends?.includes(chat.nickname)">
+                <input
+                  v-model="message[i]"
+                  type="text"
+                  class="w-full rounded-full px-4 py-2 text-xs border border-[var(--bg-card)] outline-none focus:outline-none focus:border-[var(--primary)] focus:ring-[var(--primary)]"
+                  placeholder="Wpisz wiadomość..."
+                  @keyup.enter="handleSendMessage(i, chat.uuid)"
+                />
+                <button class="nav-icon" @click="handleSendMessage(i, chat.uuid)">
+                  <i class="fa-solid fa-paper-plane"></i>
+                </button>
+              </template>
+              <template v-else>
+                <div class="w-full text-center text-xs text-[var(--text-secondary)] py-2">
+                  Nie możesz odpowiedzieć na tę konwersację
+                </div>
+              </template>
             </div>
           </div>
         </template>

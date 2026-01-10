@@ -2,13 +2,11 @@
 import {
   acceptFriendRequest,
   cancelFriendRequest,
-  getFriends,
   rejectFriendRequest,
   removeFriend,
   requestFriend
 } from '@ui/api/endpoints'
 import { IUser } from '@ui/env'
-import { useChatsStore } from '@ui/stores/chats-store'
 import useGeneralStore from '@ui/stores/general-store'
 import useUserStore from '@ui/stores/user-store'
 import { AccountType, UserRole } from '@ui/types/app'
@@ -32,7 +30,6 @@ const emit = defineEmits<{
 }>()
 
 const generalStore = useGeneralStore()
-const chatsStore = useChatsStore()
 const userStore = useUserStore()
 
 const searchQuery = ref<string>(generalStore.searchQuery ?? '')
@@ -100,7 +97,6 @@ const handleRemoveFriend = async (player: IUser): Promise<void> => {
     if (res) {
       await emit('fetch-players', searchQuery.value, true)
       await userStore.updateProfile()
-      await chatsStore.setFriends(await getFriends(userStore.user!.nickname))
 
       showToast(`Usunięto ${player.nickname} z listy znajomych`, 'success')
     }
@@ -128,7 +124,6 @@ const handleAcceptFriendRequest = async (player: IUser): Promise<void> => {
     if (res) {
       await emit('refresh-data')
       await userStore.updateProfile()
-      await chatsStore.setFriends(await getFriends(userStore.user!.nickname))
 
       showToast(`Zaakceptowano zaproszenie od ${player.nickname}`, 'success')
     }
@@ -144,7 +139,6 @@ const handleRejectFriendRequest = async (player: IUser): Promise<void> => {
     if (res) {
       await emit('refresh-data')
       await userStore.updateProfile()
-      await chatsStore.setFriends(await getFriends(userStore.user!.nickname))
 
       showToast(`Odrzucono zaproszenie od ${player.nickname}`, 'success')
     }
@@ -153,8 +147,14 @@ const handleRejectFriendRequest = async (player: IUser): Promise<void> => {
   }
 }
 
+const handleUsersListRefresh = async (): Promise<void> => {
+  await emit('fetch-players', searchQuery.value, true)
+}
+
 onMounted(async () => {
   await emit('fetch-players', searchQuery.value, true)
+
+  window.addEventListener('users:list-refresh', handleUsersListRefresh)
 
   observer = new IntersectionObserver(
     (entries) => {
@@ -179,6 +179,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   if (observer) observer.disconnect()
+  window.removeEventListener('users:list-refresh', handleUsersListRefresh)
 })
 </script>
 

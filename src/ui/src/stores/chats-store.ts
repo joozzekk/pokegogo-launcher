@@ -17,10 +17,20 @@ export const useChatsStore = defineStore('chats', () => {
   const addActiveChat = async (user: IUser): Promise<void> => {
     if (activeChats.value.find((chat) => chat.uuid === user.uuid)) return
 
-    const headUrl = await getHeadUrl(user)
-    const messages = await getMessages(user.uuid) // wiadomości zwykle nie cache’ujemy długim TTL
+    if (activeChats.value.length >= 3) {
+      activeChats.value.shift()
+    }
 
-    activeChats.value.push({ ...user, messages, headUrl, chatToggled: true })
+    const headUrl = await getHeadUrl(user)
+    const messages = await getMessages(user.uuid)
+
+    activeChats.value.push({
+      ...user,
+      messages,
+      headUrl,
+      chatToggled: true
+    })
+
     userCache.cacheUser(user)
   }
 
