@@ -1,3 +1,3 @@
 # PokeGoGo Launcher
 
-Official MC Launcher for pokemongogo.pl mc server.
+Oficjalny launcher dla serwera Minecraft PokemonGoGo.pl
