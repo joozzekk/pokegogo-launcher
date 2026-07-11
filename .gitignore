@@ -1,0 +1,14 @@
+node_modules
+dist
+out
+.DS_Store
+.eslintcache
+*.log*
+.env
+.env.*
+env.*
+komendy.txt
+# Private hidden files
+.env.*
+ftp-rename.js
+komendy.txt

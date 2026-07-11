@@ -1,0 +1,1151 @@
+@import 'tailwindcss';
+
+*,
+*::after,
+*::before {
+  box-sizing: border-box;
+  user-select: none;
+}
+
+button:hover,
+button:focus,
+a:focus,
+a:hover,
+select:focus,
+select:hover {
+  outline: none;
+}
+
+*::-webkit-scrollbar {
+  width: 2px;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  color: var(--text-primary);
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+  font-size: 13px;
+}
+
+/* -------------------------------------- Tło  ---------------------------- */
+.animated-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: -1;
+}
+
+.gradient-overlay {
+  position: absolute;
+  width: 200%;
+  height: 200%;
+  background: var(--gradient-overlay);
+  animation: gradientShift 20s ease infinite;
+}
+
+@keyframes gradientShift {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  33% {
+    transform: translate(-10%, -10%) rotate(120deg);
+  }
+  66% {
+    transform: translate(10%, -10%) rotate(240deg);
+  }
+}
+
+.particles {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.snowflake {
+  position: absolute;
+  color: white;
+  font-size: 20px;
+  animation: snowfall 20s linear infinite;
+}
+
+@keyframes snowfall {
+  0% {
+    transform: translateY(0) translateX(0) rotate(0deg);
+  }
+  100% {
+    transform: translateY(120vh) translateX(30px) rotate(360deg);
+  }
+}
+/* Header styles moved to Header.vue */
+
+/* -------------------------------------- Profil gracza ---------------------------- */
+.player-fullinfo {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.player-profile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-card);
+  border-radius: 50px;
+  border: 1px dashed var(--border);
+  transition: all 0.3s ease;
+  user-select: none;
+  padding: 0.4rem 1rem;
+}
+
+.player-avatar {
+  position: relative;
+}
+
+.player-skin {
+  width: 2.25rem;
+  min-width: 2.25rem !important;
+  height: 2.25rem;
+  min-height: 2.25rem !important;
+  border-radius: 50%;
+  border: 2px solid var(--primary);
+  image-rendering: pixelated;
+}
+
+.player-logout {
+  width: 2.25rem;
+  height: 2.25rem;
+  background: transparent;
+  border: none;
+  border-radius: 100%;
+  color: var(--player-logout);
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+
+.player-logout:hover,
+.player-logout:focus {
+  color: var(--primary);
+}
+
+.player-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.player-label {
+  font-size: 0.5rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.player-name {
+  letter-spacing: 1px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.profile-menu {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 5px;
+  transition: color 0.3s;
+}
+
+.profile-menu:hover {
+  color: var(--primary);
+}
+
+.launcher-container {
+  display: flex;
+  width: calc(100vw);
+  height: calc(100vh - 60px);
+}
+
+/* Sidebar styles moved to Sidebar.vue */
+
+.main-content {
+  height: calc(100vh - 60px);
+  overflow: hidden;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.page {
+  position: relative;
+  animation: pageSlide 0.4s ease-in-out;
+}
+
+@keyframes pageSlide {
+  from {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Home and News styles moved to Home.vue */
+
+/* -------------------------------------- Strona z ustawieniami---------------------------- */
+.settings-container {
+  height: calc(100vh - 54.5px);
+  padding: 0.5rem;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.setting-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1.5rem;
+}
+
+.setting-group label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+}
+
+.ram-slider-container {
+  position: relative;
+}
+
+#ramSlider {
+  width: 100%;
+  height: 8px;
+  background: var(--bg-light);
+  border-radius: 4px;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+#ramSlider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  background: var(--gradient-primary);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.ram-markers {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.ram-display {
+  position: absolute;
+  top: -0.2rem;
+  user-select: none;
+  transform: translateX(-50%);
+  background: var(--gradient-primary);
+  color: var(--text-primary);
+  padding: 0.2rem 0.4rem;
+  font-size: 0.7rem;
+  border-radius: 6px;
+  font-weight: 600;
+  text-wrap: nowrap;
+  transform-origin: 50%;
+}
+
+.setting-select {
+  width: 100%;
+  padding: 12px;
+  background: var(--bg-light);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.toggle-group {
+  display: flex;
+  gap: 10px;
+}
+
+.toggle-option {
+  width: 100%;
+  padding: 0.5rem 1rem;
+  background: var(--bg-light);
+  color: var(--text-secondary);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.toggle-option.active {
+  background: var(--gradient-primary);
+  color: var(--text-primary);
+}
+
+.jvm-args {
+  width: 100%;
+  padding: 12px;
+  background: var(--bg-light);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  resize: vertical;
+  font-family: 'Courier New', monospace;
+}
+
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.checkbox input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+}
+
+.settings-actions {
+  display: flex;
+  max-width: calc(50% - 0.5rem);
+  gap: 1rem;
+}
+
+.btn-primary,
+.btn-secondary {
+  padding: 0.7rem 1rem;
+  border: none;
+  border-radius: 10px;
+  width: 100%;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  transition: all 0.3s ease;
+}
+
+.btn-primary {
+  background: var(--gradient-primary);
+  color: var(--text-primary);
+}
+
+.btn-primary:hover,
+.btn-primary:focus,
+.toggle-option:focus,
+.toggle-option:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 10px var(--btn-hover);
+}
+
+.btn-secondary,
+.toggle-option:not(.active):focus,
+.toggle-option:not(.active):hover {
+  background: var(--bg-light);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  box-shadow: none;
+}
+
+.btn-secondary:hover,
+.btn-secondary:focus {
+  background: var(--btn-hover);
+}
+
+/* -------------------------------------- ChangeLog ---------------------------- */
+.changelog-container {
+  max-height: calc(100vh - 60px);
+  padding: 0.5rem;
+}
+
+.changelog-timeline {
+  height: calc(100vh - 60px);
+  padding-bottom: 40px;
+  overflow-y: auto;
+}
+
+.changelog-entry {
+  position: relative;
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.changelog-content {
+  background: var(--bg-card);
+  border-radius: 15px;
+  padding: 25px;
+  border: 1px solid var(--border);
+}
+
+.changelog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.changelog-version {
+  background: var(--gradient-primary);
+  color: var(--text-primary);
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+}
+
+.changelog-date {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.changelog-content h3 {
+  font-size: 1.5rem;
+  color: var(--text-primary);
+}
+
+.changelog-content ul {
+  list-style: none;
+}
+
+.changelog-content li {
+  padding: 8px 0;
+  color: var(--text-secondary);
+}
+
+/* -------------------------------------- Tagi ---------------------------- */
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-right: 8px;
+  text-transform: uppercase;
+}
+
+.tag.new {
+  background: rgba(0, 255, 85, 0.2);
+  color: rgb(97, 248, 130);
+}
+
+.tag.fix {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.tag.improve {
+  background: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
+}
+/* -------------------------------------- Powiadomienia ---------------------------- */
+.toast-container {
+  position: fixed;
+  top: 62.5px;
+  right: 20px;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: all;
+  background: rgba(15, 15, 20, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 340px;
+  max-width: 420px;
+  position: relative;
+  box-shadow:
+    0 10px 40px rgba(0, 0, 0, 0.5),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  font-weight: 500;
+  font-size: 0.9rem;
+  overflow: hidden;
+  animation: slideInRight 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+  transition: all 0.3s ease;
+}
+
+.toast:hover {
+  transform: translateX(-4px);
+  background: rgba(20, 20, 25, 0.9);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.toast .toast-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  flex-shrink: 0;
+}
+
+.toast.success .toast-icon {
+  background: rgba(var(--primary-rgb), 0.15);
+  color: var(--primary);
+}
+.toast.error .toast-icon {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+.toast.info .toast-icon {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+.toast .toast-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.toast .toast-message {
+  line-height: 1.4;
+}
+
+.toast .toast-close,
+.toast .toast-abort {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toast .toast-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.toast .toast-abort {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 8px;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  text-transform: uppercase;
+}
+
+.toast .toast-abort:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+
+.toast .toast-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.toast .toast-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), #a855f7);
+  width: 0%;
+  transition: width 0.3s ease;
+  position: relative;
+}
+
+.toast .toast-progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 20px;
+  background: linear-gradient(90deg, transparent, white);
+  opacity: 0.3;
+  filter: blur(4px);
+}
+
+.toast .toast-progress.indeterminate .toast-progress-fill {
+  width: 100%;
+  background: linear-gradient(90deg, var(--primary), #a855f7, var(--primary));
+  background-size: 200% 100%;
+  animation: indeterminateProgress 2s linear infinite;
+}
+
+@keyframes indeterminateProgress {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(120%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(120%);
+    opacity: 0;
+  }
+}
+
+.toast.success {
+  border-left: 4px solid var(--primary);
+}
+.toast.error {
+  border-left: 4px solid #ef4444;
+}
+.toast.info {
+  border-left: 4px solid #3b82f6;
+}
+
+.ban-btn {
+  background: var(--ban-btn);
+  color: var(--bg-primary);
+  border: none;
+  border-radius: var(--border-radius-small);
+  width: 30px;
+  height: 30px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--ban-btn-text);
+}
+
+.ban-btn:hover,
+.ban-btn:focus {
+  transform: translateY(-1px);
+  box-shadow: 0 0 15px var(--ban-btn);
+}
+
+.info-btn {
+  background: var(--gradient-primary);
+  color: var(--text-primary);
+  border: none;
+  border-radius: var(--border-radius-small);
+  width: 30px;
+  height: 30px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.info-btn:hover,
+.info-btn:focus {
+  transform: translateY(-1px);
+  box-shadow: 0 0 15px var(--text-muted);
+}
+
+.search-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.search-input {
+  width: 100%;
+  background: var(--bg-card);
+  border: 2px solid var(--border-primary);
+  border-radius: var(--border-radius-small);
+  padding: 0.8rem 1rem 0.8rem 2.5rem;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  font-family: inherit;
+  transition: var(--transition);
+  outline: none;
+}
+
+.search-input:focus,
+.search-input:hover {
+  background: var(--border);
+}
+
+.search-input::placeholder {
+  color: var(--text-muted);
+  font-weight: 300;
+}
+
+.search-icon {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  transition: var(--transition);
+}
+
+.search-input:focus ~ .search-icon {
+  color: var(--primary1);
+}
+
+.p-datepicker-panel {
+  color: var(--text-secondary) !important;
+  border: 1px solid var(--border) !important;
+  font-size: 0.8rem;
+}
+
+.p-inputtext {
+  border: 1px solid var(--border) !important;
+  font-size: 0.8rem;
+}
+
+.p-inputtext::placeholder {
+  color: var(--text-secondary) !important;
+  font-size: 0.8rem;
+}
+/* === Global Modal Styles === */
+.g-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  -webkit-app-region: no-drag;
+}
+
+/* Premium Card Style (Global) */
+.g-card {
+  background: var(--bg-card);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 24px;
+  padding: 1.5rem;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.g-modal-card {
+  /* Replicating .g-card styles because @apply is not supported */
+  background: var(--bg-card);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 24px;
+  padding: 1.5rem;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+
+  width: 90%;
+  max-width: 650px;
+  max-height: 90vh;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.g-card-header,
+.g-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+  justify-content: space-between;
+}
+
+.g-card-header h3,
+.g-modal-title h2 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.02em;
+  color: white;
+}
+
+.g-modal-subtitle {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  display: block;
+}
+
+.g-icon-box {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: rgba(var(--primary-rgb), 0.15);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  border: 1px solid rgba(var(--primary-rgb), 0.2);
+}
+
+.g-icon-box.small {
+  width: 32px;
+  height: 32px;
+  font-size: 0.9rem;
+  padding: 0;
+}
+
+/* Global Input Styles */
+.g-input,
+.glass-input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.8rem 1rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.9rem;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.g-input:focus,
+.glass-input:focus {
+  border-color: var(--primary);
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.1);
+}
+
+/* ... (skipping button styles) ... */
+
+/* DatePicker Global Overrides (Glass Theme) */
+
+/* 1. Panel/Popup container */
+.p-datepicker-panel {
+  background: #161b22 !important; /* Solid dark background */
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5) !important;
+  padding: 1rem !important;
+  z-index: 9999 !important;
+  max-width: none !important;
+  min-width: 250px;
+  /* Width is handled by 'fluid' prop and pt: { pcPanel: { root: '!w-full' } } in components */
+}
+
+/* 2. Header and Title */
+.p-datepicker-header {
+  background: transparent !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  color: var(--text-primary) !important;
+  padding-bottom: 0.5rem !important;
+}
+
+.p-datepicker-title {
+  color: var(--text-primary) !important;
+  font-weight: 600 !important;
+}
+
+/* 3. Calendar Table */
+.p-datepicker table th {
+  color: var(--text-secondary) !important;
+  font-weight: 500 !important;
+}
+
+.p-datepicker table td > span {
+  color: var(--text-primary) !important;
+  width: 2.5rem !important;
+  height: 2.5rem !important;
+  border-radius: 50% !important;
+  transition: all 0.2s !important;
+}
+
+.p-datepicker-panel .p-datepicker-calendar td > span:hover,
+.p-datepicker-panel .p-datepicker-day:not(.p-highlight):hover,
+.p-datepicker table td > span:hover {
+  background: var(--primary) !important;
+  color: white !important;
+  box-shadow: 0 0 10px rgba(var(--primary-rgb), 0.4) !important;
+}
+
+/* 4. Selection and Today states */
+.p-datepicker-today > span,
+.p-datepicker-today > span > span {
+  background: transparent !important;
+  border: 1px solid var(--primary) !important;
+  color: var(--primary) !important;
+}
+
+/* Fix selected day visibility (white text on primary background) */
+.p-datepicker-selected > span,
+.p-datepicker-selected > span:hover,
+.p-datepicker-selected > span > span,
+.p-highlight {
+  background: var(--primary) !important;
+  color: white !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 15px rgba(var(--primary-rgb), 0.4) !important;
+}
+
+/* 5. Navigation buttons */
+.p-datepicker .p-datepicker-prev,
+.p-datepicker .p-datepicker-next {
+  color: var(--text-secondary) !important;
+  width: 2rem !important;
+  height: 2rem !important;
+  border-radius: 50% !important;
+}
+
+.p-datepicker .p-datepicker-prev:hover,
+.p-datepicker .p-datepicker-next:hover {
+  background: rgba(var(--primary-rgb), 0.2) !important;
+  color: var(--primary) !important;
+}
+
+/* 6. Input Root (when not opened) */
+.p-datepicker:not(.p-datepicker-panel) {
+  display: inline-flex !important;
+  align-items: center;
+  position: relative;
+  width: 100%;
+}
+
+.p-datepicker:not(.p-datepicker-panel) .p-inputtext,
+.p-datepicker:not(.p-datepicker-panel) .g-input {
+  flex: 1;
+  min-width: 0;
+  width: 100% !important;
+  padding: 0.8rem 1rem !important;
+  background: var(--bg-input) !important;
+  border: 1px solid var(--border2) !important;
+  border-radius: 16px !important;
+  color: var(--text-primary) !important;
+}
+
+.p-datepicker:not(.p-datepicker-panel) .p-inputtext:focus,
+.p-datepicker:not(.p-datepicker-panel) .g-input:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.1) !important;
+}
+
+/* Global Button Styles */
+.g-btn,
+.action-btn {
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: 14px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.g-btn:hover,
+.action-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+.g-btn.primary {
+  background: var(--gradient-primary);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 15px rgba(var(--primary-rgb), 0.3);
+}
+
+.g-btn.primary:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 6px 20px rgba(var(--primary-rgb), 0.4);
+}
+
+.g-btn.danger {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.g-btn.danger:hover {
+  background: #ef4444;
+  color: white;
+}
+
+.g-close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.g-close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.g-modal-footer {
+  display: flex;
+  gap: 0.8rem;
+  margin-top: auto;
+}
+
+/* PrimeVue Components Z-Index Fix */
+.p-datepicker,
+.p-datepicker-panel,
+.p-component-overlay,
+.p-connected-overlay-enter-done,
+.p-dropdown-panel,
+.p-dialog,
+.p-popover,
+.p-contextmenu,
+.p-menu {
+  z-index: 9999 !important;
+}
+
+.p-toast {
+  z-index: 10000 !important;
+}
+
+.g-modal-content {
+  overflow-y: auto;
+  max-height: calc(90vh - 120px);
+  padding: 0.5rem;
+}
+/* Extreme Compact DatePicker for Modals */
+.extreme-compact-datepicker {
+  padding: 0.2rem !important;
+  border-radius: 12px !important;
+  width: auto !important;
+  min-width: 200px !important;
+  background: #161b22 !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8) !important;
+  margin-top: 4px !important;
+  z-index: 10001 !important;
+}
+
+.extreme-compact-datepicker .p-datepicker-header {
+  padding: 0.15rem !important;
+  font-size: 0.7rem !important;
+}
+
+.extreme-compact-datepicker .p-datepicker-title {
+  font-size: 0.7rem !important;
+  line-height: normal !important;
+}
+
+.extreme-compact-datepicker .p-datepicker-prev,
+.extreme-compact-datepicker .p-datepicker-next {
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+}
+
+.extreme-compact-datepicker table {
+  font-size: 0.65rem !important;
+}
+
+.extreme-compact-datepicker .p-datepicker-day {
+  width: 1.4rem !important;
+  height: 1.4rem !important;
+  padding: 0 !important;
+}
+
+.extreme-compact-datepicker table td > span {
+  width: 1.4rem !important;
+  height: 1.4rem !important;
+  font-size: 0.65rem !important;
+}
+
+.extreme-compact-datepicker .p-datepicker-time-picker {
+  padding: 0.15rem !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+  gap: 0.15rem !important;
+}
+
+.extreme-compact-datepicker .p-datepicker-hour-picker,
+.extreme-compact-datepicker .p-datepicker-minute-picker,
+.extreme-compact-datepicker .p-datepicker-second-picker {
+  font-size: 0.7rem !important;
+}
+
+.extreme-compact-datepicker .p-datepicker-buttonbar {
+  padding: 0.15rem !important;
+}

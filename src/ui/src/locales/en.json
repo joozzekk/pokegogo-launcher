@@ -1,0 +1,640 @@
+{
+  "common": {
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "confirm": "Confirm",
+    "pressSpace": "Press Space to Start",
+    "score": "Score",
+    "highScore": "High Score",
+    "clickToJump": "Click or press Space to jump",
+    "leaderboard": "Top 10 Leaderboard",
+    "rank": "Rank",
+    "nick": "Player",
+    "monthlyBest": "Monthly Best",
+    "loading": "Loading rankings...",
+    "playGame": "Play"
+  },
+  "settings": {
+    "title": "Game Settings",
+    "gameMode": "Game Mode",
+    "resolution": "Resolution",
+    "ram": "RAM Memory",
+    "displayMode": "Display Mode",
+    "window": "Window",
+    "fullscreen": "Fullscreen",
+    "launcherSettings": "Launcher Settings",
+    "theme": "Theme",
+    "notifications": "Notifications",
+    "hideToTray": "Hide to tray",
+    "autoUpdate": "Auto updates",
+    "updateChannel": "Update Channel",
+    "accountSettings": "Account Settings",
+    "changeEmail": "Change Email",
+    "changePassword": "Change Password",
+    "oldPassword": "Old Password",
+    "newPassword": "New Password",
+    "repeatPassword": "Repeat Password",
+    "save": "Save",
+    "reset": "Reset",
+    "verifyFiles": "Verify Files",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "successSave": "Settings saved.",
+    "successReset": "Default settings restored.",
+    "successPasswordChange": "Password changed successfully.",
+    "errorPasswordChange": "Failed to change password.",
+    "successEmailChange": "Email changed successfully.",
+    "errorEmailChange": "Failed to change email.",
+    "language": "Language",
+    "logs": "Logs",
+    "openLauncherLogs": "Open Launcher Logs",
+    "openGameLogs": "Open Game Logs",
+    "customThemeApplied": "Custom theme applied!",
+    "resetSettings": "Reset Default Settings"
+  },
+  "login": {
+    "copyright": "All rights reserved.",
+    "title": "Login to PokemonGoGo",
+    "subtitle": "Log in to the launcher using one of the available methods.",
+    "or": "or",
+    "placeholder": {
+      "nick": "Enter nickname..",
+      "password": "Enter password.."
+    },
+    "loginButton": "Log in",
+    "microsoftLogin": "Log in via Microsoft",
+    "noAccount": "Don't have an account?",
+    "register": "Register",
+    "toasts": {
+      "error": "An error occurred during login.",
+      "microsoftError": "An error occurred during Microsoft login."
+    }
+  },
+  "register": {
+    "title": "PokemonGoGo Registration",
+    "subtitle": "Create an account to use the application and enter the PokemonGoGo.pl server",
+    "info": "Remember that only non-premium accounts should register. If you have a premium account, log in via Microsoft.",
+    "placeholder": {
+      "nick": "Enter nickname..",
+      "email": "Enter email..",
+      "password": "Enter password..",
+      "repeatPassword": "Repeat password.."
+    },
+    "registerButton": "Register",
+    "registering": "Registering...",
+    "hasAccount": "Already have an account?",
+    "login": "Log in"
+  },
+  "home": {
+    "latestUpdates": "Latest Updates",
+    "activeEvent": "Active Event",
+    "ram": "RAM",
+    "mode": "Mode",
+    "playersOnline": "Players Online",
+    "ping": "Ping",
+    "uptime": "Uptime"
+  },
+  "changelog": {
+    "searchPlaceholder": "Search changelog by keywords..",
+    "add": "Add",
+    "loading": "Loading changelogs..",
+    "deleteSuccess": "Successfully deleted changelog",
+    "addSuccess": "Successfully added new changelog",
+    "editSuccess": "Successfully edited changelog",
+    "addTitle": "Add changelog",
+    "editTitle": "Edit changelog",
+    "labels": {
+      "name": "Name",
+      "nameDesc": "Changelog name",
+      "version": "Version",
+      "versionDesc": "Changelog version",
+      "date": "Date",
+      "dateDesc": "Changelog release date",
+      "type": "Type",
+      "typeDesc": "Type of changelog being added",
+      "changes": "List of changes",
+      "changesDesc": "List of changes made in this changelog"
+    },
+    "placeholders": {
+      "name": "Enter name",
+      "version": "Enter version",
+      "date": "Select date",
+      "desc": "What changed?"
+    },
+    "types": {
+      "launcher": "Launcher",
+      "server": "Server"
+    },
+    "table": {
+      "type": "Type",
+      "desc": "Description"
+    },
+    "changeTypes": {
+      "new": "NEW",
+      "fix": "FIX",
+      "improve": "IMPROVE",
+      "newLabel": "New",
+      "fixLabel": "Fix",
+      "improveLabel": "Improvement"
+    },
+    "noChanges": "No changes",
+    "save": "Save",
+    "cancel": "Cancel"
+  },
+  "events": {
+    "deleteSuccess": "Successfully deleted event",
+    "add": "Add",
+    "edit": "Edit",
+    "delete": "Delete",
+    "searchPlaceholder": "Search event by name..",
+    "loading": "Loading events..",
+    "refresh": "Refresh",
+    "noResultsTitle": "No results",
+    "noResultsDesc": "No events found matching search criteria.",
+    "table": {
+      "name": "Name",
+      "type": "Type",
+      "desc": "Description"
+    },
+    "addSuccess": "Successfully added new event",
+    "editSuccess": "Successfully edited event",
+    "addTitle": "Add event",
+    "editTitle": "Edit event",
+    "labels": {
+      "name": "Name",
+      "nameDesc": "Event name displayed on the launcher home page.",
+      "type": "Type",
+      "typeDesc": "Type of event being added",
+      "desc": "Description",
+      "descDesc": "Event description displayed on the launcher home page.",
+      "startDate": "Start Date",
+      "startDateDesc": "Event start date",
+      "endDate": "End Date",
+      "endDateDesc": "Event end date"
+    },
+    "placeholders": {
+      "name": "Enter name",
+      "desc": "Enter description..",
+      "date": "Select date"
+    },
+    "types": {
+      "mega": "MEGA",
+      "normal": "Normal"
+    },
+    "save": "Save",
+    "cancel": "Cancel"
+  },
+  "users": {
+    "online": "Online",
+    "offline": "Offline",
+    "toasts": {
+      "inviteSent": "Invitation sent to",
+      "inviteFailed": "Failed to send invitation to",
+      "inviteCancelled": "Invitation cancelled for",
+      "inviteCancelFailed": "Failed to cancel invitation for",
+      "friendRemoved": "Removed from friends list",
+      "friendRemoveFailed": "Failed to remove from friends list",
+      "inviteAccepted": "Accepted invitation from",
+      "inviteAcceptFailed": "Failed to accept invitation from",
+      "inviteRejected": "Rejected invitation from",
+      "inviteRejectFailed": "Failed to reject invitation from",
+      "killGameSent": "Sent kill game command to"
+    },
+    "searchPlaceholder": "Search player...",
+    "keywords": {
+      "title": "Keywords",
+      "hwid": "displays players who have HWID",
+      "nohwid": "displays players who do NOT have HWID",
+      "hwidCount": "displays players with same HWID and more than x accounts. Operators available: >, < and =",
+      "hwidSpecific": "displays players with specific [hwid]",
+      "banned": "displays banned players",
+      "online": "displays players currently online"
+    },
+    "filters": {
+      "title": "Filters",
+      "clearAll": "Clear All"
+    },
+    "requestFriend": "Add Friend",
+    "removeFriend": "Remove Friend",
+    "banned": "BANNED",
+    "gameRunning": "Game running",
+    "killGame": "Kill game",
+    "loading": "Loading players...",
+    "endOfResults": "End of results",
+    "none": "(None)",
+    "showMax": "Show maximum",
+    "limitAll": "No limit",
+    "cancelRequest": "Cancel request"
+  },
+  "ftp": {
+    "searchPlaceholder": "Search...",
+    "createFolder": "Create folder",
+    "uploadFolder": "Upload folder",
+    "uploadFile": "Upload file",
+    "loading": "Loading...",
+    "dropHint": "Drop files here to upload",
+    "noFilesTitle": "No files",
+    "noFilesDesc": "There are no files in this folder.",
+    "tooltips": {
+      "zippedDirty": "Folder zipped, but contains new files",
+      "zipped": "Folder zipped",
+      "zipFolder": "Zip folder",
+      "markImportant": "Mark as important (always downloaded)",
+      "downloadFolder": "Download folder",
+      "downloadFile": "Download file"
+    },
+    "flags": {
+      "important": "Always downloaded",
+      "ignored": "Ignored"
+    },
+    "warnings": {
+      "zippedDirty": "⚠️ Contains unzipped changes"
+    }
+  },
+  "items": {
+    "toasts": {
+      "indexChanged": "Successfully changed item index",
+      "deleted": "Successfully deleted item"
+    },
+    "add": "Add",
+    "edit": "Edit",
+    "delete": "Delete",
+    "searchPlaceholder": "Search item by name..",
+    "loading": "Loading items..",
+    "refresh": "Refresh",
+    "noResultsTitle": "No results",
+    "noResultsDesc": "No items found matching search criteria.",
+    "table": {
+      "name": "Name",
+      "price": "Price",
+      "desc": "Description"
+    },
+    "priceParams": {
+      "none": "None"
+    }
+  },
+  "shop": {
+    "searchPlaceholder": "Search item..",
+    "refresh": "Refresh",
+    "loading": "Loading shop.."
+  },
+  "createFolder": {
+    "title": "Create folder",
+    "label": "Folder name",
+    "placeholder": "Enter name",
+    "create": "Create",
+    "cancel": "Cancel",
+    "errors": {
+      "required": "Name is required",
+      "minLength": "Name must be at least 2 characters",
+      "maxLength": "Name can be max 50 characters"
+    }
+  },
+  "addItem": {
+    "title": {
+      "add": "Add item",
+      "edit": "Edit item"
+    },
+    "success": {
+      "add": "Successfully added new item",
+      "edit": "Successfully edited item"
+    },
+    "errors": {
+      "greaterThanZero": "Value must be greater than 0"
+    },
+    "labels": {
+      "name": "Name",
+      "nameDesc": "Displayed on the page",
+      "price": "Price",
+      "priceDesc": "Item price",
+      "promotion": "Promotion",
+      "promotionDesc": "Enter discount (in PLN)",
+      "type": "Type",
+      "typeDesc": "Type of item being added",
+      "desc": "Description",
+      "descDesc": "Description is formatted. If you want it to display well on the page, remember to write text in new lines.",
+      "rankName": "Rank Name",
+      "rankNameDesc": "Rank name from LuckyPerms. Examples: vip, mvp, ultra, legend.",
+      "duration": "Duration",
+      "durationDesc": "Enter how long player will receive this rank. Default 30",
+      "keyName": "Key Name",
+      "itemId": "Item ID",
+      "keyNameDesc": "Enter key name from plugin, e.g. legendary, mythic",
+      "itemIdDesc": "Enter item name, e.g. cobblemon:master_ball",
+      "amount": "Amount to sell",
+      "amountDesc": "Enter amount in which item will be sold. Default 1",
+      "index": "Index",
+      "indexDesc": "Item display order",
+      "command": "Command",
+      "commandDesc": "You can use various variables listed above. {player} - player nickname. Listed above: {amount} - item amount, {item} - item name, {rank} - rank name, {days} - duration."
+    },
+    "placeholders": {
+      "name": "Enter name",
+      "price": "Enter price",
+      "number": "Enter number",
+      "desc": "Enter description..",
+      "command": "Enter command",
+      "days": "Enter amount of days",
+      "amount": "Enter amount"
+    },
+    "types": {
+      "rank": "Rank",
+      "key": "Key",
+      "item": "Item",
+      "custom": "Custom"
+    },
+    "tooltips": {
+      "placeholders": {
+        "title": "Available placeholders:",
+        "player": "Player's nickname",
+        "amount": "Item amount",
+        "item": "Item ID / Name",
+        "rank": "Rank name",
+        "days": "Rank duration (days)"
+      }
+    },
+    "save": "Save",
+    "cancel": "Cancel"
+  },
+  "chat": {
+    "start": "Conversation started",
+    "placeholder": "Type a message...",
+    "cannotReply": "You cannot reply to this conversation"
+  },
+  "load": {
+    "init": "Initializing..",
+    "checkUpdate": "Checking for updates..",
+    "updating": "Updating..",
+    "welcome": "Welcome!",
+    "error": "An error occurred"
+  },
+  "modals": {
+    "banPlayer": {
+      "successPerm": "Successfully permanently banned user",
+      "successTemp": "Successfully banned user",
+      "successUnban": "Successfully unbanned user",
+      "titleBan": "Ban player",
+      "titleUnban": "Unban player",
+      "type": "Ban Type",
+      "hwid": "HWID",
+      "nick": "Nick",
+      "duration": "Ban Duration",
+      "temp": "Temporary",
+      "perm": "Permban",
+      "endTime": "Ban end time",
+      "datePlaceholder": "Select date",
+      "reason": "Ban reason",
+      "reasonPlaceholder": "Enter ban reason",
+      "confirmUnban": "Are you sure you want to unban {player}?",
+      "ban": "Ban",
+      "unban": "Unban",
+      "cancel": "Cancel"
+    },
+    "banned": {
+      "noReason": "No detailed reason.",
+      "title": "You have been banned",
+      "header": "Account Banned",
+      "desc": "Your account has been blocked. Details regarding the reason for the block below:",
+      "reason": "Reason",
+      "expires": "Expires",
+      "understand": "I understand"
+    },
+    "changeSkin": {
+      "selectFile": "Please select a skin file.",
+      "success": "Skin successfully changed!",
+      "title": "Custom skin",
+      "type": "Skin type",
+      "steve": "Steve",
+      "alex": "Alex",
+      "custom": "Custom skin",
+      "hint": "Click on the skin preview to change your custom skin in-game.",
+      "confirm": "Confirm",
+      "cancel": "Cancel"
+    },
+    "changeNickname": {
+      "title": "Change nickname",
+      "info": "Nickname change preview:",
+      "newNickname": "New nickname",
+      "newNicknamePlaceholder": "Enter new nickname",
+      "success": "Successfully changed nickname from {old} to {new}",
+      "change": "Change",
+      "cancel": "Cancel"
+    },
+    "discordReport": {
+      "required": "Content is required",
+      "minLength": "Content must be at least 2 characters",
+      "noNick": "No Nickname",
+      "content": "Report content",
+      "success": "Report sent",
+      "title": "Report",
+      "placeholder": "Report content..",
+      "cancel": "Cancel",
+      "send": "Send"
+    },
+    "passwordReset": {
+      "title": "Password reset",
+      "confirm": "Are you sure you want to reset password for user {nickname}?",
+      "generated": "Generated password: ",
+      "ok": "OK",
+      "reset": "Reset",
+      "cancel": "Cancel"
+    },
+    "updateConfirm": {
+      "title": "Launcher update",
+      "desc": "Are you sure you want to update the launcher? This will close Minecraft and log you out.",
+      "update": "Update",
+      "cancel": "Cancel"
+    },
+    "userProfile": {
+      "none": "None",
+      "perm": "Permanently",
+      "banEnded": "Ban ended",
+      "remaining": "Remaining: {time}",
+      "friendRequestAccepted": "Accepted friend request from {nickname}",
+      "friendRequestAcceptFailed": "Failed to accept friend request from {nickname}",
+      "friendRequestRejected": "Rejected friend request from {nickname}",
+      "friendRequestRejectFailed": "Failed to reject friend request from {nickname}",
+      "friendRemoved": "Removed {nickname} from friends list",
+      "friendRemoveFailed": "Failed to remove {nickname} from friends list",
+      "accountBlocked": "Account blocked.",
+      "areFriends": "You are friends",
+      "friendRequestSent": "Friend request sent",
+      "lastLogin": "Last login:",
+      "registered": "Registered:",
+      "noHwid": "No HWID",
+      "adminActions": "Admin Actions",
+      "ban": "Ban",
+      "unban": "Unban",
+      "resetPass": "Reset Pass",
+      "deleteAccount": "Delete Account",
+      "confirmDeleteAccount": "Are you sure you want to delete profile of player {name}?",
+      "accountDeleted": "Account successfully deleted.",
+      "accountDeleteFailed": "Failed to delete account.",
+      "friends": "Friends",
+      "friendRequestsTitle": "Friend Requests",
+      "noFriendsUser": "Currently you have no friends.",
+      "noFriendsPlayer": "Currently player has no friends.",
+      "banReason": "Reason"
+    },
+    "verifyFiles": {
+      "checkEnded": "Check completed",
+      "title": "Fixing files",
+      "warning": "Remember not to close the launcher during file verification.",
+      "finish": "Finish",
+      "verifying": "Verifying...",
+      "stop": "Stop verifying",
+      "start": "Start verification",
+      "ready": "Ready to check",
+      "starting": "Starting..."
+    }
+  },
+  "theme": {
+    "title": "Theme Editor",
+    "noOptions": "No options in this category.",
+    "saveClose": "Save and Close",
+    "exportError": "Error exporting theme:",
+    "importErrorFmt": "Invalid theme file format.",
+    "importErrorJson": "Error importing file. Check if the file is a valid JSON.",
+    "categories": {
+      "colors": "Main Palette",
+      "backgrounds": "Backgrounds & Images",
+      "ui": "UI & Elements",
+      "text": "Text & Messages",
+      "login": "Login & Form",
+      "effects": "Effects & Others"
+    },
+    "labels": {
+      "name": "Internal name (no spaces)",
+      "primary": "Primary Color",
+      "primaryShop": "Shop Accent",
+      "primaryDark": "Primary Dark",
+      "primaryLight": "Primary Light / Off-White",
+      "bgDark": "Dark Background (Main)",
+      "bgCard": "Card Background (Transparent)",
+      "bgLight": "Light Background / Surface",
+      "bgBody": "Body Background (Base)",
+      "bgPrimary": "Primary Background",
+      "bgInput": "Input Background",
+      "loadingOverlay": "Loading Overlay",
+      "vignetteColor": "Vignette Color",
+      "backgroundImage": "Background Image URL",
+      "textPrimary": "Primary Text",
+      "textSecondary": "Secondary Text",
+      "textSecondaryAlt": "Alternative Text",
+      "textMuted": "Muted Text",
+      "breadcrumbsText": "Breadcrumbs Text",
+      "errorMessage": "Error Message",
+      "border": "Border (Main)",
+      "border2": "Border (Second)",
+      "borderPrimary": "Border Primary",
+      "borderRadius": "Border Radius (px)",
+      "borderRadiusSmall": "Small Radius",
+      "newsItem": "News Item Background",
+      "newsItemHover": "News Item Hover",
+      "btnHover": "Button Hover",
+      "btnGlow": "Button Glow",
+      "footerHover": "Footer Hover",
+      "shopItem": "Shop Gradient",
+      "navIcon": "Nav Icons",
+      "navItem": "Nav Background",
+      "navItemHoverNavIcon": "Nav Hover Icon",
+      "navItemActive": "Nav Active",
+      "tagDark": "Tag Dark",
+      "statusPulse": "Status Pulse",
+      "banBtn": "Ban Button",
+      "banBtnText": "Ban Text",
+      "toastError": "Toast Error",
+      "toastWarning": "Toast Warning",
+      "loginTabBtnBg": "Login Tab Background",
+      "loginTabBtnHover": "Login Tab Hover",
+      "loginInvalidBg": "Login Invalid Background",
+      "loginInvalidBorder": "Login Invalid Border",
+      "btnMicrosoft": "Microsoft Button",
+      "playerLogout": "Logout Button",
+      "gradientPrimary": "Primary Gradient",
+      "gradientBanned": "Ban Gradient",
+      "gradientOverlay": "Overlay Gradient",
+      "shadowGlow": "Shadow Glow",
+      "shadowCard": "Shadow Card",
+      "transition": "Animation (CSS)",
+      "firstFloating": "Emoji 1 (Floating)",
+      "secondFloating": "Emoji 2 (Floating)"
+    },
+    "tooltips": {
+      "copyVar": "Click to copy",
+      "alpha": "Transparency (Alpha)"
+    }
+  },
+  "router": {
+    "home": "Play",
+    "news": "News",
+    "shop": "Shop",
+    "settings": "Settings",
+    "changelog": "Changelog",
+    "users": "Players",
+    "ftp": "FTP",
+    "items": "Items",
+    "events": "Events",
+    "gameControl": "Game Management"
+  },
+  "gameControl": {
+    "title": "Remote Game Management",
+    "warning": "Are you sure you want to close Minecraft for everyone?",
+    "actionButton": "Close all games",
+    "successToast": "Sent kill game command to everyone",
+    "errorToast": "Failed to send kill game command",
+    "description": "This action will force an immediate shutdown of Minecraft for all connected users. Use only in emergency or technical situations.",
+    "confirmTitle": "Confirm action"
+  },
+  "general": {
+    "loading": "Loading..",
+    "required": "This field is required",
+    "emailInvalid": "Invalid email address",
+    "passwordMismatch": "Passwords must match",
+    "add": "Add",
+    "abort": "Abort",
+    "close": "Close"
+  },
+  "toasts": {
+    "skinFetchError": "Failed to load skin from URL (HTTP Error/404):",
+    "canvasInitError": "Canvas context initialization error.",
+    "machineIdBanned": "Machine ID is banned.",
+    "machineIdNotBanned": "Machine ID is not banned.",
+    "updateCheck": "Checking for updates..",
+    "updateAvailable": "Update available.",
+    "updateUpToDate": "App is up-to-date.",
+    "updateError": "Error during update. Try again later."
+  },
+  "header": {
+    "changeLanguage": "Change Language"
+  },
+  "launcher": {
+    "launchButton": {
+      "states": {
+        "start": "Launching..",
+        "javaInstall": "Installing Java..",
+        "filesVerify": "Verifying files..",
+        "minecraftStart": "Starting game..",
+        "minecraftStarted": "Game running",
+        "minecraftClosed": "Minecraft has been closed."
+      },
+      "ban": {
+        "bannedTitle": "Your account has been blocked",
+        "perm": "Permanently",
+        "ended": "Ban has ended",
+        "remaining": "Remaining: {time}"
+      },
+      "actions": {
+        "launch": "LAUNCH GAME",
+        "abort": "Click to abort"
+      },
+      "errors": {
+        "generic": "An error occurred while starting the game.",
+        "tokenVerify": "MC token verification..",
+        "tokenRefreshing": "MC token refreshing..",
+        "tokenRefreshed": "MC token has been refreshed.",
+        "tokenRefreshError": "MC token refresh error. Please try again in a moment."
+      }
+    }
+  }
+}

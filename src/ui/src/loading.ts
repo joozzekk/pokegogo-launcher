@@ -1,0 +1,31 @@
+import { createApp } from 'vue'
+import { router } from './router'
+import { createPinia } from 'pinia'
+import LoadingPage from './pages/Loading.vue'
+import i18n from './i18n'
+
+const app = createApp(LoadingPage)
+app.use(router)
+app.use(createPinia())
+app.use(i18n)
+
+const token = localStorage.getItem('token')
+
+router.beforeEach(async (to, from, next) => {
+  if (to.path.includes('/loading') && !from.path.includes('/loading')) {
+    next()
+    return
+  }
+
+  if (token) {
+    if (!to.path.includes('/app')) {
+      next('/app/home')
+    } else {
+      next()
+    }
+  } else {
+    next()
+  }
+})
+
+app.mount('#loading')

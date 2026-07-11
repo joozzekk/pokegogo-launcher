@@ -1,0 +1,639 @@
+{
+  "common": {
+    "cancel": "Anuluj",
+    "delete": "Usuń",
+    "confirm": "Potwierdź",
+    "pressSpace": "Naciśnij spację, aby zacząć",
+    "score": "Wynik",
+    "highScore": "Najlepszy wynik",
+    "clickToJump": "Kliknij, aby skoczyć",
+    "leaderboard": "Ranking Top 10",
+    "rank": "Poz.",
+    "nick": "Gracz",
+    "loading": "Ładowanie danych...",
+    "playGame": "Graj"
+  },
+  "settings": {
+    "title": "Ustawienia gry",
+    "gameMode": "Tryb gry",
+    "resolution": "Rozdzielczość",
+    "ram": "Pamięć RAM",
+    "displayMode": "Tryb wyświetlania gry",
+    "window": "Okno",
+    "fullscreen": "Pełny ekran",
+    "launcherSettings": "Ustawienia launchera",
+    "theme": "Motyw",
+    "notifications": "Powiadomienia",
+    "hideToTray": "Ukrywanie w zasobniku",
+    "autoUpdate": "Automatyczne aktualizacje",
+    "updateChannel": "Kanał aktualizacji",
+    "accountSettings": "Ustawienia Konta",
+    "changeEmail": "Zmiana emaila",
+    "changePassword": "Zmiana hasła",
+    "oldPassword": "Stare hasło",
+    "newPassword": "Hasło",
+    "repeatPassword": "Powtórz hasło",
+    "save": "Zapisz",
+    "reset": "Przywróć",
+    "verifyFiles": "Sprawdź pliki",
+    "enabled": "Włączone",
+    "disabled": "Wyłączone",
+    "successSave": "Zapisano ustawienia.",
+    "successReset": "Przywrócono domyślne ustawienia",
+    "successPasswordChange": "Pomyślnie zmieniono hasło",
+    "errorPasswordChange": "Nie udało się zmienić hasła",
+    "successEmailChange": "Pomyślnie zmieniono email",
+    "errorEmailChange": "Nie udało się zmienić email",
+    "language": "Język",
+    "logs": "Logi",
+    "openLauncherLogs": "Otwórz logi launchera",
+    "openGameLogs": "Otwórz logi gry",
+    "customThemeApplied": "Zastosowano własny motyw!",
+    "resetSettings": "Przywróć ustawienia domyślne"
+  },
+  "login": {
+    "copyright": "Wszystkie prawa zastrzeżone.",
+    "title": "Logowanie do PokemonGoGo",
+    "subtitle": "Zaloguj się do launchera korzystając z jednego z dostępnych sposobów.",
+    "or": "lub",
+    "placeholder": {
+      "nick": "Podaj nick..",
+      "password": "Podaj hasło.."
+    },
+    "loginButton": "Zaloguj się",
+    "microsoftLogin": "Zaloguj przez Microsoft",
+    "noAccount": "Nie masz konta?",
+    "register": "Zarejestruj się",
+    "toasts": {
+      "error": "Wystąpił błąd podczas logowania.",
+      "microsoftError": "Wystąpił błąd podczas logowania przez Microsoft."
+    }
+  },
+  "register": {
+    "title": "Rejestracja PokemonGoGo",
+    "subtitle": "Załóż konto, aby móc korzystać z aplikacji i wejść na serwer PokemonGoGo.pl",
+    "info": "Pamiętaj, że rejestrować się powinny tylko konta non-premium. Gdy masz konto premium, zaloguj się przez Microsoft.",
+    "placeholder": {
+      "nick": "Podaj nick..",
+      "email": "Podaj email..",
+      "password": "Podaj hasło..",
+      "repeatPassword": "Powtórz hasło.."
+    },
+    "registerButton": "Zarejestruj się",
+    "registering": "Rejestracja...",
+    "hasAccount": "Masz już konto?",
+    "login": "Zaloguj się"
+  },
+  "home": {
+    "latestUpdates": "Ostatnie nowości",
+    "activeEvent": "Aktywne Wydarzenie",
+    "ram": "RAM",
+    "mode": "Tryb",
+    "playersOnline": "Graczy Online",
+    "ping": "Ping",
+    "uptime": "Uptime"
+  },
+  "changelog": {
+    "searchPlaceholder": "Wyszukaj changelog po słowach kluczowych..",
+    "add": "Dodaj",
+    "loading": "Ładowanie changelogów..",
+    "deleteSuccess": "Pomyślnie usunięto changelog",
+    "addSuccess": "Pomyślnie dodano nowy changelog",
+    "editSuccess": "Pomyślnie edytowano changelog",
+    "addTitle": "Dodaj changelog",
+    "editTitle": "Edytuj changelog",
+    "labels": {
+      "name": "Nazwa",
+      "nameDesc": "Nazwa changeloga",
+      "version": "Wersja",
+      "versionDesc": "Wersja changeloga",
+      "date": "Data",
+      "dateDesc": "Data wydania changeloga",
+      "type": "Typ",
+      "typeDesc": "Typ dodawanego changeloga",
+      "changes": "Lista zmian",
+      "changesDesc": "Lista zmian wykonanych w danym changelogu"
+    },
+    "placeholders": {
+      "name": "Podaj nazwę",
+      "version": "Podaj wersję",
+      "date": "Wybierz datę",
+      "desc": "Co zmieniono?"
+    },
+    "types": {
+      "launcher": "Launcher",
+      "server": "Serwer"
+    },
+    "table": {
+      "type": "Typ",
+      "desc": "Opis"
+    },
+    "changeTypes": {
+      "new": "NOWE",
+      "fix": "POPRAWKA",
+      "improve": "ULEPSZONO",
+      "newLabel": "Nowość",
+      "fixLabel": "Poprawka",
+      "improveLabel": "Ulepszenie"
+    },
+    "noChanges": "Brak zmian",
+    "save": "Zapisz",
+    "cancel": "Anuluj"
+  },
+  "events": {
+    "deleteSuccess": "Pomyślnie usunięto wydarzenie",
+    "add": "Dodaj",
+    "edit": "Edytuj",
+    "delete": "Usuń",
+    "searchPlaceholder": "Wyszukaj wydarzenie po nazwie..",
+    "loading": "Ładowanie wydarzeń..",
+    "refresh": "Odśwież",
+    "noResultsTitle": "Brak wyników",
+    "noResultsDesc": "Nie znaleziono żadnych wydarzeń pasujących do kryteriów wyszukiwania.",
+    "table": {
+      "name": "Nazwa",
+      "type": "Typ",
+      "desc": "Opis"
+    },
+    "addSuccess": "Pomyślnie dodano nowe wydarzenie",
+    "editSuccess": "Pomyślnie edytowano wydarzenie",
+    "addTitle": "Dodaj wydarzenie",
+    "editTitle": "Edytuj wydarzenie",
+    "labels": {
+      "name": "Nazwa",
+      "nameDesc": "Nazwa wydarzenia wyświetlana na stronie głównej launchera.",
+      "type": "Typ",
+      "typeDesc": "Typ dodawanego wydarzenia",
+      "desc": "Opis",
+      "descDesc": "Opis wydarzenia wyświetlany na stronie głównej launchera.",
+      "startDate": "Data początkowa",
+      "startDateDesc": "Data początku wydarzenia",
+      "endDate": "Data końcowa",
+      "endDateDesc": "Data końca wydarzenia"
+    },
+    "placeholders": {
+      "name": "Podaj nazwę",
+      "desc": "Podaj opis..",
+      "date": "Wybierz datę"
+    },
+    "types": {
+      "mega": "MEGA",
+      "normal": "Normalny"
+    },
+    "save": "Zapisz",
+    "cancel": "Anuluj"
+  },
+  "users": {
+    "online": "Online",
+    "offline": "Offline",
+    "toasts": {
+      "inviteSent": "Wysłano zaproszenie do",
+      "inviteFailed": "Nie udało się wysłać zaproszenia do",
+      "inviteCancelled": "Cofnięto zaproszenie do",
+      "inviteCancelFailed": "Nie udało się anulować zaproszenia do",
+      "friendRemoved": "Usunięto z listy znajomych",
+      "friendRemoveFailed": "Nie udało się usunąć z listy znajomych",
+      "inviteAccepted": "Zaakceptowano zaproszenie od",
+      "inviteAcceptFailed": "Nie udało się zaakceptować zaproszenia od",
+      "inviteRejected": "Odrzucono zaproszenie od",
+      "inviteRejectFailed": "Nie udało się odrzucić zaproszenia od",
+      "killGameSent": "Wysłano polecenie wyłączenia gry dla"
+    },
+    "searchPlaceholder": "Wyszukaj gracza...",
+    "keywords": {
+      "title": "Słowa kluczowe",
+      "hwid": "wyświetla graczy, którzy mają HWID",
+      "nohwid": "wyświetla graczy, którzy NIE mają HWID",
+      "hwidCount": "wyświetla graczy, którzy mają takie samo HWID i więcej niz x kont. Mozliwe sa operatory: >, < i =",
+      "hwidSpecific": "wyświetla graczy, którzy mają określone [hwid]",
+      "banned": "wyświetla graczy zbanowanych",
+      "online": "wyświetla graczy, którzy są aktualnie aktywni"
+    },
+    "filters": {
+      "title": "Filtry",
+      "clearAll": "Wyczyść wszystko"
+    },
+    "requestFriend": "Dodaj znajomego",
+    "removeFriend": "Usuń znajomego",
+    "banned": "BANNED",
+    "gameRunning": "Gra uruchomiona",
+    "killGame": "Wyłącz grę",
+    "loading": "Ładowanie graczy...",
+    "endOfResults": "Koniec wyników",
+    "none": "(Brak)",
+    "showMax": "Pokazuj maksymalnie",
+    "limitAll": "Bez limitu",
+    "cancelRequest": "Anuluj zaproszenie"
+  },
+  "ftp": {
+    "searchPlaceholder": "Szukaj...",
+    "createFolder": "Utwórz folder",
+    "uploadFolder": "Prześlij folder",
+    "uploadFile": "Prześlij plik",
+    "loading": "Wczytywanie...",
+    "dropHint": "Upuść pliki tutaj, aby je przesłać",
+    "noFilesTitle": "Brak plików",
+    "noFilesDesc": "W tym folderze nie ma żadnych plików.",
+    "tooltips": {
+      "zippedDirty": "Folder spakowany, ale zawiera nowe pliki",
+      "zipped": "Folder spakowany",
+      "zipFolder": "Spakuj folder (utwórz .zip)",
+      "markImportant": "Oznacz jako ważne (zawsze pobierane)",
+      "downloadFolder": "Pobierz folder",
+      "downloadFile": "Pobierz plik"
+    },
+    "flags": {
+      "important": "Pobierane zawsze",
+      "ignored": "Ignorowane"
+    },
+    "warnings": {
+      "zippedDirty": "⚠️ Zawiera niespakowane zmiany"
+    }
+  },
+  "items": {
+    "toasts": {
+      "indexChanged": "Pomyślnie zmieniono index przedmiotu",
+      "deleted": "Pomyślnie usunięto przedmiot"
+    },
+    "add": "Dodaj",
+    "edit": "Edytuj",
+    "delete": "Usuń",
+    "searchPlaceholder": "Wyszukaj przedmiot po nazwie..",
+    "loading": "Ładowanie przedmiotów..",
+    "refresh": "Odśwież",
+    "noResultsTitle": "Brak wyników",
+    "noResultsDesc": "Nie znaleziono żadnych przedmiotów pasujących do kryteriów wyszukiwania.",
+    "table": {
+      "name": "Nazwa",
+      "price": "Cena",
+      "desc": "Opis"
+    },
+    "priceParams": {
+      "none": "Brak"
+    }
+  },
+  "shop": {
+    "searchPlaceholder": "Szukaj przedmiotu..",
+    "refresh": "Odśwież",
+    "loading": "Ładowanie sklepu.."
+  },
+  "createFolder": {
+    "title": "Tworzenie folderu",
+    "label": "Nazwa folderu",
+    "placeholder": "Podaj nazwę",
+    "create": "Utwórz",
+    "cancel": "Anuluj",
+    "errors": {
+      "required": "Nazwa jest wymagana",
+      "minLength": "Nazwa musi mieć co najmniej 2 znaki",
+      "maxLength": "Nazwa może mieć maksymalnie 50 znaków"
+    }
+  },
+  "addItem": {
+    "title": {
+      "add": "Dodaj przedmiot",
+      "edit": "Edytuj przedmiot"
+    },
+    "success": {
+      "add": "Pomyślnie dodano nowy przedmiot",
+      "edit": "Pomyślnie edytowano przedmiot"
+    },
+    "errors": {
+      "greaterThanZero": "Wartość musi być większa od 0"
+    },
+    "labels": {
+      "name": "Nazwa",
+      "nameDesc": "Wyświetlana na stronie",
+      "price": "Cena",
+      "priceDesc": "Cena przedmiotu",
+      "promotion": "Promocja",
+      "promotionDesc": "Podaj przecenę (w zł)",
+      "type": "Typ",
+      "typeDesc": "Typ dodawanego przedmiotu",
+      "desc": "Opis",
+      "descDesc": "Opis jest formatowany. Jeśli chcesz, aby wyświetlał się dobrze na stronie pamiętaj, aby pisać tekst w nowych liniach.",
+      "rankName": "Nazwa rangi",
+      "rankNameDesc": "Nazwa rangi z LuckyPerms. Przykłady: vip, mvp, ultra, legend.",
+      "duration": "Długość trwania",
+      "durationDesc": "Podaj czas na jaki gracz otrzyma tę rangę. Domyślnie 30",
+      "keyName": "Nazwa klucza",
+      "itemId": "ID Przedmiotu",
+      "keyNameDesc": "Wpisz nazwę klucza z pluginu, np. legendary, mythic",
+      "itemIdDesc": "Wpisz nazwę przedmiotu, np. cobblemon:master_ball",
+      "amount": "Ilość do sprzedaży",
+      "amountDesc": "Podaj ilość w jakiej będzie sprzedawany przedmiot. Domyślnie 1",
+      "index": "Index",
+      "indexDesc": "Kolejność wyświetlania przedmiotu",
+      "command": "Komenda",
+      "commandDesc": "Możesz wykorzystywać różne zmienne podane wyżej. {player} - nick gracza. Podane wyżej: {amount} - ilość przedmiotu, {item} - nazwa przedmiotu, {rank} - nazwa rangi, {days} - długość trwania."
+    },
+    "placeholders": {
+      "name": "Podaj nazwę",
+      "price": "Podaj cenę",
+      "number": "Podaj liczbę",
+      "desc": "Podaj opis..",
+      "command": "Podaj komendę",
+      "days": "Podaj ilość dni",
+      "amount": "Podaj ilość"
+    },
+    "types": {
+      "rank": "Ranga",
+      "key": "Klucz",
+      "item": "Item",
+      "custom": "Inny"
+    },
+    "tooltips": {
+      "placeholders": {
+        "title": "Dostępne zmienne:",
+        "player": "Nick gracza",
+        "amount": "Ilość przedmiotu",
+        "item": "ID / Nazwa przedmiotu",
+        "rank": "Nazwa rangi",
+        "days": "Czas trwania rangi (dni)"
+      }
+    },
+    "save": "Zapisz",
+    "cancel": "Anuluj"
+  },
+  "chat": {
+    "start": "Rozmowa rozpoczęta",
+    "placeholder": "Wpisz wiadomość...",
+    "cannotReply": "Nie możesz odpowiedzieć na tę konwersację"
+  },
+  "load": {
+    "init": "Inicjalizowanie..",
+    "checkUpdate": "Sprawdzanie aktualizacji..",
+    "updating": "Aktualizowanie..",
+    "welcome": "Witamy!",
+    "error": "Wystąpił błąd"
+  },
+  "modals": {
+    "banPlayer": {
+      "successPerm": "Pomyślnie nadano permanentnego bana użytkownikowi",
+      "successTemp": "Pomyślnie zbanowano użytkownika",
+      "successUnban": "Pomyślnie odbanowano użytkownika",
+      "titleBan": "Zbanuj gracza",
+      "titleUnban": "Odbanuj gracza",
+      "type": "Typ blokady",
+      "hwid": "HWID",
+      "nick": "Nick",
+      "duration": "Czas trwania",
+      "temp": "Czasowy",
+      "perm": "Permban",
+      "endTime": "Czas zakończenia bana",
+      "datePlaceholder": "Wybierz datę",
+      "reason": "Powód bana",
+      "reasonPlaceholder": "Wpisz powód bana",
+      "confirmUnban": "Czy na pewno chcesz odbanować gracza {player}?",
+      "ban": "Zbanuj",
+      "unban": "Odbanuj",
+      "cancel": "Anuluj"
+    },
+    "banned": {
+      "noReason": "Brak szczegółowego powodu.",
+      "title": "Zostałeś zbanowany",
+      "header": "Konto Zbanowane",
+      "desc": "Twoje konto zostało zablokowane. Szczegóły dotyczące powodu blokady poniżej:",
+      "reason": "Powód",
+      "expires": "Wygasa",
+      "understand": "Rozumiem"
+    },
+    "changeSkin": {
+      "selectFile": "Proszę wybrać plik skina.",
+      "success": "Skin został pomyślnie zmieniony!",
+      "title": "Custom skin",
+      "type": "Typ skina",
+      "steve": "Steve",
+      "alex": "Alexa",
+      "custom": "Customowy skin",
+      "hint": "Kliknij na podgląd skina, aby zmienić swój customowy skin w grze.",
+      "confirm": "Zatwierdź",
+      "cancel": "Anuluj"
+    },
+    "changeNickname": {
+      "title": "Zmień nick",
+      "info": "Podgląd zmiany nicku:",
+      "newNickname": "Nowy nick",
+      "newNicknamePlaceholder": "Wpisz nowy nick",
+      "success": "Pomyślnie zmieniono nick gracza {old} na {new}",
+      "change": "Zmień",
+      "cancel": "Anuluj"
+    },
+    "discordReport": {
+      "required": "Treść jest wymagana",
+      "minLength": "Treść musi mieć co najmniej 2 znaki",
+      "noNick": "Brak Nicku",
+      "content": "Treść zgłoszenia",
+      "success": "Zgłoszenie zostało wysłane",
+      "title": "Zgłoszenie",
+      "placeholder": "Treść zgłoszenia..",
+      "cancel": "Anuluj",
+      "send": "Wyślij"
+    },
+    "passwordReset": {
+      "title": "Reset hasła",
+      "confirm": "Czy napewno chcesz zresetować hasło użytkownika {nickname}?",
+      "generated": "Wygenerowane hasło: ",
+      "ok": "OK",
+      "reset": "Zresetuj",
+      "cancel": "Anuluj"
+    },
+    "updateConfirm": {
+      "title": "Aktualizacja launchera",
+      "desc": "Czy napewno chcesz aktualizować launcher? Spowoduje to wyłączenie minecrafta oraz wylogowanie z konta.",
+      "update": "Aktualizuj",
+      "cancel": "Anuluj"
+    },
+    "userProfile": {
+      "none": "Brak",
+      "perm": "Permanentnie",
+      "banEnded": "Blokada zakończyła się",
+      "remaining": "Pozostało: {time}",
+      "friendRequestAccepted": "Zaakceptowano zaproszenie od {nickname}",
+      "friendRequestAcceptFailed": "Nie udało się zaakceptować zaproszenia od {nickname}",
+      "friendRequestRejected": "Odrzucono zaproszenie od {nickname}",
+      "friendRequestRejectFailed": "Nie udało się odrzucić zaproszenia od {nickname}",
+      "friendRemoved": "Usunięto {nickname} z listy znajomych",
+      "friendRemoveFailed": "Nie udało się usunąć {nickname} z listy znajomych",
+      "accountBlocked": "Konto zablokowane.",
+      "areFriends": "Jesteście znajomymi",
+      "friendRequestSent": "Wysłano zaproszenie do znajomych",
+      "lastLogin": "Ost. logowanie:",
+      "registered": "Zarejestrowano:",
+      "noHwid": "Brak HWID",
+      "adminActions": "Akcje Administratora",
+      "ban": "Banuj",
+      "unban": "Odbanuj",
+      "resetPass": "Resetuj Hasło",
+      "deleteAccount": "Usuń konto",
+      "confirmDeleteAccount": "Czy na pewno chcesz usunąć profil gracza {name}?",
+      "accountDeleted": "Pomyślnie usunięto konto.",
+      "accountDeleteFailed": "Nie udało się usunąć konta.",
+      "friends": "Znajomi",
+      "friendRequestsTitle": "Zaproszenia do znajomych",
+      "noFriendsUser": "Aktualnie nie masz żadnych znajomych.",
+      "noFriendsPlayer": "Aktualnie gracz nie ma żadnych znajomych.",
+      "banReason": "Powód"
+    },
+    "verifyFiles": {
+      "checkEnded": "Sprawdzanie zakończone",
+      "title": "Naprawianie plików",
+      "warning": "Pamiętaj, aby nie zamykać launchera podczas weryfikacji plików.",
+      "finish": "Zakończ",
+      "verifying": "Weryfikacja w toku...",
+      "stop": "Przerwij weryfikowanie",
+      "start": "Rozpocznij weryfikacje",
+      "ready": "Gotowy do sprawdzenia",
+      "starting": "Rozpoczynanie..."
+    }
+  },
+  "theme": {
+    "title": "Edytor Motywu",
+    "noOptions": "Brak opcji w tej kategorii.",
+    "saveClose": "Zapisz i Zamknij",
+    "exportError": "Błąd podczas eksportu motywu:",
+    "importErrorFmt": "Nieprawidłowy format pliku motywu.",
+    "importErrorJson": "Błąd podczas importu pliku. Sprawdź czy plik jest poprawnym JSON-em.",
+    "categories": {
+      "colors": "Paleta Główna",
+      "backgrounds": "Tła & Obrazy",
+      "ui": "UI & Elementy",
+      "text": "Tekst & Komunikaty",
+      "login": "Login & Form",
+      "effects": "Efekty & Inne"
+    },
+    "labels": {
+      "name": "Nazwa wewn. (bez spacji)",
+      "primary": "Kolor Wiodący (Primary)",
+      "primaryShop": "Akcent Sklepu",
+      "primaryDark": "Primary Ciemny",
+      "primaryLight": "Primary Jasny / Off-White",
+      "bgDark": "Tło Ciemne (Główne)",
+      "bgCard": "Tło Karty (Przezroczyste)",
+      "bgLight": "Tło Jasne / Surface",
+      "bgBody": "Tło Body (Podkład)",
+      "bgPrimary": "Tło Primary",
+      "bgInput": "Tło Inputów",
+      "loadingOverlay": "Overlay Ładowania",
+      "vignetteColor": "Kolor Winiety",
+      "backgroundImage": "URL Obrazka Tła",
+      "textPrimary": "Tekst Główny",
+      "textSecondary": "Tekst Drugorzędny",
+      "textSecondaryAlt": "Tekst Alternatywny",
+      "textMuted": "Tekst Wyciszony",
+      "breadcrumbsText": "Tekst Breadcrumbs",
+      "errorMessage": "Tekst Błędu",
+      "border": "Border (Główny)",
+      "border2": "Border (Drugi)",
+      "borderPrimary": "Border Primary",
+      "borderRadius": "Zaokrąglenie (px)",
+      "borderRadiusSmall": "Małe zaokrąglenie",
+      "newsItem": "News Item Tło",
+      "newsItemHover": "News Item Hover",
+      "btnHover": "Przycisk Hover",
+      "btnGlow": "Poświata Przycisku",
+      "footerHover": "Stopka Hover",
+      "shopItem": "Gradient Sklepu",
+      "navIcon": "Ikony Nawigacji",
+      "navItem": "Tło Nawigacji",
+      "navItemHoverNavIcon": "Nav Hover Ikona",
+      "navItemActive": "Nav Aktywny",
+      "tagDark": "Tag Ciemny",
+      "statusPulse": "Puls Statusu",
+      "banBtn": "Przycisk Ban",
+      "banBtnText": "Tekst Ban",
+      "toastError": "Toast Błąd",
+      "toastWarning": "Toast Ostrzeżenie",
+      "loginTabBtnBg": "Login Tab Tło",
+      "loginTabBtnHover": "Login Tab Hover",
+      "loginInvalidBg": "Login Invalid Tło",
+      "loginInvalidBorder": "Login Invalid Border",
+      "btnMicrosoft": "Przycisk Microsoft",
+      "playerLogout": "Przycisk Wyloguj",
+      "gradientPrimary": "Gradient Główny",
+      "gradientBanned": "Gradient Ban",
+      "gradientOverlay": "Gradient Overlay",
+      "shadowGlow": "Cień Glow",
+      "shadowCard": "Cień Karty",
+      "transition": "Animacja (CSS)",
+      "firstFloating": "Emoji 1 (Latające)",
+      "secondFloating": "Emoji 2 (Latające)"
+    },
+    "tooltips": {
+      "copyVar": "Kliknij by skopiować",
+      "alpha": "Przezroczystość (Alpha)"
+    }
+  },
+  "router": {
+    "home": "Graj",
+    "news": "Aktualności",
+    "shop": "Sklep",
+    "settings": "Ustawienia",
+    "changelog": "Changelog",
+    "users": "Gracze",
+    "ftp": "FTP",
+    "items": "Itemy",
+    "events": "Wydarzenia",
+    "gameControl": "Zarządzanie Grą"
+  },
+  "gameControl": {
+    "title": "Zdalne Zarządzanie Grą",
+    "warning": "Czy na pewno chcesz wszystkim zamknąć Minecrafta?",
+    "actionButton": "Zamknij wszystkim grę",
+    "successToast": "Wysłano polecenie zamknięcia gry do wszystkich",
+    "errorToast": "Nie udało się wysłać polecenia zamknięcia gry",
+    "description": "Ta akcja wymusi natychmiastowe zamknięcie gry Minecraft u wszystkich połączonych użytkowników. Używaj tylko w sytuacjach awaryjnych lub technicznych.",
+    "confirmTitle": "Potwierdź działanie"
+  },
+  "general": {
+    "loading": "Ładowanie..",
+    "required": "To pole jest wymagane",
+    "emailInvalid": "Nieprawidłowy adres email",
+    "passwordMismatch": "Hasła muszą być identyczne",
+    "add": "Dodaj",
+    "abort": "Przerwij",
+    "close": "Zamknij"
+  },
+  "toasts": {
+    "skinFetchError": "Nie udało się załadować skina z URL (HTTP Error/404):",
+    "canvasInitError": "Błąd inicjalizacji Canvas context.",
+    "machineIdBanned": "Machine ID jest zbanowane.",
+    "machineIdNotBanned": "Machine ID nie jest zbanowane.",
+    "updateCheck": "Sprawdzanie aktualizacji..",
+    "updateAvailable": "Dostępna aktualizacja.",
+    "updateUpToDate": "Aplikacja jest aktualna.",
+    "updateError": "Wystąpił błąd podczas aktualizacji. Spróbuj ponownie później."
+  },
+  "header": {
+    "changeLanguage": "Zmień język"
+  },
+  "launcher": {
+    "launchButton": {
+      "states": {
+        "start": "Uruchamianie..",
+        "javaInstall": "Instalowanie Javy..",
+        "filesVerify": "Weryfikowanie plików..",
+        "minecraftStart": "Uruchamianie gry..",
+        "minecraftStarted": "Gra uruchomiona",
+        "minecraftClosed": "Minecraft został zamknięty."
+      },
+      "ban": {
+        "bannedTitle": "Twoje konto zostało zablokowane",
+        "perm": "Permanentnie",
+        "ended": "Blokada zakończyła się",
+        "remaining": "Pozostało: {time}"
+      },
+      "actions": {
+        "launch": "URUCHOM GRĘ",
+        "abort": "Kliknij, aby przerwać"
+      },
+      "errors": {
+        "generic": "Wystąpił błąd podczas uruchamiania gry.",
+        "tokenVerify": "Weryfikacja tokenu MC..",
+        "tokenRefreshing": "Odświeżanie tokenu MC..",
+        "tokenRefreshed": "MC Token został odświeżony.",
+        "tokenRefreshError": "Błąd odświeżania tokenu MC. Spróbuj ponownie za chwilę."
+      }
+    }
+  }
+}

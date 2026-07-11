@@ -1,0 +1,86 @@
+import { fetchProfile } from '@ui/api/endpoints'
+import { type IUser } from '@ui/env'
+import { defineStore } from 'pinia'
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { type SavedAccount } from '@ui/types/app'
+import { useChatsStore } from '@ui/stores/chats-store'
+import { loadCustomOrFallbackHead } from '@ui/utils'
+import { useUserCacheStore } from './user-cache-store'
+
+const useUserStore = defineStore('user', () => {
+  const selectedProfile = ref<IUser | null>(null)
+  const chatsStore = useChatsStore()
+  const userCache = useUserCacheStore()
+
+  const savedAccounts = ref<SavedAccount[]>(
+    JSON.parse(localStorage.getItem('savedAccounts') ?? '[]')
+  )
+  const hwidBanned = ref<boolean>(false)
+  const user = ref(null as IUser | null)
+  const router = useRouter()
+
+  const setUser = async (newUser: IUser): Promise<void> => {
+    newUser.headUrl = await loadCustomOrFallbackHead(newUser)
+
+    user.value = newUser
+  }
+
+  const resetUser = (): void => {
+    user.value = null
+  }
+
+  const removeSavedAccount = (savedAccount: SavedAccount): void => {
+    savedAccounts.value = savedAccounts.value.filter(
+      (account) => account.nickname !== savedAccount.nickname
+    )
+    localStorage.setItem('savedAccounts', JSON.stringify(savedAccounts.value))
+  }
+
+  const logout = async (): Promise<void> => {
+    resetUser()
+    chatsStore.resetChats()
+    userCache.resetCache()
+    selectedProfile.value = null
+    localStorage.removeItem('token')
+    localStorage.removeItem('refresh_token')
+    localStorage.removeItem('mcToken')
+    router.push('/')
+  }
+
+  const updateProfile = async (): Promise<void> => {
+    const profile = await fetchProfile()
+
+    // Sync Discord roles in the background
+    if (profile && profile.uuid) {
+      const backendUrl = import.meta.env.RENDERER_VITE_API_URL || 'https://api.pokemongogo.pl/v1'
+      fetch(`${backendUrl}/discord/sync?uuid=${profile.uuid}`).catch(() => {})
+    }
+
+    await setUser(profile)
+  }
+
+  const updateSelectedProfile = (player: IUser | null): void => {
+    selectedProfile.value = player
+  }
+
+  const resetSelectedProfile = (): void => {
+    selectedProfile.value = null
+  }
+
+  return {
+    user,
+    hwidBanned,
+    savedAccounts,
+    selectedProfile,
+    updateSelectedProfile,
+    resetSelectedProfile,
+    setUser,
+    resetUser,
+    logout,
+    removeSavedAccount,
+    updateProfile
+  }
+})
+
+export default useUserStore
